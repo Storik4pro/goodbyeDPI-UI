@@ -26,7 +26,7 @@ else:
     import ctypes.wintypes
     import darkdetect
     from customtkinter import *
-    from _data import settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, text
+    from _data import settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, text
     from utils import install_font
     import pywintypes
     import configparser
@@ -38,16 +38,20 @@ else:
     from PIL import Image, ImageTk
 
     first_run = settings.settings['GLOBAL']['is_first_run']
-    if first_run == 'True':
-        install_font('data/font/Nunito-SemiBold.ttf')
-        config = configparser.ConfigParser()
-        config.read(SETTINGS_FILE_PATH)
-        config['GLOBAL']['is_first_run'] = 'False'
-        with open(SETTINGS_FILE_PATH, 'w') as configfile:
-            config.write(configfile)
-        settings.reload_settings()
 
-    version = "1.0.0"
+    if not DEBUG:
+        if first_run == 'True':
+            install_font('data/font/Nunito-SemiBold.ttf')
+            config = configparser.ConfigParser()
+            config.read(SETTINGS_FILE_PATH)
+            config['GLOBAL']['is_first_run'] = 'False'
+            with open(SETTINGS_FILE_PATH, 'w') as configfile:
+                config.write(configfile)
+            settings.reload_settings()
+
+    version = "1.0.1"
+    
+
 
     regions = {
         text.inAppText['ru']:'RU',
@@ -232,7 +236,7 @@ else:
             self.create_tray_icon()
 
         def create_tray_icon(self):
-            image = Image.open("data/icon.png") 
+            image = Image.open(DIRECTORY+"data/icon.png") 
             menu = (item(text.inAppText['maximize'] , self.show_window), item(text.inAppText['quit'] , self.exit_app))
             self.tray_icon = pystray.Icon("name", image, "GoodbyeDPI UI", menu)
             self.tray_icon.run()
@@ -261,7 +265,7 @@ else:
                 
                 task_name = "GoodbyeDPI_UI_Autostart"
 
-                command = f'schtasks /create /tn "{task_name}" /tr "{sys.executable}" /sc onlogon /rl highest /f'
+                command = f'schtasks /create /tn "{task_name}" /tr "\'{sys.executable}\'" /sc onlogon /rl highest /f'
 
                 subprocess.run(command, check=True, shell=True)
                 
@@ -304,7 +308,7 @@ else:
             self.notifier.show_toast(
             title,
             str(message),
-            icon_path="data/icon.ico",
+            icon_path=DIRECTORY+"data/icon.ico",
             duration=10,
             threaded=True,
             callback_on_click=self.on_notification_click
@@ -320,6 +324,6 @@ else:
     set_appearance_mode(mode)
     set_default_color_theme("blue")
     set_widget_scaling(1)
-    window.iconbitmap('data/icon.ico')
+    window.iconbitmap(DIRECTORY+'data/icon.ico')
     window.mainloop()
     

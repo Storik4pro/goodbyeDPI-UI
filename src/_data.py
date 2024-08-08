@@ -1,8 +1,13 @@
 import configparser
+import os
 
-SETTINGS_FILE_PATH = 'data/settings/settings.ini'
-LOCALE_FILE_PATH = 'data/loc/loc.ini'
-GOODBYE_DPI_PATH = 'data/goodbyeDPI/'
+DEBUG = False
+
+DIRECTORY = f'{os.path.dirname(os.path.abspath(__file__))}/' if not DEBUG else ''
+
+SETTINGS_FILE_PATH = DIRECTORY+'data/settings/settings.ini'
+LOCALE_FILE_PATH =  DIRECTORY+'data/loc/loc.ini'
+GOODBYE_DPI_PATH =  DIRECTORY+'data/goodbyeDPI/'
 FONT = 'Nunito SemiBold'
 
 class Settings:
