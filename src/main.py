@@ -1,5 +1,4 @@
-from tkinter import messagebox, PhotoImage
-import tkinter
+from tkinter import messagebox
 import sys
 import subprocess
 import os
@@ -21,21 +20,23 @@ def is_admin():
 if not is_admin():
     ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
 else:
-    try:
-        from customtkinter import *
-        from _data import settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, text
-        from utils import install_font
-        import configparser
-        import psutil
-        from plyer import notification
-        import pystray
-        from pystray import MenuItem as item
-        from PIL import Image, ImageTk
-    except:
-        a = sys.exc_info()[1]
-        b = sys.exc_info()
-        messagebox.showwarning("Error", f"Cannot import data:\n"
-                                        f"{a}; {b}")
+    import tkinter.ttk 
+    from tkinter import filedialog
+    from tkinter.font import Font
+    import ctypes.wintypes
+    import darkdetect
+    from customtkinter import *
+    from _data import settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, text
+    from utils import install_font
+    import pywintypes
+    import configparser
+    import psutil
+    from win10toast_click import ToastNotifier
+    from plyer import notification
+    import pystray
+    from pystray import MenuItem as item
+    from PIL import Image, ImageTk
+
     first_run = settings.settings['GLOBAL']['is_first_run']
     if first_run == 'True':
         install_font('data/font/Nunito-SemiBold.ttf')
@@ -80,6 +81,8 @@ else:
             self.protocol("WM_DELETE_WINDOW", self.on_closing)
             self.bind("<Unmap>", self.on_minimize)
             self.tray_icon = None
+
+            self.notifier = ToastNotifier()
             
             if self.autorun:
                 self.perform_autorun_actions()
@@ -149,6 +152,7 @@ else:
                 subprocess.Popen(['cmd', '/c', '0_russia_update_blacklist_file.cmd'], shell=True, cwd=GOODBYE_DPI_PATH, creationflags=subprocess.CREATE_NO_WINDOW)
                 self.show_notification(text.inAppText['update_complete'])
             except Exception as ex:
+                messagebox.showerror('An error just ocruppted', f"{ex}")
                 self.show_notification(f"{ex}",title=text.inAppText['error'])
 
         def change_region(self, region):
@@ -212,7 +216,7 @@ else:
                         self.show_notification(text.inAppText['process'] + " goodbyedpi.exe " + text.inAppText['close_complete'])
                         return
                     except psutil.NoSuchProcess:
-                        self.show_notification(text.inAppText['close_error'] + " goodbyedpi.exe. " + text.inAppText['close_error1'] , title=text.inAppText['error_title'] )
+                        self.show_notification((text.inAppText['close_error'] + " goodbyedpi.exe. " + text.inAppText['close_error1']) , title=text.inAppText['error_title'] )
             self.show_notification(text.inAppText['close_error'] +" goodbyedpi.exe. " + text.inAppText['close_error1'], title=text.inAppText['error_title'] )
 
         def on_closing(self):
@@ -245,6 +249,7 @@ else:
             self.stop_process()
             self.tray_icon.stop()
             self.destroy()
+            sys.exit(0)
 
         def perform_autorun_actions(self):
             self.start_process()
@@ -292,14 +297,23 @@ else:
                 self.show_notification(f"{ex}", title="")
         
 
-        def show_notification(self, message, title=text.inAppText['warning']):
-            notification.notify(
-            title=title,
-            message=message,
-            app_name='GoodbyeDPI UI',
-            timeout=10
-            )     
+        def show_notification(self, message, title="GoodbyeDPI UI"):
+            print(message, title)
+            self.notifier = ToastNotifier()
+            self.notifier.show_toast(
+            title,
+            str(message),
+            icon_path="data/icon.ico",
+            duration=10,
+            threaded=True,
+            callback_on_click=self.on_notification_click
+            )
+
+        def on_notification_click(self):
+            self.show_window(None, None)
             
+    def func():pass
+    
     window = MainWindow()
     mode = settings.settings['APPEARANCE_MODE']['mode']
     set_appearance_mode(mode)
