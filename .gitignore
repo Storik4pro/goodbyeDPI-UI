@@ -1,7 +1,7 @@
 .vs/
 .idea/
 data/settings/settings.ini
-
+output/
 # Vagrant
 .vagrant/
 

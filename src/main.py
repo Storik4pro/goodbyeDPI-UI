@@ -258,12 +258,13 @@ else:
         def install_service(self):
             try:
                 script_path = os.path.abspath(sys.argv[0])
+                
                 task_name = "GoodbyeDPI_UI_Autostart"
 
-                command = f'schtasks /create /tn "{task_name}" /tr "{sys.executable} {script_path}" /sc onlogon /rl highest /f'
+                command = f'schtasks /create /tn "{task_name}" /tr "{sys.executable}" /sc onlogon /rl highest /f'
 
                 subprocess.run(command, check=True, shell=True)
-
+                
                 config = configparser.ConfigParser()
                 config.read(SETTINGS_FILE_PATH)
                 config['GLOBAL']['autorun'] = 'True'
@@ -294,7 +295,7 @@ else:
                 self.show_notification(text.inAppText['autorun_complete1'])
                 self.create_region()
             except Exception as ex:
-                self.show_notification(f"{ex}", title="")
+                self.show_notification(f"{ex}", title=text.inAppText['autorun_error1'])
         
 
         def show_notification(self, message, title="GoodbyeDPI UI"):
