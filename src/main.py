@@ -3,6 +3,7 @@ import sys
 import subprocess
 import os
 import ctypes
+import psutil
 
 def run_as_admin(cmd, cwd):
     try:
@@ -16,6 +17,13 @@ def is_admin():
     except:
         return False
 
+def is_process_running(process_name):
+    for proc in psutil.process_iter(['pid', 'name']):
+        
+        if proc.info['name'] == process_name:
+            if proc.info['pid'] != os.getpid():
+                return proc
+    return None
 
 if not is_admin():
     ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
@@ -30,7 +38,6 @@ else:
     from utils import install_font
     import pywintypes
     import configparser
-    import psutil
     from win10toast_click import ToastNotifier
     from plyer import notification
     import pystray
@@ -38,10 +45,18 @@ else:
     from PIL import Image, ImageTk
 
     first_run = settings.settings['GLOBAL']['is_first_run']
-
+    install_font_result = True
     if not DEBUG:
+        existing_app = is_process_running('goodbyeDPI.exe')
+        if existing_app:
+            result = messagebox.askyesno(text.inAppText['app_is_running'], text.inAppText['process']+" 'goodbyeDPI.exe' "+text.inAppText['app_is_running_info'])
+            if result:
+                existing_app.terminate()
+                existing_app.wait()
+            else:
+                sys.exit(0)
         if first_run == 'True':
-            install_font('data/font/Nunito-SemiBold.ttf')
+            install_font_result = install_font('data/font/Nunito-SemiBold.ttf')
             config = configparser.ConfigParser()
             config.read(SETTINGS_FILE_PATH)
             config['GLOBAL']['is_first_run'] = 'False'
@@ -49,7 +64,7 @@ else:
                 config.write(configfile)
             settings.reload_settings()
 
-    version = "1.0.1"
+    version = "1.0.2"
     
 
 
@@ -69,7 +84,7 @@ else:
             self.frame2 = CTkFrame(self, width=400)
 
             self.region = settings.settings['REGION']['region']
-            self.process = None
+            self.process = is_process_running('goodbyedpi.exe')
             self.active_dns = settings.settings['GLOBAL']['change_dns']
             self._active_dns = StringVar(value=self.active_dns)
             if self.active_dns == 'True': 
@@ -93,6 +108,9 @@ else:
                 self.hide_window()
                 return
             self.create_region()
+            
+            if not install_font_result:
+                self.show_notification(text.inAppText['font_error_info'], title=text.inAppText['font_error'], func=self.open_folder)
 
         def create_region(self, region=None):
             self.frame2.destroy()
@@ -232,6 +250,7 @@ else:
                 self.hide_window()
 
         def hide_window(self):
+            self.show_notification(text.inAppText['tray_icon'], func=self.show_window)
             self.withdraw()
             self.create_tray_icon()
 
@@ -258,6 +277,7 @@ else:
         def perform_autorun_actions(self):
             self.start_process()
             self.create_region()
+            
 
         def install_service(self):
             try:
@@ -302,7 +322,7 @@ else:
                 self.show_notification(f"{ex}", title=text.inAppText['autorun_error1'])
         
 
-        def show_notification(self, message, title="GoodbyeDPI UI"):
+        def show_notification(self, message, title="GoodbyeDPI UI", func=None):
             print(message, title)
             self.notifier = ToastNotifier()
             self.notifier.show_toast(
@@ -311,11 +331,14 @@ else:
             icon_path=DIRECTORY+"data/icon.ico",
             duration=10,
             threaded=True,
-            callback_on_click=self.on_notification_click
+            callback_on_click=self.on_notification_click if func == None else func
             )
 
         def on_notification_click(self):
             self.show_window(None, None)
+
+        def open_folder(self):
+            os.startfile(os.path.dirname(os.path.abspath(__file__))+'/data/font')
             
     def func():pass
     
