@@ -5,7 +5,7 @@ import subprocess
 import winreg
 
 import requests
-from settings import GOODBYE_DPI_PATH
+from _data import GOODBYE_DPI_PATH
 
 def install_font(font_path):
     try:
