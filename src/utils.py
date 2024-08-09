@@ -19,7 +19,7 @@ def install_font(font_path):
         ctypes.windll.gdi32.AddFontResourceW(dest_path)
         ctypes.windll.user32.SendMessageW(0xFFFF, 0x001D, 0, 0)
 
-        print("Шрифт успешно установлен.")
+        return True
     except Exception as e:
-        print(f"Ошибка при установке шрифта: {e}")
+        return False
 
