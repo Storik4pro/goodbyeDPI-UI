@@ -1,7 +1,11 @@
 import os
 import shutil
 import ctypes
+import subprocess
 import winreg
+
+import requests
+from settings import GOODBYE_DPI_PATH
 
 def install_font(font_path):
     try:
@@ -22,4 +26,22 @@ def install_font(font_path):
         return True
     except Exception as e:
         return False
+    
+def start_process(*args):
+    goodbyedpi_path = os.path.join(GOODBYE_DPI_PATH, 'x86_64', 'goodbyedpi.exe')
+    
+    _args = [
+            goodbyedpi_path,
+            *args,
+    ]
+    process = subprocess.Popen(_args, cwd=os.path.join(GOODBYE_DPI_PATH, 'x86_64'), creationflags=subprocess.CREATE_NO_WINDOW)
+    return process
 
+def download_blacklist(url, local_filename=GOODBYE_DPI_PATH+'russia-blacklist.txt'):
+    with requests.get(url, stream=True) as r:
+        r.raise_for_status()
+        with open(local_filename, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+    return True
