@@ -35,7 +35,7 @@ else:
     import darkdetect
     from customtkinter import *
     from _data import settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, text
-    from utils import install_font
+    from utils import install_font, start_process, download_blacklist
     import pywintypes
     import configparser
     from win10toast_click import ToastNotifier
@@ -43,6 +43,7 @@ else:
     import pystray
     from pystray import MenuItem as item
     from PIL import Image, ImageTk
+    import threading
 
     first_run = settings.settings['GLOBAL']['is_first_run']
     install_font_result = True
@@ -64,7 +65,7 @@ else:
                 config.write(configfile)
             settings.reload_settings()
 
-    version = "1.0.2"
+    version = "1.0.3"
     
 
 
@@ -79,6 +80,8 @@ else:
             self.geometry('300x400')
             self.title(f'goodbyeDPI UI - v {version}')
             self.resizable(False, False)
+
+            self.is_update = False
 
             self.frame1 = CTkFrame(self, width=400) 
             self.frame2 = CTkFrame(self, width=400)
@@ -169,13 +172,24 @@ else:
                 but_3.pack(padx=10, pady=10, side=TOP)
             self.frame1.pack(pady=10, padx=10, fill="both", expand=True)
 
-        def update_txt(self):
+        def update_blacklist_thread(self):
+            self.is_update = True 
+            was_running = self.stop_process()
+            self.show_notification(text.inAppText['update_in_process_info'], text.inAppText['update_in_process'])
             try:
-                subprocess.Popen(['cmd', '/c', '0_russia_update_blacklist_file.cmd'], shell=True, cwd=GOODBYE_DPI_PATH, creationflags=subprocess.CREATE_NO_WINDOW)
-                self.show_notification(text.inAppText['update_complete'])
+                download_blacklist("https://p.thenewone.lol/domains-export.txt")
             except Exception as ex:
-                messagebox.showerror('An error just ocruppted', f"{ex}")
                 self.show_notification(f"{ex}",title=text.inAppText['error'])
+                
+            self.is_update = False 
+            if was_running:
+                self.start_process()
+            
+            self.show_notification(text.inAppText['update_complete'])
+
+        def update_txt(self):
+            update_thread = threading.Thread(target=self.update_blacklist_thread)
+            update_thread.start()                
 
         def change_region(self, region):
             _region = settings.settings['REGION']['region']
@@ -196,17 +210,17 @@ else:
                 self.active_dns = True
             else: self.active_dns = False
 
-        def check_comma(self):
+        def check_args(self):
             if self.region == 'RU':
                 if self.active_dns:
-                    return "1_russia_blacklist_dnsredir.cmd"
+                    return settings.settings['COMMANDS']['russia_blacklist_dnsredir'].split(", ")
                 else:
-                    return "1_russia_blacklist.cmd"
+                    return settings.settings['COMMANDS']['russia_blacklist'].split(", ")
             else:
                 if self.active_dns:
-                    return "2_any_country_dnsredir.cmd"
+                    return settings.settings['COMMANDS']['any_contry_dnsredir'].split(", ")
                 else:
-                    return "2_any_country.cmd"
+                    return settings.settings['COMMANDS']['any_contry'].split(", ")
 
         def toggle_process(self):
             if self.switch_var.get() == "on":
@@ -215,35 +229,33 @@ else:
                 self.stop_process()
         
         def start_process(self):
-            cmd_file = self.check_comma()
+            _args = self.check_args()
             try:
-                self.process = subprocess.Popen(["cmd", "/c", cmd_file],cwd=GOODBYE_DPI_PATH, creationflags=subprocess.CREATE_NO_WINDOW)
-                self.show_notification(text.inAppText['process']+" goodbyedpi.exe " + text.inAppText['run_comlete'])
+                if not self.is_update:
+                    self.process = start_process(*_args)
+                    self.show_notification(text.inAppText['process']+" goodbyedpi.exe " + text.inAppText['run_comlete'])
+                else:
+                    self.show_notification(f"Cannot run process goodbyedpi.exe while updating is running", title=text.inAppText['error'])
             except Exception as ex:
-                self.show_notification(f"{ex}", title=text.inAppText['error'])
+                self.show_notification(f"{ex}", title=text.inAppText['error'])           
         
         def stop_process(self):
             if self.process:
-                try:
-                    self.process.terminate()
-                    self.process.wait()
-                except psutil.NoSuchProcess:
-                    pass
-                self.process = None
-
-            for proc in psutil.process_iter(['pid', 'name']):
-                if proc.info['name'] == 'goodbyedpi.exe':
-                    try:
-                        proc.terminate()
-                        self.show_notification(text.inAppText['process'] + " goodbyedpi.exe " + text.inAppText['close_complete'])
-                        return
-                    except psutil.NoSuchProcess:
-                        self.show_notification((text.inAppText['close_error'] + " goodbyedpi.exe. " + text.inAppText['close_error1']) , title=text.inAppText['error_title'] )
-            self.show_notification(text.inAppText['close_error'] +" goodbyedpi.exe. " + text.inAppText['close_error1'], title=text.inAppText['error_title'] )
-
+                for proc in psutil.process_iter(['pid', 'name']):
+                    if proc.info['name'] == 'goodbyedpi.exe':
+                        try:
+                            proc.terminate()
+                            self.show_notification(text.inAppText['process'] + " goodbyedpi.exe " + text.inAppText['close_complete'])
+                            self.process = None
+                            return True
+                        except psutil.NoSuchProcess:
+                            self.show_notification((text.inAppText['close_error'] + " goodbyedpi.exe. " + text.inAppText['close_error2']) , title=text.inAppText['error_title'] )
+                self.show_notification(text.inAppText['close_error'] +" goodbyedpi.exe. " + text.inAppText['close_error1'], title=text.inAppText['error_title'] )
+        
         def on_closing(self):
             if self.process: self.stop_process() 
-            self.destroy()  
+            if not self.is_update: self.destroy()
+            else:self.show_notification(f"Cannot close application while updating is running", title=text.inAppText['error'])
 
         def on_minimize(self, event):
             if self.state() == 'iconic':
