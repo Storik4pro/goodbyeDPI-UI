@@ -2,6 +2,7 @@
 .idea/
 data/settings/settings.ini
 output/
+goodbyeDPI UI/
 # Vagrant
 .vagrant/
 
