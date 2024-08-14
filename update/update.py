@@ -45,7 +45,7 @@ class Text:
 text = Text('EN')
 
 def open_git():
-    webbrowser.open(REPO_URL)
+    webbrowser.open("https://storik4pro.github.io/installer-issues/")
 
 def open_about():
     global about_app
@@ -208,10 +208,11 @@ class UpdaterApp(CTk):
                         try:
                             if not member.endswith('/'):
                                 source = zip_ref.open(member)
-                                target = open(target_path, "wb")
-                                self.create_logs(f"Unpacking the '{source.name.split('/')[-1]}' file")
-                                with source, target:
-                                    shutil.copyfileobj(source, target)
+                                if str(source.name.split('/')[-1]) != 'update.exe':
+                                    target = open(target_path, "wb")
+                                    self.create_logs(f"Unpacking the '{source.name.split('/')[-1]}' file")
+                                    with source, target:
+                                        shutil.copyfileobj(source, target)
                         except PermissionError as ex:
                             logger.error(f'Permission error {ex}')
                             result=messagebox.askyesno('Permission error',f'{ex}'+"\n"+text.inAppText['update_ask'])
