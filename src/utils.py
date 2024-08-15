@@ -6,11 +6,11 @@ import subprocess
 import threading
 import time
 import winreg
+import psutil
 from toasted import Button, Image, Progress, Text, Toast, ToastButtonStyle, ToastImagePlacement
-from win11toast import update_progress
 
 import requests
-from _data import GOODBYE_DPI_PATH, DEBUG, DIRECTORY
+from _data import GOODBYE_DPI_PATH, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER
 
 # Toast
 
@@ -148,3 +148,19 @@ def download_blacklist(url, progress_toast:ProgressToast, local_filename=GOODBYE
 
 def move_settings_file(settings_file_path, backup_settings_file_path):
     shutil.copy(settings_file_path, backup_settings_file_path)
+
+def get_latest_release():
+    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/releases/latest"
+    response = requests.get(url)
+    data = response.json()
+    latest_version = data["tag_name"]
+
+    return latest_version
+
+def is_process_running(process_name):
+    for proc in psutil.process_iter(['pid', 'name']):
+        
+        if proc.info['name'] == process_name:
+            if proc.info['pid'] != os.getpid():
+                return proc
+    return None
