@@ -1,111 +1,68 @@
+from tkinter import messagebox
 from customtkinter import *
-import tkinter
+import tkinter as ttk
 from _data import settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, text
 
-class Settings(CTk):
-    def __init__(self) -> None:
+class SettingsApp(CTk):
+    def __init__(self):
         super().__init__()
-        self.geometry('1300x400')
-        self.title(f'goodbyeDPI UI - settings')
+        self.title("Settings")
+        self.geometry("800x600")
 
-        self.grid_columnconfigure(1, weight=1)
-        self.grid_columnconfigure((2, 3), weight=0)
-        self.grid_rowconfigure((0, 1, 2), weight=1)
+        # Sidebar
+        self.sidebar = CTkFrame(self, width=200)
+        self.sidebar.pack(side="left", fill="y")
 
-        self.sidebar()
+        self.tabs = {
+            "Персонализация": self.personalization_settings,
+            "Система": self.system_settings,
+            "goodbyeDPI": self.goodbye_dpi_settings,
+            "О программе": self.about_program
+        }
 
-        self.canvas = tkinter.Canvas(borderwidth=0, background="black", highlightthickness=0)
-        self.frame4 = CTkFrame(self.canvas, width=700)
-        self.frame4.grid(padx=0, pady=0, row=0, column=1)
-        self.canvas.create_window((4, 4), window=self.frame4, anchor="nw", width=700)
-        self.canvas.grid(padx=0, pady=0, row=0, column=1)
-        self.frame5 = CTkFrame(self)
-        self.frame5.grid(padx=50, pady=10, row=1, column=1)
+        self.buttons = {}
+        for tab_name in self.tabs:
+            button = CTkButton(self.sidebar, text=tab_name, command=lambda name=tab_name: self.switch_tab(name))
+            button.pack(pady=10)
+            self.buttons[tab_name] = button
 
-        self.show_UI()
-        self.show_save_dialog()
+        # Main content area
+        self.content_frame = CTkFrame(self)
+        self.content_frame.pack(side="right", fill="both", expand=True)
 
-        scrollbar = CTkScrollbar(self, command=self.canvas.yview, height=600)
-        scrollbar.grid(padx=0, pady=20, row=0, column=2)
+        self.current_tab = None
+        self.switch_tab("Персонализация")
 
-        self.canvas.configure(yscrollcommand=scrollbar.set)
-        self.canvas.update_idletasks()
-        self.canvas.configure(scrollregion=self.canvas.bbox("all"), width=700, height=600)
-        self.bind("<MouseWheel>", self.mouseWheel)
+    def switch_tab(self, tab_name):
+        if self.current_tab:
+            self.current_tab.pack_forget()
+        self.current_tab = self.tabs[tab_name]
+        self.current_tab.pack(fill="both", expand=True)
 
-    def mouseWheel(self, event):
-        self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+    def personalization_settings(self):
+        frame = CTkFrame(self.content_frame)
+        CTkLabel(frame, text="Настройки персонализации").pack(pady=20)
+        # Add widgets for language, display mode, custom tkinter theme
+        return frame
 
-    def sidebar(self):
-        sidebar_frame = CTkFrame(self, width=140, corner_radius=0)
-        sidebar_frame.grid(row=0, column=0, rowspan=4, sticky="nsew")
-        sidebar_frame.grid_rowconfigure(4, weight=1)
+    def system_settings(self):
+        frame = CTkFrame(self.content_frame)
+        CTkLabel(frame, text="Системные настройки").pack(pady=20)
+        # Add widgets for autostart, region, auto-update
+        return frame
 
-        label = CTkLabel(sidebar_frame, text="ПАРАМЕТРЫ", font=(FONT, 30))
-        label.grid(pady=(20, 10), padx=20, row=0, column=0)
+    def goodbye_dpi_settings(self):
+        frame = CTkFrame(self.content_frame)
+        CTkLabel(frame, text="Настройки goodbyeDPI").pack(pady=20)
+        # Add widgets for goodbyeDPI settings
+        return frame
 
-        but_1 = CTkButton(sidebar_frame, text='пользовательский интерфейс', command=self.button,
-                      font=(FONT, 15), width=280)
-        but_1.grid(padx=10, pady=10, row=1, column=0)
+    def about_program(self):
+        frame = CTkFrame(self.content_frame)
+        CTkLabel(frame, text="О программе").pack(pady=20)
+        # Add widgets for information about goodbyedpi.exe, goodbyeDPI UI, acknowledgments
+        return frame
 
-        but_2 = CTkButton(sidebar_frame, text='система', command=self.button,
-                        font=(FONT, 15), width=280)
-        but_2.grid(padx=10, pady=10, row=2, column=0)
-
-        but_3 = CTkButton(sidebar_frame, text='goodbyeDPI settings', command=self.button,
-                        font=(FONT, 15), width=280)
-        but_3.grid(padx=10, pady=10, row=3, column=0)
-
-        about_label = CTkLabel(sidebar_frame, text="goodbye DPI UI", anchor="w",
-                                     font=(FONT, 15), width=280)
-        about_label.grid(row=6, column=0, padx=20, pady=(10, 0))
-
-        but_about = CTkButton(sidebar_frame, text='о программе ...', command=self.button,
-                        font=(FONT, 15), width=280)
-        but_about.grid(row=7, column=0, padx=20, pady=(10, 10))
-
-    def show_UI(self):
-        system_label = CTkLabel(self.frame4, text="ОСНОВНЫЕ", anchor="w",
-                                     font=(FONT, 25), width=350)
-        system_label.grid(row=0, column=0, padx=20, pady=(10, 0))
-        appearance_mode_label = CTkLabel(self.frame4, text="Тема интерфейса: ", anchor="w",
-                                     font=(FONT, 20), width=300)
-        appearance_mode_label.grid(row=1, column=0, padx=20, pady=(10, 0))
-        appearance_mode_optionemenu = CTkOptionMenu(self.frame4, values=["Светлая", "Тёмная"],
-                                            command=self.button, width=300)
-        appearance_mode_optionemenu.grid(row=1, column=1, padx=0, pady=(10, 0))
-
-        language_label = CTkLabel(self.frame4, text="Локализация: ", anchor="w",
-                                     font=(FONT, 20), width=300)
-        language_label.grid(row=2, column=0, padx=20, pady=(10, 0))
-        language_optionemenu = CTkOptionMenu(self.frame4, values=["Русская", "Английская"],
-                                            command=self.button, width=300)
-        language_optionemenu.grid(row=2, column=1, padx=0, pady=(10, 0))
-
-        region_label = CTkLabel(self.frame4, text="Регион: ", anchor="w",
-                                     font=(FONT, 20), width=300)
-        region_label.grid(row=3, column=0, padx=20, pady=(10, 0))
-        region_optionemenu = CTkOptionMenu(self.frame4, values=["Россия", "Другие"],
-                                            command=self.button, width=300)
-        region_optionemenu.grid(row=3, column=1, padx=0, pady=(10, 0))
-        personalize_label = CTkLabel(self.frame4, text="ПЕРСОАНАЛИЗАЦИЯ", anchor="w",
-                                     font=(FONT, 25), width=350)
-        personalize_label.grid(row=4, column=0, padx=20, pady=(10, 0))
-
-    def show_save_dialog(self):
-        but_b = CTkButton(self.frame5, text='сохранить', command=self.button,
-                      font=(FONT, 15), width=200)
-        but_b.grid(padx=20, pady=(20, 20), row=0, column=0)
-        but_b = CTkButton(self.frame5, text='сбросить', command=self.button,
-                      font=(FONT, 15), width=200)
-        but_b.grid(padx=20, pady=(20, 20), row=0, column=1)
-        but_b = CTkButton(self.frame5, text='отмена', command=self.button,
-                      font=(FONT, 15), width=200)
-        but_b.grid(padx=20, pady=(20, 20), row=0, column=2)
-
-    def button(self):
-        pass
-
-settings = Settings()
-
-settings.mainloop()
+if __name__ == "__main__":
+    app = SettingsApp()
+    app.mainloop()
