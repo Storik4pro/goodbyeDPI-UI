@@ -84,9 +84,8 @@ async def show_error(app_id : str, title, description, btnText):
     return result
 
 def register_app():
-    if Toast.is_registered_app_id("GoodbyeDPI_app"):
-        Toast.unregister_app_id("GoodbyeDPI_app")
-    Toast.register_app_id("GoodbyeDPI_app", "GoodbyeDPI UI", icon_uri = DIRECTORY+"data\icon.png")
+    if not Toast.is_registered_app_id("GoodbyeDPI_app"):
+        Toast.register_app_id("GoodbyeDPI_app", "GoodbyeDPI UI", icon_uri = DIRECTORY+"data\icon.png")
 
 # utils
 
