@@ -39,7 +39,7 @@ class MainWindow(CTk):
         self.frame2 = CTkFrame(self, width=400)
 
         self.region = settings.settings['REGION']['region']
-        self.process = is_process_running('goodbyedpi.exe')
+        self.process = False
 
         self.proc = GoodbyedpiProcess(self)
         self.proc_terminal = None
@@ -59,6 +59,7 @@ class MainWindow(CTk):
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.bind("<Unmap>", self.on_minimize)
         self.tray_icon = None
+        self.switch_var = StringVar(value="on" if self.process else "off")
         
         if self.autorun:
             self.perform_autorun_actions()
@@ -235,6 +236,7 @@ class MainWindow(CTk):
                 _q = self.proc.start_goodbyedpi(_args)
                 self.switch_var.set("on")
                 print(self.switch_var.get())
+                self.process = True
             else:
                 self.show_notification(f"Cannot run process goodbyedpi.exe while updating is running", title=text.inAppText['error'], func=self.start_process, _type='error')
         except Exception as ex:
@@ -248,6 +250,7 @@ class MainWindow(CTk):
                 if notf:self.show_notification(text.inAppText['process'] + " goodbyedpi.exe " + text.inAppText['close_complete'])
                 self.switch_var.set("off")
                 print(self.switch_var.get())
+                self.process = False
                 return True
             except Exception as ex:
                 self.show_notification(text.inAppText['close_error'] +" goodbyedpi.exe. " + text.inAppText['close_error1'] + str(ex), title=text.inAppText['error_title'], func=self.stop_process, _type='error')
@@ -256,7 +259,7 @@ class MainWindow(CTk):
     
     def on_closing(self):
         if not DEBUG:
-            if self.proc.goodbyedpi_thread.is_alive(): self.stop_process() 
+            if self.proc.stop_event.is_set(): self.stop_process() 
         if not self.is_update: 
             self.destroy()
             sys.exit(0)
