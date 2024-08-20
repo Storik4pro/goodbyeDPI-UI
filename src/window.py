@@ -256,7 +256,7 @@ class MainWindow(CTk):
     
     def on_closing(self):
         if not DEBUG:
-            if self.process: self.stop_process() 
+            if self.proc.goodbyedpi_thread.is_alive(): self.stop_process() 
         if not self.is_update: 
             self.destroy()
             sys.exit(0)
