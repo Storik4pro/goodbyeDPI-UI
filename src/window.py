@@ -8,13 +8,15 @@ from customtkinter import *
 import psutil
 import pystray
 from pystray import MenuItem as item
+from tktooltip import ToolTip
 from toasted import ToastDismissReason
 from _data import settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, BACKUP_SETTINGS_FILE_PATH, text
 from utils import install_font, start_process, download_blacklist, move_settings_file, \
                     ProgressToast, register_app, show_message, show_error, get_latest_release,\
-                    is_process_running
+                    is_process_running, GoodbyedpiProcess
+from pseudo_console_view import GoodbyedpiApp
 
-version = '1.0.5'
+version = '1.0.6'
 
 regions = {
         text.inAppText['ru']:'RU',
@@ -38,6 +40,10 @@ class MainWindow(CTk):
 
         self.region = settings.settings['REGION']['region']
         self.process = is_process_running('goodbyedpi.exe')
+
+        self.proc = GoodbyedpiProcess(self)
+        self.proc_terminal = None
+
         self.active_dns = settings.settings['GLOBAL']['change_dns']
         self._active_dns = StringVar(value=self.active_dns)
         if self.active_dns == 'True': 
@@ -73,6 +79,9 @@ class MainWindow(CTk):
         self.settings_button = CTkButton(self.frame2, text='', command=self.update_prog, width=25, height=25, image=update_logo)
         self.settings_button.pack(side="right", padx=(0, 10), pady=1)
 
+        ToolTip(widget=self.settings_button, msg=" "+text.inAppText['ask_update_tooltip']+" ",
+            background = '#333333',foreground='#FFFFFF',  font=(FONT, 10))
+
         reg = CTkOptionMenu(self.frame2, values=[text.inAppText['ru'], text.inAppText['other']],
                                                         command=self.change_region, width=200)
         reg.pack(padx=10, pady=15, side=RIGHT, fill='both')
@@ -107,6 +116,14 @@ class MainWindow(CTk):
         
         but_4 = CTkButton(self.frame1, text=text.inAppText['update']+' blacklist.txt', font=(FONT, 15), width=400, command=self.update_txt)
         but_4.pack(padx=10, pady=10, side=TOP)
+
+        img = CTkImage(light_image=Image.open(DIRECTORY+"data/find.ico"), size=(20, 20))
+        but_5 = CTkButton(self.frame1, text=text.inAppText['view_pseudoconsole'], font=(FONT, 15), width=400, image=img, fg_color='transparent', border_width=2, command=self.connect_terminal)
+        but_5.pack(padx=10, pady=10, side=BOTTOM)
+
+        ToolTip(widget=but_5, msg=" "+text.inAppText['view_pseudoconsole_tooltip']+" ",
+            background = '#333333',foreground='#FFFFFF',  font=(FONT, 10))
+
         self.frame1.pack(pady=10, padx=10, fill="both", expand=True)
 
     def create_other(self):
@@ -124,6 +141,14 @@ class MainWindow(CTk):
         else:
             but_3 = CTkButton(self.frame1, text=text.inAppText['autorun_out'], font=(FONT, 15), width=400, command=self.remove_service)
             but_3.pack(padx=10, pady=10, side=TOP)
+
+        img = CTkImage(light_image=Image.open(DIRECTORY+"data/find.ico"), size=(20, 20))
+        but_5 = CTkButton(self.frame1, text=text.inAppText['view_pseudoconsole'], font=(FONT, 15), width=400, image=img, fg_color='transparent', border_width=2, command=self.connect_terminal)
+        but_5.pack(padx=10, pady=10, side=BOTTOM)
+
+        ToolTip(widget=but_5, msg=" "+text.inAppText['view_pseudoconsole_tooltip']+" ",
+            background = '#333333',foreground='#FFFFFF',  font=(FONT, 10))
+
         self.frame1.pack(pady=10, padx=10, fill="both", expand=True)
 
     def update_blacklist_thread(self):
@@ -207,34 +232,39 @@ class MainWindow(CTk):
         _args = self.check_args()
         try:
             if not self.is_update:
-                self.process = start_process(*_args)
-                if notf:self.show_notification(text.inAppText['process']+" goodbyedpi.exe " + text.inAppText['run_comlete'])
+                _q = self.proc.start_goodbyedpi(_args)
+                self.switch_var.set("on")
+                print(self.switch_var.get())
             else:
                 self.show_notification(f"Cannot run process goodbyedpi.exe while updating is running", title=text.inAppText['error'], func=self.start_process, _type='error')
         except Exception as ex:
             self.show_notification(f"{ex}", title=text.inAppText['error'], func=self.start_process, _type='error')           
     
     def stop_process(self, notf=True):
-        if self.process:
-            for proc in psutil.process_iter(['pid', 'name']):
-                if proc.info['name'] == 'goodbyedpi.exe':
-                    try:
-                        proc.terminate()
-                        if notf:self.show_notification(text.inAppText['process'] + " goodbyedpi.exe " + text.inAppText['close_complete'])
-                        self.process = None
-                        return True
-                    except psutil.NoSuchProcess:
-                        self.show_notification((text.inAppText['close_error'] + " goodbyedpi.exe. " + text.inAppText['close_error2']) , title=text.inAppText['error_title'], func=self.stop_process, _type='error')
-            self.show_notification(text.inAppText['close_error'] +" goodbyedpi.exe. " + text.inAppText['close_error1'], title=text.inAppText['error_title'], func=self.stop_process, _type='error')
+        print("stopping")
+        if not self.proc.stop_event.is_set():
+            try:
+                self.proc.stop_goodbyedpi()
+                if notf:self.show_notification(text.inAppText['process'] + " goodbyedpi.exe " + text.inAppText['close_complete'])
+                self.switch_var.set("off")
+                print(self.switch_var.get())
+                return True
+            except Exception as ex:
+                self.show_notification(text.inAppText['close_error'] +" goodbyedpi.exe. " + text.inAppText['close_error1'] + str(ex), title=text.inAppText['error_title'], func=self.stop_process, _type='error')
+                return False
+        return True
     
     def on_closing(self):
         if not DEBUG:
             if self.process: self.stop_process() 
-        if not self.is_update: self.destroy()
+        if not self.is_update: 
+            self.destroy()
+            sys.exit(0)
         else:self.show_notification(f"Cannot close application while updating is running", title=text.inAppText['error'])
 
     def on_minimize(self, event):
         if self.state() == 'iconic':
+            self.proc_terminal.destroy()
             self.hide_window()
 
     def hide_window(self):
@@ -317,6 +347,18 @@ class MainWindow(CTk):
         if result.dismiss_reason == ToastDismissReason.NOT_DISMISSED:
             if func:
                 func()
+
+    def connect_terminal(self, error=False):
+        if error:
+            self.switch_var.set("off")
+        if self.proc_terminal is None or not self.proc_terminal.winfo_exists():
+            self.show_window()
+            self.proc_terminal = GoodbyedpiApp(self.stop_process, self.start_process)
+            self.proc.connect_app(self.proc_terminal)
+            self.proc_terminal.mainloop()
+
+        else:
+            self.proc_terminal.focus()
 
     def show_notification(self, message, title="GoodbyeDPI UI", func=None, button=None, _type='normal'):
         self.notification_thread = threading.Thread(target=lambda: self.show_notification_tread(title, message, func=func, button=button, _type=_type))
