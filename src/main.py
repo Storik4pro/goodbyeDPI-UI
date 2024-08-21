@@ -102,5 +102,7 @@ if __name__ == "__main__":
         mode = settings.settings['APPEARANCE_MODE']['mode']
         set_appearance_mode(mode)
         set_widget_scaling(1)
-        window.iconbitmap(DIRECTORY+'data/icon.ico')
-        window.mainloop()
+        try:
+            window.iconbitmap(DIRECTORY+'data/icon.ico')
+            window.mainloop()
+        except: pass
