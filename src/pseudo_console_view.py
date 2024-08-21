@@ -120,7 +120,7 @@ class GoodbyedpiApp(CTkToplevel):
             self.update_status(text.inAppText['pseudoconsole_success'])
             self.logo.configure(light_image=Image.open(DIRECTORY+"data/find.ico"))
 
-        elif "Error opening filter" in output or "unknown option" in output:
+        if "Error opening filter" in output or "unknown option" in output:
             self.update_status(text.inAppText['pseudoconsole_error'])
             self.logo.configure(light_image=Image.open(DIRECTORY+"data/error.ico"))
             if self.stop_func: 
