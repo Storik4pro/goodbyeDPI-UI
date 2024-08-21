@@ -246,7 +246,12 @@ class MainWindow(CTk):
         print("stopping")
         if not self.proc.stop_event.is_set():
             try:
-                self.proc.stop_goodbyedpi()
+                try:
+                    self.proc.stop_goodbyedpi()
+                except Exception as ex:
+                    if not '[WinError 5]' in str(ex):
+                        self.show_notification(text.inAppText['close_error'] +" goodbyedpi.exe. " + text.inAppText['close_error1'] + str(ex), title=text.inAppText['error_title'], func=self.stop_process, _type='error')
+                        return False
                 if notf:self.show_notification(text.inAppText['process'] + " goodbyedpi.exe " + text.inAppText['close_complete'])
                 self.switch_var.set("off")
                 print(self.switch_var.get())
