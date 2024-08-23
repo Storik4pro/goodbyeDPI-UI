@@ -129,3 +129,4 @@ _portable.zip
 data/settings/_settings.ini
 update.exe
 src/quick_start.py
+src/test.py
