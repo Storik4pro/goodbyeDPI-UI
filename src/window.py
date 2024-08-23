@@ -16,7 +16,7 @@ from utils import install_font, start_process, download_blacklist, move_settings
                     is_process_running, GoodbyedpiProcess
 from pseudo_console_view import GoodbyedpiApp
 
-version = '1.0.6'
+version = '1.0.7'
 
 regions = {
         text.inAppText['ru']:'RU',
