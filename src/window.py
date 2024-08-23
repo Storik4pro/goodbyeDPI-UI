@@ -272,7 +272,8 @@ class MainWindow(CTk):
 
     def on_minimize(self, event):
         if self.state() == 'iconic':
-            self.proc_terminal.destroy()
+            if self.proc_terminal:
+                self.proc_terminal.destroy()
             self.hide_window()
 
     def hide_window(self):
