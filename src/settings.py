@@ -550,7 +550,7 @@ class SettingsApp(ttk.Tk):
                 "Switch10": (Switch, ("Отправка поддельных запросов с помощью TCP SEQ/ACK",)),
                 "Button11": (Button, ("Оптимизация", "Ограничение обработки пакетов TCP", lambda: self.switch_tab('TCP'))),
                 "Switch11": (Switch, ("Добавление пробела между методом HTTP и URL", "Обратите внимание: данная настройка влияет на работосопобность сайтов",)),
-                "Button12": (Button, ("Список сайтов для обхода блокировки", "Обновление russia_blacklist.txt, Добавление своего списка сайтов", lambda: self.switch_tab('IPID'))),
+                "Button12": (Button, ("Список сайтов для обхода блокировки", "Обновление russia_blacklist.txt, Добавление своего списка сайтов", lambda: self.switch_tab('blacklist'))),
             }
         )
         goodbyedpi_HTTPS = self.create_tab()
@@ -647,6 +647,20 @@ class SettingsApp(ttk.Tk):
             {
                 "Label1": (Label, ("Оптимизация",)),
                 "Switch6": (Switch, ("Ограничивать обработку TCP", None, "disabled", None)),
+                "Entry1": (Entry, ("Максимальное значение для обработки", None, self, ValidateIntCol(5))),
+
+            },
+            True
+        )
+
+        goodbyedpi_blacklist = self.create_tab()
+        self.tab_frames["blacklist"] = goodbyedpi_blacklist
+
+        Content(
+            goodbyedpi_TCP,
+            {
+                "Label1": (Label, ("Список сайтов для обхода блокировки",)),
+                "Switch6": (Switch, ("Активировать для всех сайтов", None, "disabled", None)),
                 "Entry1": (Entry, ("Максимальное значение для обработки", None, self, ValidateIntCol(5))),
 
             },
