@@ -11,6 +11,7 @@ import win32con
 import win32api
 from ctypes import windll, c_char_p
 from win32material import *
+from Elements import CTkScrollableDropdown
 
 
 ELEMENT_HEIGHT = 60
@@ -28,6 +29,66 @@ def canvas_transparent(w):
     windll.user32.SetWindowLongA(hwnd, -20, new_exstyle)  # GWL_EXSTYLE
     windll.user32.SetLayeredWindowAttributes(hwnd, colorkey, 255, 0x00000001) 
 
+class ValidateValue:
+    def __init__(self, maxvalue, minvalue, valid_value=1) -> None:
+        self.maxvalue = maxvalue
+        self.minvalue = minvalue
+        self.int_validate = True
+        self.last_valid_value = valid_value
+        if minvalue == 0 and maxvalue == 0:
+            self.int_validate = False
+
+    def validate(self, entry_var:Variable, entry, label_info:CTkLabel=None, valid_value=1):
+        
+        value = entry_var.get()
+        if value.isdigit():
+            num_value = int(value)
+            if self.int_validate:
+                if self.minvalue <= num_value <= self.maxvalue:
+                    self.last_valid_value = value
+                    entry.normal()
+                    if label_info: label_info.configure(text_color="#FFFFFF")
+                else:
+                    entry_var.set(self.last_valid_value)
+                    entry.red() 
+                    if label_info: label_info.configure(text_color="red")
+            else:
+                self.last_valid_value = value
+                entry.normal()
+                if label_info: label_info.configure(text_color="#FFFFFF")
+        elif value == '':
+            pass
+        else:
+            if not self.last_valid_value in entry_var.get():
+               entry_var.set("") 
+            else:
+                entry_var.set(self.last_valid_value)
+            entry.red() 
+            if label_info: label_info.configure(text_color="red")
+
+class ValidateIntCol:
+    def __init__(self, lenght, valid_value=1) -> None:
+        self.lenght = lenght
+
+    def validate(self, entry_var:Variable, entry, label_info:CTkLabel=None, valid_value=1):
+        value = entry_var.get()
+        if value.isdigit():
+            if len(value) <= self.lenght:
+                self.last_valid_value = value
+                entry.normal()
+            else:
+                entry_var.set(self.last_valid_value)
+                entry.red() 
+        elif value == '':
+            pass
+        else:
+            if not self.last_valid_value in entry_var.get():
+               entry_var.set("") 
+            else:
+                entry_var.set(self.last_valid_value)
+            entry.red() 
+    
+
 class BaseElement:
     def __init__(self, parent:CTkFrame|CTkCanvas, row=0, column=0) -> None:
         self.frame = CTkFrame(parent, width=ELEMENT_WIDTH, height=ELEMENT_HEIGHT, fg_color=COLOR_FRAME)
@@ -44,6 +105,8 @@ class BaseElement:
                     try:
                         _widget.configure(text_color="#5D6B73")
                     except:pass
+            if type(widget) == CTkLabel:
+                widget.configure(text_color="#5D6B73")
             try:
                 widget.configure(state="disabled")
             except:
@@ -58,6 +121,8 @@ class BaseElement:
                     try:
                         _widget.configure(text_color="#FFFFFF")
                     except:pass
+            if type(widget) == CTkLabel:
+                widget.configure(text_color="#FFFFFF")
             try:
                 widget.configure(state="normal")
             except:
@@ -67,14 +132,17 @@ class EntryElement:
     def __init__(self, parent:CTkFrame|CTkCanvas, placeholder_text:str, label_element:CTkLabel=None, validate_function=None, width=240, window:CTk=None) -> None:
         self.label_info = label_element
         self.entry_var = StringVar(value="1")
-        self.entry_var.trace_add("write", self.validate_input if validate_function is None else validate_function)
-
-        self.entry = CTkEntry(master=parent, placeholder_text=placeholder_text, textvariable=self.entry_var, width=width, border_width=2, border_color=COLOR_FRAME)
-        self.entry.grid(row=0, column=1, padx=(0, 0), pady=0)
 
         self.last_valid_value = self.entry_var.get()
-
-        if window: window.bind_all("<Button-1>", self.on_click, add="+")
+        try:
+            self.entry_var.trace_add("write", lambda *args :validate_function.validate(self.entry_var, self, label_element, self.last_valid_value))
+        except Exception as ex:
+            print(ex)
+        self.entry = CTkEntry(master=parent, placeholder_text=placeholder_text, textvariable=self.entry_var, width=width, border_width=2, border_color=COLOR_FRAME)
+        self.entry.grid(row=0, column=1, padx=(0, 0), pady=0)
+        
+        
+        if window: window.bind_all("<Button-1>", lambda *args :validate_function.validate(self.entry_var, self, label_element, self.last_valid_value), add="+")
     
     def get(self):
         return self.entry.get()
@@ -87,6 +155,7 @@ class EntryElement:
         if valid_value: self.last_valid_value = valid_value
 
     def validate_input(self, *args):
+        print(*args)
         value = self.entry_var.get()
 
         if value.isdigit():
@@ -110,10 +179,11 @@ class FrameButton:
         pass
 
 class Switch(BaseElement):
-    def __init__(self, parent:CTkFrame|CTkCanvas, row=0, column=0, label='Sample label', subLabel:str=None, command=None, var:Variable=None) -> None:
+    def __init__(self, parent:CTkFrame|CTkCanvas, row=0, column=0, label='Sample label', subLabel:str=None, command=None,var:Variable=None, onvalue='On', offvalue='Off') -> None:
         super().__init__(parent, row=row, column=column)
         self.var = var if var else StringVar(value='Off')
         self.command = command
+        self.onvalue = onvalue
 
         self.label_frame = CTkFrame(self.frame, width=570, height=ELEMENT_HEIGHT, fg_color="transparent")
         self.label_frame.grid_propagate(False)
@@ -129,15 +199,17 @@ class Switch(BaseElement):
 
         self.stateLabel = CTkLabel(self.frame, text=self.var.get(), font=(FONT, 15), height=ELEMENT_HEIGHT, width=40, fg_color="transparent", anchor="w")
         self.stateLabel.grid(row=0, column=1, padx=(15, 0), pady=0)
-        
-        switch = CTkSwitch(self.frame, text='', variable=self.var, onvalue='On', offvalue='Off', width=40, fg_color="#1C1C1C", command=self.toggle, corner_radius=10)  # Закругленные углы
+    
+        switch = CTkSwitch(self.frame, text='', variable=self.var, onvalue="On", offvalue="Off", width=40, fg_color="#1C1C1C", command=self.toggle, corner_radius=10)  # Закругленные углы
         switch.grid(row=0, column=2, padx=(0,20))
 
     def toggle(self):
         self.stateLabel.configure(text=self.var.get())
         if self.command: 
             self.call = True
-            self.command(self.var.get(), self)
+            if self.var.get() == self.onvalue: value='On'
+            else: value='Off'
+            self.command(value, self)
             self.call = False
 
 class Combobox(BaseElement):
@@ -156,8 +228,11 @@ class Combobox(BaseElement):
             self.label_info = CTkLabel(self.label_frame, text=subLabel, font=(FONT, 12), height=height, width=570, fg_color="transparent", anchor="w")
             self.label_info.grid(row=1, column=0, padx=(0, 0), pady=0)
 
-        self.combobox = CTkOptionMenu(self.frame, values=values, font=(FONT, 15), width=240, corner_radius=10, command=function)
+        self.combobox = CTkOptionMenu(self.frame, font=(FONT, 15), values=values, width=240, corner_radius=10, command=function)
         self.combobox.grid(row=0, column=1, padx=(0, 20))
+
+        CTkScrollableDropdown(self.combobox, values=values, justify="left", button_color="transparent", hover_color="#404040", alpha=0.89, button_height=35, frame_border_width=0, frame_corner_radius=5, scrollbar=False)
+
 
 class Button(BaseElement):
     def __init__(self, parent: CTkFrame | CTkCanvas, row=0, column=0, label='Sample text', subLabel=None, func=None) -> None:
@@ -235,7 +310,7 @@ class SwitchButton(Button):
         if self.command: self.command(self.var.get())
 
 class Entry(BaseElement):
-    def __init__(self, parent: CTkFrame | CTkCanvas, row=0, column=0, label='Sample label', subLabel=None, window:CTk = None) -> None:
+    def __init__(self, parent: CTkFrame | CTkCanvas, row=0, column=0, label='Sample label', subLabel=None, window:CTk = None, validate:ValidateValue=None) -> None:
         super().__init__(parent, row, column)
 
         self.label_frame = CTkFrame(self.frame, width=420, height=ELEMENT_HEIGHT, fg_color="transparent")
@@ -253,7 +328,9 @@ class Entry(BaseElement):
             self.label_info = CTkLabel(self.label_frame, text=subLabel, font=(FONT, 12), height=height, width=570, fg_color="transparent", anchor="w")
             self.label_info.grid(row=1, column=0, padx=(0, 0), pady=0)
 
-        self.entry = EntryElement(self.frame, placeholder_text="Значение от 1 до 50", label_element=self.label_info if subLabel else None, validate_function=self.validate_input, window=window)
+        validate_value=ValidateValue(50, 1) if validate is None else validate
+
+        self.entry = EntryElement(self.frame, placeholder_text="Значение от 1 до 50", label_element=self.label_info if subLabel else None, validate_function=validate_value, window=window)
 
         self.last_valid_value = self.entry.get()  # Переменная для хранения последнего правильного значения
 
@@ -469,9 +546,9 @@ class SettingsApp(ttk.Tk):
                 "Switch8": (SwitchButton, ("Находить и обрабатывать HTTP-трафик на порте, отличном от 80", "Добавление собственного TCP порта", lambda: self.switch_tab('port'))),
                 "Button2": (Button, ("Перенаправление DNS запросов", "Перенаправление на IP адрес, Перенаправление на IPv6 адрес", lambda: self.switch_tab('DNS'))),
                 "Switch9": (SwitchButton, ("Фильтрация дополнительных IP ID подключений", "Изменение значения ID", lambda: self.switch_tab('IPID'))),
-                "Button10": (Button, ("Отправка фейковых HTTP/HTTPS запросов", "Ручная настройка TTL, Автоопределение TTL, отправка контрольной суммы TCP", lambda: self.switch_tab('IPID'))),
+                "Button10": (Button, ("Отправка фейковых HTTP/HTTPS запросов", "Ручная настройка TTL, Автоопределение TTL, отправка контрольной суммы TCP", lambda: self.switch_tab('TTL'))),
                 "Switch10": (Switch, ("Отправка поддельных запросов с помощью TCP SEQ/ACK",)),
-                "Button11": (Button, ("Оптимизация", "Ограничение обработки пакетов TCP", lambda: self.switch_tab('IPID'))),
+                "Button11": (Button, ("Оптимизация", "Ограничение обработки пакетов TCP", lambda: self.switch_tab('TCP'))),
                 "Switch11": (Switch, ("Добавление пробела между методом HTTP и URL", "Обратите внимание: данная настройка влияет на работосопобность сайтов",)),
                 "Button12": (Button, ("Список сайтов для обхода блокировки", "Обновление russia_blacklist.txt, Добавление своего списка сайтов", lambda: self.switch_tab('IPID'))),
             }
@@ -482,7 +559,7 @@ class SettingsApp(ttk.Tk):
         Content(
             goodbyedpi_HTTPS,
             {
-                "Label1": (Label, ("Параметры goodbyeDPI > Фрагментация HTTPS",)),
+                "Label1": (Label, ("Фрагментация HTTPS",)),
                 "Switch1": (Switch, ("Фрагментация HTTPS", None, "disabled")),
                 "Entry1": (Entry, ("Значение фрагментации HTTPS", "Значение фрагментации должно быть в пределах от 1 до 50", self)),
                 "Checkbox1":(Checkbox, ("Случайное значение через", CTkOptionMenu, (['5 сек.', '10 сек.']))),
@@ -512,7 +589,7 @@ class SettingsApp(ttk.Tk):
             {
                 "Label1": (Label, ("Обработка трафика на пользовательском порте",)),
                 "Switch1": (Switch, ("Находить и обрабатывать HTTP-трафик на порте, отличном от 80", None, "disabled")),
-                "Entry1": (Entry, ("Собственные TCP порты", "Добавление собственных портов для обработки goodbyedpi", self)),
+                "Entry1": (Entry, ("Собственные TCP порты", "Добавление собственных портов для обработки goodbyedpi", self, ValidateIntCol(5))),
             },
             True
         )
@@ -526,10 +603,10 @@ class SettingsApp(ttk.Tk):
                 "Label1": (Label, ("Перенаправление DNS-запросов ",)),
                 "Switch1": (Switch, ("Перенаправлять запросы DNS запросы на указанный IP", None, "disabled")),
                 "Entry1": (Entry, ("IP адрес для перенаправления", None, self)),
-                "Entry2": (Entry, ("Порт для перенаправления", None, self)),
+                "Entry2": (Entry, ("Порт для перенаправления", None, self, ValidateIntCol(5))),
                 "Switch2": (Switch, ("Перенаправлять IPv6 запросы DNS запросы на указанный IPv6", None, "disabled")),
                 "Entry3": (Entry, ("IPv6 адрес для перенаправления", None, self)),
-                "Entry4": (Entry, ("Порт для перенаправления", None, self)),
+                "Entry4": (Entry, ("Порт для перенаправления", None, self, ValidateIntCol(5))),
             },
             True
         )
@@ -541,7 +618,36 @@ class SettingsApp(ttk.Tk):
             {
                 "Label1": (Label, ("Фильтрация дополнительных IP ID",)),
                 "Switch6": (Switch, ("Фильтрация дополнительных IP ID", None, "disabled")),
-                "Entry4": (Entry, ("Значение IP ID", "Например, для дом.ру это значение равно 54321", self)),
+                "Entry4": (Entry, ("Значение IP ID", "Например, для дом.ру это значение равно 54321", self, ValidateIntCol(5))),
+
+            },
+            True
+        )
+
+        goodbyedpi_TTL = self.create_tab()
+        self.tab_frames["TTL"] = goodbyedpi_TTL
+
+        Content(
+            goodbyedpi_TTL,
+            {
+                "Label1": (Label, ("Отправка фейковых HTTP/HTTPS запросов",)),
+                "Switch6": (Switch, ("Отправка неверной контрольной суммы TCP", "Самый безопасный способ (рекомендуется)", "disabled", None, 'Off', 'On')),
+                "Switch5": (Switch, ("Автоопределение значения TTL", None, "disabled", None, 'Off', 'On')),
+                "Entry1": (Entry, ("Количество фейковых TTL запросов", "Значение должно быть в пределах от 1 до 30", self, ValidateValue(30, 1))),
+
+            },
+            True
+        )
+
+        goodbyedpi_TCP = self.create_tab()
+        self.tab_frames["TCP"] = goodbyedpi_TCP
+
+        Content(
+            goodbyedpi_TCP,
+            {
+                "Label1": (Label, ("Оптимизация",)),
+                "Switch6": (Switch, ("Ограничивать обработку TCP", None, "disabled", None)),
+                "Entry1": (Entry, ("Максимальное значение для обработки", None, self, ValidateIntCol(5))),
 
             },
             True
