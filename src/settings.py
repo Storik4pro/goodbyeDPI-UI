@@ -1,3 +1,4 @@
+import ctypes
 from tkinter import messagebox
 import typing
 from customtkinter import *
@@ -6,9 +7,6 @@ import tkinter as ttk
 from customtkinter import CTkCanvas, CTkFrame
 from _data import settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, text
 from PIL import Image, ImageTk, ImageDraw
-import win32gui
-import win32con
-import win32api
 from ctypes import windll, c_char_p
 from win32material import *
 from Elements import CTkScrollableDropdown
@@ -19,6 +17,9 @@ ELEMENT_WIDTH = 700
 
 COLOR_HOVER = '#404040'
 COLOR_FRAME = '#0f0f0f'
+ELEMENT_COLOR = '#212121'
+
+FONT_BOLD = 'Nunito ExtraBold'
 
 def canvas_transparent(w):
     colorkey = 0x00030201
@@ -91,7 +92,7 @@ class ValidateIntCol:
 
 class BaseElement:
     def __init__(self, parent:CTkFrame|CTkCanvas, row=0, column=0) -> None:
-        self.frame = CTkFrame(parent, width=ELEMENT_WIDTH, height=ELEMENT_HEIGHT, fg_color=COLOR_FRAME)
+        self.frame = CTkFrame(parent, width=ELEMENT_WIDTH, height=ELEMENT_HEIGHT+2, fg_color=COLOR_FRAME)
         self.frame.grid_propagate(False)
         self.frame.grid(row=row, column=column, pady=2, padx=0)
         self.call = False 
@@ -174,10 +175,6 @@ class EntryElement:
             self.entry_var.set(self.last_valid_value)
             self.entry.configure(border_color=COLOR_FRAME)
 
-class FrameButton:
-    def __init__(self, id, parent) -> None:
-        pass
-
 class Switch(BaseElement):
     def __init__(self, parent:CTkFrame|CTkCanvas, row=0, column=0, label='Sample label', subLabel:str=None, command=None,var:Variable=None, onvalue='On', offvalue='Off') -> None:
         super().__init__(parent, row=row, column=column)
@@ -201,7 +198,11 @@ class Switch(BaseElement):
         self.stateLabel.grid(row=0, column=1, padx=(15, 0), pady=0)
     
         switch = CTkSwitch(self.frame, text='', variable=self.var, onvalue="On", offvalue="Off", width=40, fg_color="#1C1C1C", command=self.toggle, corner_radius=10)  # Закругленные углы
-        switch.grid(row=0, column=2, padx=(0,20))
+        switch.grid(row=0, column=2, padx=(0,19))
+
+        try:
+            self.command(self.var.get(), self)
+        except:pass
 
     def toggle(self):
         self.stateLabel.configure(text=self.var.get())
@@ -228,22 +229,34 @@ class Combobox(BaseElement):
             self.label_info = CTkLabel(self.label_frame, text=subLabel, font=(FONT, 12), height=height, width=570, fg_color="transparent", anchor="w")
             self.label_info.grid(row=1, column=0, padx=(0, 0), pady=0)
 
-        self.combobox = CTkOptionMenu(self.frame, font=(FONT, 15), values=values, width=240, corner_radius=10, command=function)
+        self.combobox = CTkOptionMenu(self.frame, font=(FONT, 15),fg_color=ELEMENT_COLOR, button_color=ELEMENT_COLOR, hover=True, button_hover_color=COLOR_HOVER, values=values, width=240, corner_radius=5, dynamic_resizing=False, command=function)
         self.combobox.grid(row=0, column=1, padx=(0, 20))
 
         CTkScrollableDropdown(self.combobox, values=values, justify="left", button_color="transparent", hover_color="#404040", alpha=0.89, button_height=35, frame_border_width=0, frame_corner_radius=5, scrollbar=False)
 
 
-class Button(BaseElement):
-    def __init__(self, parent: CTkFrame | CTkCanvas, row=0, column=0, label='Sample text', subLabel=None, func=None) -> None:
+
+class Button:
+    def __init__(self, parent: CTkFrame | CTkCanvas, row=0, column=0, label='Sample label', function=None, state='normal') -> None:
+        self.button = CTkButton(parent, text=label, font=(FONT, 15), fg_color=COLOR_FRAME, hover_color=COLOR_HOVER, command=function, state=state)
+        self.button.grid(row=row, column=column, sticky='w', pady=5)
+
+    def disable(self):
+        self.button.configure(state='disable')
+    def enable(self):
+        self.button.configure(state='normal')
+
+class FrameButton(BaseElement):
+    def __init__(self, parent: CTkFrame | CTkCanvas, row=0, column=0, label='Sample text', subLabel=None, func=None, window:CTk|ttk.Tk=None) -> None:
         super().__init__(parent, row, column)
 
         self.func = func
+        self.window = window
         self.frame.configure(fg_color=COLOR_FRAME)
 
         self.label_frame = CTkFrame(self.frame, width=540, height=ELEMENT_HEIGHT, fg_color="transparent")
         self.label_frame.grid_propagate(False)
-        self.label_frame.grid(row=0, column=0, pady=0, padx=(20, 0))
+        self.label_frame.grid(row=0, column=0, pady=(0, 1), padx=(20, 0))
 
         height = ELEMENT_HEIGHT//2 if subLabel else ELEMENT_HEIGHT
 
@@ -255,12 +268,14 @@ class Button(BaseElement):
             self.label_info.grid(row=1, column=0, padx=(0, 0), pady=0)
 
         img = CTkImage(light_image=Image.open(DIRECTORY+"data/arrow-light.png"), dark_image=Image.open(DIRECTORY+"data/arrow-dark.png"), size=(20, 20))
-        self.img_label = CTkLabel(self.frame, text='', width=218, height=20, compound = "right", anchor='s', image=img)
-        self.img_label.grid(row=0, column=1, padx=(0, 20))
+        self.img_label = CTkLabel(self.frame, text='', width=20, height=20, compound = "right", anchor='s', image=img)
+        self.img_label.grid(row=0, column=1, padx=(100, 0))
 
         self.bind_all_widgets(self.frame)
 
         self.bind_execute(self.frame)
+
+        self.enter = False
 
     def bind_execute(self, widget):
         widget.bind("<Button-1>", self.execute_function)
@@ -277,16 +292,50 @@ class Button(BaseElement):
             self.bind_all_widgets(child)
 
     def on_enter(self, event):
-        self.frame.configure(fg_color=COLOR_HOVER)
+        self.enter = True
+        if self.window: self.window.after(2, self._hover)
+        else: self._hover()         
 
     def on_leave(self, event):
-        self.frame.configure(fg_color=COLOR_FRAME)
+        self.enter = False
+        if self.window: self.window.after(2, self._normal)
+        else: self._normal()
+
+    def _hover(self):
+        if self.enter:
+            self.frame.configure(fg_color=COLOR_HOVER)
+    
+    def _normal(self):
+        if not self.enter:
+            self.frame.configure(fg_color=COLOR_FRAME)
 
     def execute_function(self, event):
         print("function executed")
         if self.func: self.func()
 
-class SwitchButton(Button):
+class ComboboxButton(FrameButton):
+    def __init__(self, parent: CTkFrame | CTkCanvas, row=0, column=0, label='Sample text', subLabel=None, func=None, window:CTk|ttk.Tk=None, values=['Samle value', ], function=None) -> None:
+        super().__init__(parent, row, column, label, subLabel, func, window)
+
+        self.img_label.grid_forget()
+        self.img_label.configure(width=20)
+
+        self.label_frame.grid_forget()
+        
+        self.label_frame.configure(width=420)
+        self.label_frame.grid_propagate(False)
+        self.label_frame.grid(row=0, column=0, pady=0, padx=(20, 0))
+
+
+        self.combobox = CTkOptionMenu(self.frame, font=(FONT, 15),fg_color=ELEMENT_COLOR, button_color=ELEMENT_COLOR, bg_color="transparent", hover=False, button_hover_color=COLOR_HOVER, values=values, width=200, corner_radius=5, dynamic_resizing=False, command=function)
+        self.combobox.grid(row=0, column=1, pady=1, padx=(0, 20))
+        CTkScrollableDropdown(self.combobox, values=values, justify="left", button_color="transparent", hover_color="#404040", alpha=0.89, button_height=35, frame_border_width=0, frame_corner_radius=5, scrollbar=False)
+
+        self.img_label.grid(row=0, column=2, padx=(0,20))
+
+        self.bind_all_widgets(self.frame)
+
+class SwitchButton(FrameButton):
     def __init__(self, parent: CTkFrame | CTkCanvas, row=0, column=0, label='Sample text', subLabel=None, func=None, switch_command=None, var:Variable=None) -> None:
         super().__init__(parent, row, column, label, subLabel, func)
         self.command = switch_command
@@ -352,17 +401,26 @@ class Entry(BaseElement):
         
 
 class Label:
-    def __init__(self, parent:CTkFrame|CTkCanvas, row=0, column=0, label='Sample label') -> None:
-        label = CTkLabel(parent, text=label, font=(FONT, 25), width=700, anchor='w', fg_color="transparent")
-        label.grid(row=row, column=column, padx=0, pady=(0, 20))
+    def __init__(self, parent:CTkFrame|CTkCanvas, row=0, column=0, label='Sample label', font=(FONT_BOLD, 25), pady=(0, 20)) -> None:
+        label = CTkLabel(parent, text=label, font=font, width=700, anchor='w', fg_color="transparent")
+        label.grid(row=row, column=column, padx=0, pady=pady)
         self.call=False
 
     def disable(self):pass
     def enable(self):pass
 
+class SubLabel(Label):
+    def __init__(self, parent: CTkFrame | CTkCanvas, row=0, column=0, label='Sample label') -> None:
+        font=(FONT, 20)
+        super().__init__(parent, row, column, label, font, (0, 2))
+
+class TooltipLabel(Label):
+    def __init__(self, parent: CTkFrame | CTkCanvas, row=0, column=0, label='Sample label') -> None:
+        font=(FONT, 14)
+        super().__init__(parent, row, column, label, font, 2)
         
 class Checkbox(BaseElement):
-    def __init__(self, parent: CTkFrame | CTkCanvas, row=0, column=0, label='Sample Label', element:CTkEntry|CTkOptionMenu=None, args:tuple=None, func=None) -> None:
+    def __init__(self, parent: CTkFrame | CTkCanvas, row=0, column=0, label='Sample Label', element:CTkEntry|CTkOptionMenu|CTkButton=None, args:tuple=None, func=None) -> None:
         super().__init__(parent, row, column)
 
         self.variable = StringVar(value='On')
@@ -378,12 +436,17 @@ class Checkbox(BaseElement):
             self.entry = CTkEntry(textvariable=self.entry_var)
             self.element = element(self.frame, width=240, font=(FONT, 15), command=func,border_width=2, border_color=COLOR_FRAME, placeholder_text=args[0], values=args)
             self.element.grid(row=0, column=1, padx=(0, 20))
+        elif element == CTkButton:
+            self.element = element(self.frame, text=args, width=240, font=(FONT, 15), command=func, fg_color=ELEMENT_COLOR, hover_color=COLOR_HOVER, corner_radius=5)
+            self.element.grid(row=0, column=1, padx=(0, 20))
+        else:
+            self.element = None
     
     def toggle(self):
         if self.variable.get() == 'On':
-            self.element.configure(state='normal')
+            if self.element: self.element.configure(state='normal')
         else:
-            self.element.configure(state='disabled')
+            if self.element: self.element.configure(state='disabled')
 
 class Content:
     def __init__(self, parent:CTkFrame|CTkCanvas, content:typing.Dict[Switch|Label|Combobox|BaseElement, tuple], disabled_func=None) -> None:
@@ -424,16 +487,12 @@ class Content:
                     continue
                 if _q:content.enable()
                 
-
-
-
-    
-
 class SettingsApp(ttk.Tk):
     def __init__(self):
         super().__init__()
+        self.scaleFactor = ctypes.windll.shcore.GetScaleFactorForDevice(0) / 100
         self.title("Настройки")
-        self.geometry("1100x600")
+        self.geometry(f"{int(1100*self.scaleFactor)}x600")
         self.configure(bg="black")
         self.grid_columnconfigure(1, weight=1)
         self.grid_columnconfigure((2, 3), weight=0)
@@ -535,7 +594,7 @@ class SettingsApp(ttk.Tk):
             goodbyedpi_tab[0],
             {
                 "Label1": (Label, ("Параметры goodbyeDPI",)),
-                "Combobox1": (Combobox, ("Пресет настроек", ["blacklist-с изменением DNS", "blacklist", "с изменением DNS", "без параметров"])),
+                "Combobox1": (ComboboxButton, ("Пресет настроек", "Изменение готовых пресетов, Создание новых пресетов", lambda: self.switch_tab('quick'), self, ["blacklist-с изменением DNS", "blacklist", "с изменением DNS", "без параметров"], None)),
                 "Switch1": (Switch, ("Блокировка пассивных DPI",)),
                 "Switch2": (Switch, ("Замена заголовка Host на hoSt",)),
                 "Switch3": (Switch, ("Удаление пробела между именем параметра Host и его заголовком",)),
@@ -544,15 +603,29 @@ class SettingsApp(ttk.Tk):
                 "Button1": (SwitchButton, ("Фрагментация HTTPS", "Случайное кол-во фрагментаций, Выбор фрагментации TLS", lambda: self.switch_tab('HTTPS'))),
                 "Switch6": (SwitchButton, ("Фрагментация длительных (persistent, keep-alive) HTTP-соединений", "Не дожидаться первого сегмента ACK", lambda: self.switch_tab('HTTP'))),
                 "Switch8": (SwitchButton, ("Находить и обрабатывать HTTP-трафик на порте, отличном от 80", "Добавление собственного TCP порта", lambda: self.switch_tab('port'))),
-                "Button2": (Button, ("Перенаправление DNS запросов", "Перенаправление на IP адрес, Перенаправление на IPv6 адрес", lambda: self.switch_tab('DNS'))),
+                "Button2": (FrameButton, ("Перенаправление DNS запросов", "Перенаправление на IP адрес, Перенаправление на IPv6 адрес", lambda: self.switch_tab('DNS'))),
                 "Switch9": (SwitchButton, ("Фильтрация дополнительных IP ID подключений", "Изменение значения ID", lambda: self.switch_tab('IPID'))),
-                "Button10": (Button, ("Отправка фейковых HTTP/HTTPS запросов", "Ручная настройка TTL, Автоопределение TTL, отправка контрольной суммы TCP", lambda: self.switch_tab('TTL'))),
+                "Button10": (FrameButton, ("Отправка фейковых HTTP/HTTPS запросов", "Ручная настройка TTL, Автоопределение TTL, отправка контрольной суммы TCP", lambda: self.switch_tab('TTL'))),
                 "Switch10": (Switch, ("Отправка поддельных запросов с помощью TCP SEQ/ACK",)),
-                "Button11": (Button, ("Оптимизация", "Ограничение обработки пакетов TCP", lambda: self.switch_tab('TCP'))),
+                "Button11": (FrameButton, ("Оптимизация", "Ограничение обработки пакетов TCP", lambda: self.switch_tab('TCP'))),
                 "Switch11": (Switch, ("Добавление пробела между методом HTTP и URL", "Обратите внимание: данная настройка влияет на работосопобность сайтов",)),
-                "Button12": (Button, ("Список сайтов для обхода блокировки", "Обновление russia_blacklist.txt, Добавление своего списка сайтов", lambda: self.switch_tab('blacklist'))),
+                "Button12": (FrameButton, ("Сайты, для которых будет включен goodbyedpi", "Обновление russia_blacklist.txt, Добавление своего списка сайтов", lambda: self.switch_tab('blacklist'))),
             }
         )
+        goodbyedpi_quick = self.create_tab()
+        self.tab_frames["quick"] = goodbyedpi_quick
+
+        Content(
+            goodbyedpi_quick,
+            {
+                "Label1": (Label, ("Пресет настроек",)),
+                "SubLabel1":(SubLabel, ("Средство создания пресетов", )),
+                "TooltipLabel1":(TooltipLabel, ("Средство создания пресетов позволит создать ваш собственный пресет настроек",)),
+                "Button1":(Button, ("Открыть средство создания пресетов",)),
+            },
+            True
+        )
+
         goodbyedpi_HTTPS = self.create_tab()
         self.tab_frames["HTTPS"] = goodbyedpi_HTTPS
 
@@ -657,11 +730,12 @@ class SettingsApp(ttk.Tk):
         self.tab_frames["blacklist"] = goodbyedpi_blacklist
 
         Content(
-            goodbyedpi_TCP,
+            goodbyedpi_blacklist,
             {
-                "Label1": (Label, ("Список сайтов для обхода блокировки",)),
-                "Switch6": (Switch, ("Активировать для всех сайтов", None, "disabled", None)),
-                "Entry1": (Entry, ("Максимальное значение для обработки", None, self, ValidateIntCol(5))),
+                "Label1": (Label, ("Сайты, для которых необходимо включить goodbyedpi",)),
+                "Switch6": (Switch, ("Активировать для всех сайтов", None, "disabled", None, 'Off', 'On')),
+                "Checkbox1":(Checkbox, ("Активировать для сайтов из russia_blacklist.txt", CTkButton, ('Обновить blacklist'))),
+                "Checkbox2":(Checkbox, ("Активировать для своего списка сайтов", CTkButton, ('Изменить список сайтов'))),
 
             },
             True
@@ -698,10 +772,12 @@ class SettingsApp(ttk.Tk):
             canvas = CTkCanvas(borderwidth=0, bg='black', highlightthickness=0, height=self.winfo_height())
             #canvas_transparent(canvas)
 
-            scrollable_frame = CTkFrame(canvas,width=800, fg_color='transparent')
+            
+
+            scrollable_frame = CTkFrame(canvas,width=800*self.scaleFactor, fg_color='transparent')
             scrollable_frame.bind("<Configure>", lambda e: self.on_frame_configure(canvas))
             scrollable_frame.grid(row=0, column=0, padx=0, pady=0)
-            canvas.create_window((0, 0), window=scrollable_frame, anchor="nw", width=700)
+            canvas.create_window((0, 0), window=scrollable_frame, anchor="nw", width=700*self.scaleFactor)
             canvas.grid(row=0, column=1, sticky="n", padx=0, pady=(30, 0))
 
             scrollbar = CTkScrollbar(self, orientation="vertical", command=canvas.yview, height=self.winfo_height())
@@ -709,7 +785,7 @@ class SettingsApp(ttk.Tk):
 
             canvas.configure(yscrollcommand=scrollbar.set)
             canvas.update_idletasks()
-            canvas.configure(scrollregion=canvas.bbox("all"), width=700, height=self.winfo_height())
+            canvas.configure(scrollregion=canvas.bbox("all"), width=700*self.scaleFactor, height=self.winfo_height())
             
             canvas.bind("<Configure>", lambda e: self.adjust_scroll_visibility(scrollable_frame, canvas, scrollbar))
             self.bind("<MouseWheel>", mouseWheel)
@@ -729,55 +805,6 @@ class SettingsApp(ttk.Tk):
 
     def on_frame_configure(self, canvas):
         canvas.configure(scrollregion=canvas.bbox("all"))
-
-    def add_label_and_combobox(self, row, parent, label_text, combobox_values, func=None):
-        frame = CTkFrame(parent, width=700,height=ELEMENT_HEIGHT)
-        frame.grid_propagate(False)
-        frame.grid(row=row, column=0, pady=2, padx=0)
-
-        label = CTkLabel(frame, text=label_text, font=(FONT, 15), height=ELEMENT_HEIGHT, width=420, fg_color="transparent", anchor="w")
-        label.grid(row=0, column=0, padx=(20, 0), pady=0)
-
-        combobox = CTkOptionMenu(frame, values=combobox_values, font=(FONT, 15), width=240, corner_radius=10, command=func)  # Закругленные углы
-        combobox.grid(row=0, column=1, padx=(0, 20))
-
-    def add_switch(self, row, parent, switch_text, command=None, var:Variable = None, info:str=None):
-        frame = CTkFrame(parent, width=700,height=ELEMENT_HEIGHT)
-        frame.grid_propagate(False)
-        frame.grid(row=row, column=0, pady=2, padx=0)
-
-        var = var if var else StringVar(value='On')
-
-        label_frame = CTkFrame(frame, width=570, height=ELEMENT_HEIGHT, fg_color="transparent")
-        label_frame.grid_propagate(False)
-        label_frame.grid(row=0, column=0, pady=0, padx=(20, 0))
-        height = ELEMENT_HEIGHT//2 if info else ELEMENT_HEIGHT
-
-        label = CTkLabel(label_frame, text=switch_text, font=(FONT, 15), height=height, width=570, fg_color="transparent", anchor="w")
-        label.grid(row=0, column=0, padx=(0, 0), pady=0)
-
-        if info:
-            label_info = CTkLabel(label_frame, text=info, font=(FONT, 12), height=height, width=570, fg_color="transparent", anchor="w")
-            label_info.grid(row=1, column=0, padx=(0, 0), pady=0)
-
-
-        stateLabel = CTkLabel(frame, text=var.get(), font=(FONT, 15), height=ELEMENT_HEIGHT, width=40, fg_color="transparent", anchor="w")
-        stateLabel.grid(row=0, column=1, padx=(15, 0), pady=0)
-        
-        switch = CTkSwitch(frame, text='', variable=var, onvalue='On', offvalue='Off', width=40, fg_color="#1C1C1C", command=command, corner_radius=10)  # Закругленные углы
-        switch.grid(row=0, column=2, padx=(0,20))
-
-    def add_checkbox(self, row, parent, checkbox_text):
-        frame = CTkFrame(parent,width=700, height=ELEMENT_HEIGHT)
-        frame.grid_propagate(False)
-        frame.grid(row=row, column=0, pady=2, padx=0)
-
-        checkbox = CTkCheckBox(frame, text=checkbox_text, font=(FONT, 15), fg_color="#1C1C1C", corner_radius=10)  # Закругленные углы
-        checkbox.grid(row=0, column=0)
-
-    def add_label(self, row, parent, label_text):
-        label = CTkLabel(parent, text=label_text, font=(FONT, 25), width=700, anchor='w', fg_color="transparent")
-        label.grid(row=row, column=0, padx=0, pady=(0, 20))
 
     def switch_tab(self, tab_name):
         try:
@@ -811,7 +838,7 @@ class SettingsApp(ttk.Tk):
         else:
             frame.grid(row=0, column=1, padx=20, pady=30, sticky='sn')
         
-    def switch_theme(self, value):
+    def switch_theme(self, value, call):
         if value == 'On':
             self.text_color = "#FFFFFF"
             self.hover_color = "#404040"
@@ -834,6 +861,10 @@ class SettingsApp(ttk.Tk):
     def theme_change(self, theme):
         set_default_color_theme(theme)
 if __name__ == "__main__":
+    
+    errorCode = ctypes.windll.shcore.SetProcessDpiAwareness(1)
     app = SettingsApp()
+    
     ApplyMica(windll.user32.FindWindowW(c_char_p(None), "Настройки"), True, False)
+    
     app.mainloop()
