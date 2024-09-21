@@ -1,4 +1,5 @@
 import asyncio
+import configparser
 import os
 import queue
 import re
@@ -7,6 +8,7 @@ import ctypes
 import subprocess
 import threading
 import time
+import webbrowser
 import winreg
 import psutil
 import winpty
@@ -14,8 +16,8 @@ from toasted import Button, Image, Progress, Text, Toast, ToastButtonStyle, Toas
 import winsound
 
 import requests
-from _data import GOODBYE_DPI_PATH, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, text
-
+try: from _data import GOODBYE_DPI_PATH, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, SETTINGS_FILE_PATH, text, settings
+except: from src._data import GOODBYE_DPI_PATH, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, SETTINGS_FILE_PATH, text, settings
 def error_sound():
     winsound.MessageBeep(winsound.MB_ICONHAND)
 
@@ -301,6 +303,46 @@ def get_latest_release():
 
     return latest_version
 
+def get_release_info(version):
+    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/releases/tags/{version}"
+    response = requests.get(url)
+    data = response.json()
+    return data
+
+def get_download_url(version):
+    try:
+        data = get_release_info(version)
+        download_url = None
+
+        for asset in data["assets"]:
+            if asset["name"].endswith(".zip"):
+                download_url = asset["browser_download_url"]
+                break
+
+        if download_url is None:
+            return 'ERR_INVALID_URL'
+
+        return download_url
+    except requests.ConnectionError:
+        return 'ERR_CONNECTION_LOST'
+    except Exception as ex:
+        return 'ERR_UNKNOWN'
+    
+def download_update(url, directory, signal):
+    with requests.get(url, stream=True) as r:
+        total_length = r.headers.get('content-length')
+        if total_length is None:
+            with open(directory, 'wb') as f:
+                shutil.copyfileobj(r.raw, f)
+        else:
+            dl = 0
+            total_length = int(total_length)
+            with open(directory, 'wb') as f:
+                for data in r.iter_content(chunk_size=4096):
+                    signal.emit(float((dl / total_length)*100))
+                    dl += len(data)
+                    f.write(data)
+
 def is_process_running(process_name):
     for proc in psutil.process_iter(['pid', 'name']):
         
@@ -308,3 +350,30 @@ def is_process_running(process_name):
             if proc.info['pid'] != os.getpid():
                 return proc
     return None
+
+# settings change
+
+
+def change_setting(setting_group, setting, value):
+    config = configparser.ConfigParser()
+    config.read(SETTINGS_FILE_PATH)
+    config[setting_group][setting] = value
+
+    with open(SETTINGS_FILE_PATH, 'w') as configfile:
+        config.write(configfile)
+    
+    settings.reload_settings()
+
+def change_settings(setting_group, settings_list):
+    config = configparser.ConfigParser()
+    config.read(SETTINGS_FILE_PATH)
+    for i, setting in enumerate(settings_list):
+        config[setting_group][setting[0]] = setting[1]
+
+    with open(SETTINGS_FILE_PATH, 'w') as configfile:
+        config.write(configfile)
+    
+    settings.reload_settings()
+
+def open_custom_blacklist():
+    os.startfile(f"{GOODBYE_DPI_PATH}/custom_blacklist.txt")
