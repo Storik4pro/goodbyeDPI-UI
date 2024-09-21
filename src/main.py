@@ -16,6 +16,7 @@ import darkdetect
 from customtkinter import *
 from _data import settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, BACKUP_SETTINGS_FILE_PATH, text
 from utils import install_font, register_app, is_process_running
+from quick_start import merge_settings, merge_blacklist
 import pywintypes
 import configparser
 from win10toast_click import ToastNotifier
@@ -48,32 +49,7 @@ def check_first_run():
                 sys.exit(0)
         if first_run == 'True':
             register_app()
-            try:
-                config_old = configparser.ConfigParser()
-                config_old.read(BACKUP_SETTINGS_FILE_PATH)
-
-                config = configparser.ConfigParser()
-                config.read(SETTINGS_FILE_PATH)
-
-                for section in config.sections():
-                    if not config_old.has_section(section):
-                        config_old.add_section(section)
-                    for key, value in config.items(section):
-                        if not config_old.has_option(section, key):
-                            config_old.set(section, key, value)
-                with open(SETTINGS_FILE_PATH, 'w') as configfile:
-                    config_old.write(configfile)
-                settings.reload_settings()
-                config = config_old
-            except:
-                config = configparser.ConfigParser()
-                config.read(SETTINGS_FILE_PATH)
-
             install_font_result = install_font('data/font/Nunito-SemiBold.ttf')
-            
-            config['GLOBAL']['is_first_run'] = 'False'
-            with open(SETTINGS_FILE_PATH, 'w') as configfile:
-                config.write(configfile)
             settings.reload_settings()
     return install_font_result
 
@@ -81,24 +57,38 @@ def check_first_run():
 if __name__ == "__main__":
     argv = sys.argv[1:]
     try:
-        options, args = getopt.getopt(argv, "", ["autorun"])
+        options, args = getopt.getopt(argv, "", ["autorun", "after-update"])
     except getopt.GetoptError as err:
         pass
 
     autorun = 'False'
-
+    after_update = False
+    first_run = settings.settings['GLOBAL']['is_first_run'] if not DEBUG else 'False'
+    pompt = ' '
     for name, value in options:
         if name == '--autorun':
             autorun = 'True'
-
+        if name == '--after-update':
+            after_update = 'True'
+        pompt+=name+value
+        
     if not is_admin():
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__+pompt, None, 1)
     else:
+        if after_update == 'True':
+            merge_settings(BACKUP_SETTINGS_FILE_PATH, SETTINGS_FILE_PATH)
+            merge_blacklist(GOODBYE_DPI_PATH)
+            settings.reload_settings()
+        
         set_default_color_theme("blue")
 
         install_font_result = check_first_run()
-        window = MainWindow(install_font_result, autorun)
-        
+
+        if settings.settings['GLOBAL']['hide_to_tray'] == "True":
+            autorun = 'True'
+
+        window = MainWindow(install_font_result, autorun, after_update if after_update == 'True' else first_run)
+
         mode = settings.settings['APPEARANCE_MODE']['mode']
         set_appearance_mode(mode)
         set_widget_scaling(1)
@@ -106,3 +96,10 @@ if __name__ == "__main__":
             window.iconbitmap(DIRECTORY+'data/icon.ico')
             window.mainloop()
         except: pass
+        
+        if not DEBUG:
+            config = configparser.ConfigParser()
+            config.read(SETTINGS_FILE_PATH)
+            config['GLOBAL']['is_first_run'] = 'False'
+            with open(SETTINGS_FILE_PATH, 'w') as configfile:
+                config.write(configfile)
