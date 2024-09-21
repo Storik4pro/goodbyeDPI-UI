@@ -236,7 +236,7 @@ def run_qt_app(pipe):
     QGuiApplication.setApplicationDisplayName('Settings')
     QGuiApplication.setApplicationVersion(GlobalConfig.application_version)
     Logger.setup("Gallery")
-    app = QGuiApplication(sys.argv)
+    app = QGuiApplication([DIRECTORY+'_settings/Gallery/main.py'] if not DEBUG else ['E:/ByeDPI/src/_settings/main.py'])
     engine = QQmlApplicationEngine()
     engine.rootContext().setContextProperty("backend", backend)
     icon = QIcon(DIRECTORY+"data/icon.ico")
