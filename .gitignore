@@ -128,5 +128,9 @@ data/settings/settings.ini
 _portable.zip
 data/settings/_settings.ini
 update.exe
-src/quick_start.py
 src/test.py
+*.qmltypes
+app/
+backup/
+reload_resourse.py
+unload_resourse.py
