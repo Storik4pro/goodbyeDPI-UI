@@ -42,3 +42,16 @@ def merge_settings(backup_settings_file, settings_file):
     os.remove(backup_settings_file)
     print(f"Deleted backup settings file {backup_settings_file}")
 
+def rename_update_exe():
+    update_path = 'update.exe'
+    temp_update_path = '_update.exe'
+
+    if os.path.exists(update_path):
+        os.remove(update_path)
+
+    if os.path.exists(temp_update_path):
+        os.rename(temp_update_path, update_path)
+        return True
+    else:
+        return False
+

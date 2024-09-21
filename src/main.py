@@ -16,7 +16,7 @@ import darkdetect
 from customtkinter import *
 from _data import settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, BACKUP_SETTINGS_FILE_PATH, text
 from utils import install_font, register_app, is_process_running
-from quick_start import merge_settings, merge_blacklist
+from quick_start import merge_settings, merge_blacklist, rename_update_exe
 import pywintypes
 import configparser
 from win10toast_click import ToastNotifier
@@ -79,6 +79,9 @@ if __name__ == "__main__":
             merge_settings(BACKUP_SETTINGS_FILE_PATH, SETTINGS_FILE_PATH)
             merge_blacklist(GOODBYE_DPI_PATH)
             settings.reload_settings()
+
+        if after_update == 'False' and first_run == 'True':
+            update_result = rename_update_exe()
         
         set_default_color_theme("blue")
 
