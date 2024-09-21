@@ -1,35 +1,21 @@
-# app icon
-"""Download by Bence Bezeredy from <a href="https://thenounproject.com/browse/icons/term/download/" target="_blank" title="Download Icons">Noun Project</a> (CC BY 3.0)"""
-import logging
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename='update.log', level=logging.INFO)
-import os
-import requests
-import zipfile
-import shutil
-import sys
-import time
-from customtkinter import *
-import threading
-import webbrowser
-from PIL import Image
 import configparser
-import getopt
+import logging
+import os
+import zipfile
+import sys
+import threading
 from tkinter import messagebox
 from datetime import datetime
-from about import AboutApp
-import psutil
+import argparse
+from customtkinter import *
+from PIL import Image
+import subprocess
+import shutil
 
-DEBUG = False
-
-ERROR_TITLE = "Update assistant error"
-REPO_OWNER = "Storik4pro"
-REPO_NAME = "goodbyeDPI-UI"
-REPO_URL = f"https://github.com/{REPO_OWNER}/{REPO_NAME}"
 FONT = 'Nunito SemiBold'
-DIRECTORY = f'{os.path.dirname(os.path.abspath(__file__))}/update/' if not DEBUG else 'update/'
-directory = "./"
-about_app = None
+DIRECTORY = f'{os.path.dirname(os.path.abspath(__file__))}/'
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='update.log', level=logging.INFO)
 
 class Text:
     def __init__(self, language) -> None:
@@ -42,286 +28,287 @@ class Text:
         config.read(DIRECTORY+'loc.ini', encoding='utf-8')
         self.inAppText = config[f'{self.selectLanguage}']
 
-text = Text('EN')
-
-def open_git():
-    webbrowser.open("https://storik4pro.github.io/installer-issues/")
-
-def open_about():
-    global about_app
-    if about_app is None or not about_app.winfo_exists():
-        about_app = AboutApp(text.inAppText, FONT, DIRECTORY, REPO_URL)
-        about_app.mainloop()
-    else:
-        about_app.focus()
-
-def close_procces():
-    
-    for proc in psutil.process_iter(['pid', 'name']):
-        if proc.info['name'] == 'goodbyedpi.exe':
-            try:
-                proc.terminate()
-                logger.info(f'process goodbyedpi.exe terminated')
-            except psutil.NoSuchProcess:
-                pass
-        if proc.info['name'] == 'goodbyeDPI.exe':
-            try:
-                proc.terminate()
-                logger.info(f'process goodbyeDPI.exe terminated')
-            except psutil.NoSuchProcess:
-                pass
-
 class UpdaterApp(CTk):
-    def __init__(self, version, *args, **kwargs):
+    def __init__(self, zip_file_path, unpack_directory, text, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.version = version
-        self.geometry("480x480")
+        self.zip_file_path = zip_file_path
+        self.unpack_directory = unpack_directory
+        self.geometry("800x500")
         self.resizable(False, False)
-        self.title(f"Update assistant")
+        self.title("Update Assistant")
         self.iconbitmap(DIRECTORY+'update_icon.ico')
-
-        self.header_label = CTkLabel(self, text=text.inAppText['update_ready']+f" {self.version}", font=(FONT, 20, "bold"))
-        self.header_label.pack(pady=10)
+        self.end = False
 
         self.content_frame = CTkFrame(self)
         self.content_frame.pack(pady=10, padx=10, fill="both", expand=True)
 
-        self.changelog_textbox = CTkTextbox(self.content_frame, wrap="word", width=400, height=150, font=(FONT, 15))
+        self.header_frame = CTkFrame(self.content_frame)
+        self.header_frame.pack(fill="x", pady=(10, 0), padx=10)
+
+        self.logo = CTkImage(light_image=Image.open(DIRECTORY+"update_icon.png"), size=(50, 50))
+        self.logo_label = CTkLabel(self.header_frame, image=self.logo, text="")
+        self.logo_label.pack(side="left", pady=10, padx=(10, 5))
+
+        self.header_text_frame = CTkFrame(self.header_frame, fg_color='transparent')
+        self.header_text_frame.pack(fill='x')
+
+        self.header_text = CTkLabel(self.header_text_frame, text = text.inAppText['update_log'], anchor="w", font=(FONT, 18, "bold"))
+        self.header_text.pack(pady=(10, 0), padx=(5, 10), fill="x", expand=True)
+
+        self.status_text = text.inAppText['update_installing']
+        self.status_label = CTkLabel(self.header_text_frame, text=self.status_text, anchor="w", justify='left', font=(FONT, 14))
+        self.status_label.pack(side="bottom", padx=(5, 10), pady=(0, 10), fill="x", expand=True)
+
+        self.textbox_frame = CTkFrame(self.content_frame, fg_color='transparent')
+        self.textbox_frame.pack(fill="both", expand=True)
+
+        self.changelog_textbox = CTkTextbox(self.textbox_frame, wrap="word", font=(FONT, 15))
         self.changelog_textbox.pack(pady=10, padx=10, fill="both", expand=True)
-        self.changelog_textbox.insert("1.0", text.inAppText['update_info_load'])
         self.changelog_textbox.configure(state="disabled")
 
-        self.checkbox = StringVar(value='True')
-        self.restart_button = CTkButton(self.content_frame, text=text.inAppText['update_retry'], font=(FONT, 15), command=self.start_update_thread, width=400)
+        self.progress_var = DoubleVar(value=0)
+        self.progress_bar = CTkProgressBar(self.content_frame, variable=self.progress_var)
+        self.progress_bar.pack(pady=(10, 0), padx=10, fill="x")
 
-        self.start_button = CTkButton(self.content_frame, text=text.inAppText['update_start'], font=(FONT, 15), command=self.start_update_thread, width=400)
-        self.start_button.pack(pady=20, padx=10, fill="both")
+        self.button_frame = CTkFrame(self.content_frame, fg_color='transparent')
+        self.button_frame.pack(fill="x", side='bottom')
 
-        self.separator = CTkLabel(self, text="─" * 100)
-        self.separator.pack(pady=(5, 0))
+        self.exit_button = CTkButton(self.button_frame, text=text.inAppText['exit'], fg_color="transparent", border_width=2, font=(FONT, 15), width=200, state=DISABLED, command=self.safe_exit)
+        self.exit_button.pack(side="right", padx=(5, 10), pady=10)
 
-        self.link_frame = CTkFrame(self)
-        self.link_frame.pack(pady=(0, 10))
-
-        github_logo = CTkImage(light_image=Image.open(DIRECTORY+"help.png"), size=(24, 24))
-        self.github_image_button = CTkButton(self.link_frame, text='', command=open_git, width=30,height=30, image=github_logo)
-        self.github_image_button.pack(side="left", padx=(10, 10), pady=10)
-
-        settings_logo = CTkImage(light_image=Image.open(DIRECTORY+"info.png"), size=(24, 24))
-        self.settings_button = CTkButton(self.link_frame, text='', command=open_about, width=30, height=30, image=settings_logo)
-        self.settings_button.pack(side="left", padx=(0, 10), pady=10)
+        self.finish_status = 0
 
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        self.load_changelog()
-
-        self.finish_status = 0
-        self.now_id = 1
-
-    def on_closing(self):
-        if hasattr(self, 'updating') and self.updating.is_alive():
-            self.header_label.configure(text=text.inAppText['update_in_process'])
-        else:
-            self.destroy()
-
-    def start_update_thread(self):
-        self.start_button.configure(state="disabled")
         self.updating = threading.Thread(target=self.update_program)
         self.updating.start()
 
-    def get_release_info(self):
-        logger.info(f'getting release info ...')
-        url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/releases/tags/{self.version}"
-        response = requests.get(url)
-        data = response.json()
-        return data
+    def on_closing(self):
+        if self.end:
+            try:
+                self.safe_exit()
+            except: sys.exit(0)
 
-    def format_changelog(self, changelog):
-        changelog = changelog.replace("### ", "").replace("## ", "").replace("# ", "")
-        return changelog
-
-    def load_changelog(self):
-        data = self.get_release_info()
-        changelog = data.get("body", text.inAppText['update_info_error'])
-        formatted_changelog = self.format_changelog(changelog)
-        self.changelog_textbox.configure(state="normal")
-        self.changelog_textbox.delete("1.0", "end")
-        self.changelog_textbox.insert("1.0", formatted_changelog)
-        self.changelog_textbox.configure(state="disabled")
-
-    def create_logs(self, text, stop=True):
+    def create_logs(self, text):
         _time = datetime.now().strftime('%H:%M:%S')
         logger.info(f'[{_time}] {text}')
-        self.log_label.configure(text=f''+text+'\n')
-
-    def get_download_url(self):
-        try:
-            data = self.get_release_info()
-            download_url = None
-
-            for asset in data["assets"]:
-                if asset["name"].endswith(".zip"):
-                    download_url = asset["browser_download_url"]
-                    break
-
-            return download_url
-        except Exception as ex:
-            logger.error(text.inAppText['check_internet']+f"\n{ex}", exc_info=1)
-            self.finish_status = 1
-            messagebox.showerror(ERROR_TITLE, text.inAppText['check_internet']+f"\n{ex}")
-
-    def download_and_extract(self, url):
-        try:
-            extract_to=directory if not DEBUG else 'goodbyeDPI UI/'
-            local_filename = extract_to+url.split('/')[-1]
-            last_persent = 0
-            self.create_logs(f"Downloading archive ...")
-            
-            with requests.get(url, stream=True) as r:
-                total_length = r.headers.get('content-length')
-                if total_length is None:
-                    with open(local_filename, 'wb') as f:
-                        shutil.copyfileobj(r.raw, f)
-                else:
-                    dl = 0
-                    total_length = int(total_length)
-                    with open(local_filename, 'wb') as f:
-                        for data in r.iter_content(chunk_size=4096):
-                            if int((dl / total_length) * 100) > last_persent:
-                                self.create_logs(f"Downloading archive {int((dl / total_length) * 100)} % [{dl}/{total_length}]", True)
-                                last_persent = int((dl / total_length) * 100)
-                                self.progress_var.set((dl / total_length))
-                            dl += len(data)
-                            f.write(data)
-                            self.update_idletasks()
-            self.create_logs(f"Preparing for unpacking ...")
-            if not os.path.exists(extract_to):
-                os.makedirs(extract_to)
-            self.progress_var.set((100))
-            with zipfile.ZipFile(local_filename, 'r') as zip_ref:
-                for member in zip_ref.namelist():
-                    if member.startswith('goodbyeDPI UI/'):
-                        target_path = os.path.join(extract_to, os.path.relpath(member, 'GoodbyeDPI UI'))
-                        target_dir = os.path.dirname(target_path)
-                        if not os.path.exists(target_dir):
-                            os.makedirs(target_dir)
-                        try:
-                            if not member.endswith('/'):
-                                source = zip_ref.open(member)
-                                if str(source.name.split('/')[-1]) != 'update.exe':
-                                    target = open(target_path, "wb")
-                                    self.create_logs(f"Unpacking the '{source.name.split('/')[-1]}' file")
-                                    with source, target:
-                                        shutil.copyfileobj(source, target)
-                        except PermissionError as ex:
-                            logger.error(f'Permission error {ex}')
-                            result=messagebox.askyesno('Permission error',f'{ex}'+"\n"+text.inAppText['update_ask'])
-                            if result:
-                                pass
-                            else:
-                                self.finish_status = 1
-                                logger.error(f'process canceled by user')
-                                return
-            os.remove(local_filename)
-        except Exception as ex:
-            messagebox.showerror('An error just occurred', ex)
-            logger.error(f'download or extract failed {ex}')
-            self.finish_status = 1
+        self.changelog_textbox.configure(state="normal")
+        self.changelog_textbox.insert("end", f"\n[{_time}] {text}")
+        self.changelog_textbox.see("end")
+        self.changelog_textbox.configure(state="disabled")
+        self.status_label.configure(text=text)
 
     def update_program(self):
-        self.finish_status = 0
-        close_procces()
-        self.start_button.destroy()
-        self.restart_button.destroy()
-
-        self.progress_var = DoubleVar(value=0)
-        self.progress_bar = CTkProgressBar(self.content_frame, variable=self.progress_var, width=400)
-        self.progress_bar.pack(pady=(10, 0), padx=10, fill="both")
-
-        self.log_label = CTkLabel(self.content_frame, text=text.inAppText['update_log'], width=400, font=(FONT, 15))
-        self.log_label.pack(pady=0, padx=10, fill="both")
-
-
-        self.create_logs(f"Getting ready URL")
-        self.header_label.configure(text=text.inAppText['update_downloading'])
-        download_url = self.get_download_url()
-        self.create_logs(f"Getting ready for downloading ...")
-        self.download_and_extract(download_url)
-
-        self.header_label.configure(text=text.inAppText['update_installing'])
-        time.sleep(2)
-        if self.finish_status != 0:
-            self.header_label.configure(text=text.inAppText['update_error'])
-        else:
-            self.header_label.configure(text=text.inAppText['update_complete'])
-        self.progress_var.set(100)
-
-        self.finish_update()
-
-    def finish_update(self):
-        self.log_label.destroy()
-        self.progress_bar.destroy()
+        self.create_logs("Starting extraction process")
+        self.extract_zip()
         if self.finish_status == 0:
-            self.checkbox_1 = CTkCheckBox(self.content_frame, text=text.inAppText['run'], command=self.run_program, variable=self.checkbox, onvalue="True", offvalue="False",
-                                    font=(FONT, 15), width=400)
-            self.checkbox_1.pack(pady=10, padx=10, fill="both")
+            self.header_text.configure(text="Update Complete")
+            self.status_label.configure(text="Extraction completed successfully.")
+            self.create_logs("Extraction completed successfully.")
+            self.launch_application()
         else:
-            self.restart_button = CTkButton(self.content_frame, text=text.inAppText['update_retry'], font=(FONT, 15), command=self.start_update_thread, width=400)
-            self.restart_button.pack(pady=(0, 20), padx=10, fill="both")
-        self.start_button = CTkButton(self.content_frame, text=text.inAppText['exit'], font=(FONT, 15), command=self.restart_program, width=400)
-        self.start_button.pack(pady=(0, 20), padx=10, fill="both")
+            self.header_text.configure(text="Update Error")
+            self.status_label.configure(text="An error occurred during extraction.")
+            self.create_logs("An error occurred during extraction.")
+            self.protocol("WM_DELETE_WINDOW", self.safe_exit)
 
-    def run_program(self):
-        pass
+    def extract_zip(self):
+        try:
+            zip_file = self.zip_file_path
+            extract_to = self.unpack_directory
 
-    def restart_program(self):
-        if self.checkbox.get() == 'True' and self.finish_status==0: 
-            try:
-                if directory == '.':
-                    os.execv('../'+"goodbyeDPI.exe", ['../'+"goodbyeDPI.exe"])
-                else:
-                    os.execv(directory+"goodbyeDPI.exe", [directory+"goodbyeDPI.exe"])
-            except Exception as ex:
-                logger.error(f'executing failure {ex}. Directory {directory+"goodbyeDPI.exe"}')
-                messagebox.showerror('An error just occurred', ex)
+            if not os.path.exists(extract_to):
+                os.makedirs(extract_to)
+
+            with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+                members = zip_ref.infolist()
+                total_files = len(members)
+                extracted_files = 0
+
+                index = 0  
+                while index < len(members):
+                    member = members[index]
+                    member_path = member.filename
+                    if member_path.startswith("goodbyeDPI UI/"):
+                        relative_path = member_path[len("goodbyeDPI UI/"):]
+                        if relative_path == '':
+                            index += 1
+                            continue 
+
+                        if relative_path in ["update.exe", "_internal/data/goodbyeDPI/custom_blacklist.txt"]:
+                            self.create_logs(f"Skipping {relative_path}")
+                            index += 1
+                            continue
+
+                        destination_path = os.path.join(extract_to, relative_path)
+                        destination_dir = os.path.dirname(destination_path)
+                        if not os.path.exists(destination_dir):
+                            os.makedirs(destination_dir)
+
+                        if member.is_dir():
+                            if not os.path.exists(destination_path):
+                                os.makedirs(destination_path)
+                        else:
+                            try:
+                                with zip_ref.open(member) as source, open(destination_path, "wb") as target:
+                                    shutil.copyfileobj(source, target)
+                            except OSError as pe:
+                                print(pe.errno)
+                                if '13' in str(pe.errno):
+                                    self.create_logs(f"Permission denied when extracting {relative_path}")
+                                    user_choice = self.show_permission_error_dialog(relative_path)
+                                    if user_choice == "skip":
+                                        self.create_logs(f"Skipping {relative_path}")
+                                        index += 1
+                                        continue
+                                    elif user_choice == "retry":
+                                        self.create_logs(f"Retrying {relative_path}")
+                                        continue 
+                                    elif user_choice == "cancel":
+                                        self.create_logs("Installation cancelled by user.")
+                                        self.finish_status = 1
+                                        return
+                                else:
+                                    self.create_logs(f"Error extracting {relative_path}: {ex}")
+                                    messagebox.showerror('Error', f"Error extracting {relative_path}:\n{ex}")
+                                    self.finish_status = 1
+                                    return
+                            except Exception as ex:
+                                self.create_logs(f"Error extracting {relative_path}: {ex}")
+                                messagebox.showerror('Error', f"Error extracting {relative_path}:\n{ex}")
+                                self.finish_status = 1
+                                return
+
+                        extracted_files += 1
+                        progress = extracted_files / total_files
+                        self.progress_var.set(progress)
+                        self.create_logs(f"Extracted {relative_path}")
+                        self.update_idletasks()
+                    index += 1  
+
+        except Exception as ex:
+            messagebox.showerror('An error occurred', str(ex))
+            logger.error(f'Extraction failed: {ex}', exc_info=True)
+            self.finish_status = 1
+
+    def show_permission_error_dialog(self, file_name):
+        dialog = CTkToplevel(self)
+        dialog.title("Cannot extract file")
+        dialog_width = 400
+        dialog_height = 205
+
+        x = self.winfo_x() + (self.winfo_width() // 2) - (dialog_width // 2)
+        y = self.winfo_y() + (self.winfo_height() // 2) - (dialog_height // 2)
+        dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
+
+        dialog.resizable(False, False)
+        dialog.transient(self)  
+        dialog.grab_set() 
+
+        dialog.after(200, lambda: dialog.iconbitmap(DIRECTORY+'update_icon.ico'))
+        
+        top_frame = CTkFrame(dialog, corner_radius=0)
+        top_frame.pack(fill=X, padx=10, pady=5)
+
+        file_icon_image = Image.open(DIRECTORY+"file_icon.png") 
+        file_icon_photo = CTkImage(file_icon_image, size=(50, 50))
+        file_icon_label = CTkLabel(top_frame, text="", image=file_icon_photo)
+        file_icon_label.pack(side=LEFT, padx=10)
+
+        text_frame = CTkFrame(top_frame, corner_radius=0)
+        text_frame.pack(fill=X, expand=True)
+
+        cannot_extract_label = CTkLabel(text_frame, text=text.inAppText['error1'], font=(FONT, 16, "bold"))
+        cannot_extract_label.pack(anchor='nw', padx=20)
+
+        file_name_label = CTkLabel(text_frame, text=file_name, font=(FONT, 12))
+        file_name_label.pack(anchor='sw', pady=(0, 0), padx=20)
+
+        bottom_frame = CTkFrame(dialog, fg_color='transparent')
+        bottom_frame.pack(fill=BOTH, expand=True, padx=10, pady=5)
+
+        skip_icon = Image.open(DIRECTORY+"skip_icon.png")  
+        skip_icon_photo = CTkImage(light_image=skip_icon, size=(20, 20))
+
+        retry_icon = Image.open(DIRECTORY+"retry_icon.png")  
+        retry_icon_photo = CTkImage(light_image=retry_icon, size=(20, 20))
+
+        cancel_icon = Image.open(DIRECTORY+"cancel_icon.png") 
+        cancel_icon_photo = CTkImage(light_image=cancel_icon, size=(20, 20))
+
+        def on_skip():
+            dialog.destroy()
+            return_value[0] = "skip"
+
+        def on_retry():
+            dialog.destroy()
+            return_value[0] = "retry"
+
+        def on_cancel():
+            if messagebox.askyesno("Confirm Cancellation", "Cancelling the installation may cause issues. Do you wish to continue?"):
+                dialog.destroy()
+                return_value[0] = "cancel"
+            else:
+                pass
+
+        return_value = [None]
+
+        button_width = dialog_width - 40  
+
+        skip_button = CTkButton(bottom_frame, text=text.inAppText['skip'], width=button_width, height=40, corner_radius=0, image=skip_icon_photo, fg_color='transparent', border_width=1, anchor='w', command=on_skip, compound='left')
+        skip_button.configure(font=(FONT, 14))
+        skip_button.pack(fill=X, pady=1)
+
+        retry_button = CTkButton(bottom_frame, text=text.inAppText['retry'], width=button_width, height=40, corner_radius=0, image=retry_icon_photo, fg_color='transparent', border_width=1, anchor='w', command=on_retry, compound='left')
+        retry_button.configure(font=(FONT, 14))
+        retry_button.pack(fill=X, pady=1)
+
+        cancel_button = CTkButton(bottom_frame, text=text.inAppText['exit'], width=button_width, height=40, corner_radius=0, image=cancel_icon_photo, fg_color='transparent', border_width=1, anchor='w', command=on_cancel, compound='left')
+        cancel_button.configure(font=(FONT, 14))
+        cancel_button.pack(fill=X, pady=1)
+
+        self.wait_window(dialog)
+        return return_value[0]
+
+    def launch_application(self):
+        try:
+            goodbye_dpi_exe = os.path.join(self.unpack_directory, "goodbyeDPI.exe")
+            if os.path.exists(goodbye_dpi_exe):
+                self.create_logs("Launching goodbyeDPI.exe with --after-update parameter")
+                subprocess.Popen([goodbye_dpi_exe, "--after-update"])
+
+                self.end = True
+                self.safe_exit()
+                sys.exit(0)
+                
+            else:
+                raise FileNotFoundError(f"{goodbye_dpi_exe} not found")
+        except Exception as ex:
+            messagebox.showerror('An error occurred', str(ex))
+            logger.error(f'Failed to launch application: {ex}', exc_info=True)
+            self.finish_status = 1
+            self.exit_button.configure(state='normal')
+            self.protocol("WM_DELETE_WINDOW", self.safe_exit)
+
+    def safe_exit(self):
+        self.destroy()
+        self.quit()
         sys.exit(0)
 
-def get_latest_release():
-    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/releases/latest"
-    logger.info(f'url used: {url}')
-    response = requests.get(url)
-    data = response.json()
-    latest_version = data["tag_name"]
-    logger.info(f'version for update: {latest_version}')
-
-    return latest_version
-
-version =""
-lang ="EN"
 if __name__ == "__main__":
-    argv = sys.argv[1:]
-    try:
-        options, args = getopt.getopt(argv, "v:l:d:",
-                                    ["version =",
-                                        "language =",
-                                        "directory ="])
-    except:
-        logger.info(text.inAppText['version_error'])
-        messagebox.showinfo('Update assistant', text.inAppText['version_error'])
-    
-    for name, value in options:
-        if name in ['-v', '--version']:
-            version = value
-        elif name in ['-l', '--language']:
-            lang = value
-        elif name in ['-d', '--directory']:
-            directory = value+'/'
-    text.reload_text(lang)
-    if version == '':
-        logger.info(text.inAppText['version_error'])
-        messagebox.showinfo('Update assistant', text.inAppText['version_error'])
-        version = get_latest_release()
-    logger.info('getting ready app')
-    app = UpdaterApp(version)
-    logger.info('app started successfully')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-directory-to-unpack', required=True, help='Directory to unpack to')
+    parser.add_argument('-directory-to-zip', required=True, help='Path to zip file to unpack')
+    parser.add_argument('-localize', required=True, help='Localization for UI')
+    args = parser.parse_args()
+
+    zip_file_path = args.directory_to_zip
+    unpack_directory = args.directory_to_unpack
+    loc = args.localize
+
+    text = Text(loc)
+
+    logger.info('Starting UpdaterApp')
+    app = UpdaterApp(zip_file_path, unpack_directory, text)
+    logger.info('App started successfully')
     app.mainloop()
