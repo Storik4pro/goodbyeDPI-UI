@@ -1,5 +1,6 @@
 import asyncio
 import getopt
+import multiprocessing
 from tkinter import messagebox
 import sys
 import subprocess
@@ -15,7 +16,7 @@ import ctypes.wintypes
 import darkdetect
 from customtkinter import *
 from _data import settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, BACKUP_SETTINGS_FILE_PATH, text
-from utils import install_font, register_app, is_process_running
+from utils import install_font, register_app, is_process_running, change_setting
 from quick_start import merge_settings, merge_blacklist, rename_update_exe
 import pywintypes
 import configparser
@@ -55,6 +56,7 @@ def check_first_run():
 
     
 if __name__ == "__main__":
+    if not DEBUG: multiprocessing.freeze_support()
     argv = sys.argv[1:]
     try:
         options, args = getopt.getopt(argv, "", ["autorun", "after-update"])
@@ -82,6 +84,9 @@ if __name__ == "__main__":
 
         if after_update == 'False' and first_run == 'True':
             update_result = rename_update_exe()
+
+        if first_run == 'True':
+            change_setting('GLOBAL', 'work_directory', DIRECTORY)
         
         set_default_color_theme("blue")
 

@@ -128,6 +128,7 @@ def remove_ansi_sequences(text):
     stage2 = ansi_escape.sub('', stage1)
     print("") # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
     print("") # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
+    print("") # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
     stage2 = stage2.replace("https://github.com/ValdikSS/GoodbyeDPI", "https://github.com/ValdikSS/GoodbyeDPI\n\n")
     return stage2
 
