@@ -134,3 +134,4 @@ app/
 backup/
 reload_resourse.py
 unload_resourse.py
+__settings.py
