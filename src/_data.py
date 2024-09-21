@@ -2,7 +2,7 @@ import configparser
 import os
 import sys
 
-DEBUG = True
+DEBUG = False
 
 if getattr(sys, 'frozen', False):
     application_path = os.path.dirname(sys.executable)
