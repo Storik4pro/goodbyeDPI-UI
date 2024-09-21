@@ -55,7 +55,7 @@ class MainWindow(CTk):
             try:
                 if settings.settings['GLOBAL']['notifyaboutupdates'] == "True":
                     version_to_update = get_latest_release()
-                    self.updates_availible = version==version_to_update
+                    self.updates_availible = version!=version_to_update
                     if self.updates_availible: 
                         change_setting('GLOBAL', 'version_to_update', version_to_update)
                         change_setting('GLOBAL', 'lastcheckedtime', datetime.now().strftime("%H:%M %d.%m.%Y"))
@@ -379,6 +379,7 @@ class MainWindow(CTk):
         
 
     def install_service(self):
+        if settings.settings['GLOBAL']['autorun'] == 'True':return
         try:
             script_path = os.path.abspath(sys.argv[0])
             
@@ -399,11 +400,11 @@ class MainWindow(CTk):
             self.autorun = True
 
             self.show_notification(text.inAppText['autorun_complete'])
-            self.create_region()
         except Exception as ex:
             self.show_notification(f"{ex}", title=text.inAppText['autorun_error'], func=self.install_service, _type='error')
 
     def remove_service(self):
+        if settings.settings['GLOBAL']['autorun'] == 'False':return
         try:
             task_name = "GoodbyeDPI_UI_Autostart"
 
@@ -418,7 +419,6 @@ class MainWindow(CTk):
             settings.reload_settings()
             self.autorun = False
             self.show_notification(text.inAppText['autorun_complete1'])
-            self.create_region()
         except Exception as ex:
             self.show_notification(f"{ex}", title=text.inAppText['autorun_error1'], func=self.remove_service, _type='error')
 
