@@ -135,3 +135,4 @@ backup/
 reload_resourse.py
 unload_resourse.py
 __settings.py
+src/_settings/Gallery/res/qml/page/DraggableWidget.qml
