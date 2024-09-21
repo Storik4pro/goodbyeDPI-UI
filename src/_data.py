@@ -9,7 +9,7 @@ if getattr(sys, 'frozen', False):
 else:
     application_path = os.path.dirname(os.path.abspath(__file__))
 
-DIRECTORY = f'{application_path}/' if not DEBUG else ''
+DIRECTORY = f'{application_path}/_internal/' if not DEBUG else ''
 
 VERSION = "1.1.0"
 
