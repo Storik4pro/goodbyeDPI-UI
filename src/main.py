@@ -97,6 +97,13 @@ if __name__ == "__main__":
 
         window = MainWindow(install_font_result, autorun, after_update if after_update == 'True' else first_run)
 
+        if not DEBUG:
+            config = configparser.ConfigParser()
+            config.read(SETTINGS_FILE_PATH)
+            config['GLOBAL']['is_first_run'] = 'False'
+            with open(SETTINGS_FILE_PATH, 'w') as configfile:
+                config.write(configfile)
+
         mode = settings.settings['APPEARANCE_MODE']['mode']
         set_appearance_mode(mode)
         set_widget_scaling(1)
@@ -105,9 +112,3 @@ if __name__ == "__main__":
             window.mainloop()
         except: pass
         
-        if not DEBUG:
-            config = configparser.ConfigParser()
-            config.read(SETTINGS_FILE_PATH)
-            config['GLOBAL']['is_first_run'] = 'False'
-            with open(SETTINGS_FILE_PATH, 'w') as configfile:
-                config.write(configfile)
