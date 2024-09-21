@@ -25,7 +25,9 @@ GoodbyeDPI UI предоставляет удобный графический �
 6. Поздравляем! Вы завершили установку!
 
 ## Использование
-![image](https://github.com/user-attachments/assets/1c92f591-34a4-46ca-a1da-824489a89ab2)
+![image](https://github.com/user-attachments/assets/3145f2a0-22fd-4b5b-a00e-b54901d2870a)
+![image](https://github.com/user-attachments/assets/fb73530d-b20c-4221-88da-595cfc6a6f3f)
+
 
 1. Запустите приложение.
 2. Выберите регион и настройки DNS.
