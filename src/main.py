@@ -64,7 +64,7 @@ if __name__ == "__main__":
         pass
 
     autorun = 'False'
-    after_update = False
+    after_update = 'False'
     first_run = settings.settings['GLOBAL']['is_first_run'] if not DEBUG else 'False'
     pompt = ' '
     for name, value in options:
@@ -81,6 +81,7 @@ if __name__ == "__main__":
             merge_settings(BACKUP_SETTINGS_FILE_PATH, SETTINGS_FILE_PATH)
             merge_blacklist(GOODBYE_DPI_PATH)
             settings.reload_settings()
+            change_setting('GLOBAL', 'after_update', 'False')
 
         if after_update == 'False' and first_run == 'True':
             update_result = rename_update_exe()

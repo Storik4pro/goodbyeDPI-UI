@@ -385,7 +385,7 @@ class MainWindow(CTk):
             
             task_name = "GoodbyeDPI_UI_Autostart"
 
-            executable = f'"{sys.executable}" --autorun'
+            executable = f'"{sys.executable.replace("Programm Files", "PROGRA~1")}" --autorun'
 
             command = f'schtasks /create /tn "{task_name}" /tr "{executable}" /sc onlogon /rl highest /f'
 

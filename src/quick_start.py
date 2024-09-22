@@ -1,6 +1,8 @@
 import os
 import configparser
 
+from _data import DIRECTORY
+
 def merge_blacklist(goodbye_dpi_path):
     russia_youtube_file = os.path.join(goodbye_dpi_path, 'russia-youtube.txt')
     custom_blacklist_file = os.path.join(goodbye_dpi_path, 'custom_blacklist.txt')
@@ -43,8 +45,8 @@ def merge_settings(backup_settings_file, settings_file):
     print(f"Deleted backup settings file {backup_settings_file}")
 
 def rename_update_exe():
-    update_path = 'update.exe'
-    temp_update_path = '_update.exe'
+    update_path = DIRECTORY.replace("_internal/", "")+'update.exe'
+    temp_update_path = DIRECTORY.replace("_internal/", "")+'_update.exe'
 
     if os.path.exists(update_path):
         os.remove(update_path)
