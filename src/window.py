@@ -210,7 +210,7 @@ class MainWindow(CTk):
                 if data == 'UPDATE_INSTALL':
                     self.stop_process()
                     move_settings_file(SETTINGS_FILE_PATH, BACKUP_SETTINGS_FILE_PATH)
-                    subprocess.Popen(f'update.exe -directory-to-unpack '+ DIRECTORY + ' -directory-to-zip ' + DIRECTORY + "_portable.zip" + '-localize ' + settings.settings['GLOBAL']['language'])
+                    subprocess.Popen(f'update.exe -directory-to-unpack "'+ DIRECTORY.replace("_internal/", "") + '" -directory-to-zip "' + DIRECTORY + "_portable.zip" + '" -localize ' + settings.settings['GLOBAL']['language'])
                     self.on_closing()
                 if data == "SET_MODE":
                     settings.reload_settings()
