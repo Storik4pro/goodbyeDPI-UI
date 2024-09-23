@@ -221,6 +221,7 @@ ScrollablePage {
         isDownloading = true
         progressBar.visible = true
         progressBarDownload.value = 0
+        checkBtn.text = backend.get_element_loc("update_available_btn_t")
         backend.download_update()
     }
 
