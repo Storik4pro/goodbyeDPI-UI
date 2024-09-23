@@ -351,17 +351,20 @@ class MainWindow(CTk):
     def hide_window(self):
         self.show_notification(text.inAppText['tray_icon'], func=self.show_window)
         self.withdraw()
-        self.create_tray_icon()
+        if self.tray_icon:
+            self.tray_icon.visible = True
+        else:
+            self.create_tray_icon()
 
     def create_tray_icon(self):
         image = Image.open(DIRECTORY+"data/icon.png") 
         menu = (item(text.inAppText['maximize'] , self.show_window), item(text.inAppText['quit'] , self.exit_app))
         self.tray_icon = pystray.Icon("name", image, "GoodbyeDPI UI", menu)
-        self.tray_icon.run()
+        threading.Thread(target=self.tray_icon.run, daemon=True).start()
 
     def show_window(self, icon=None, item=None):
         if self.tray_icon:
-            self.tray_icon.stop()
+            self.tray_icon.visible = False
         self.after(10, self.deiconify)
         self.after(10, self.lift)
         self.after(10, self.focus_force)
