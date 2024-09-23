@@ -332,7 +332,7 @@ class MainWindow(CTk):
     
     def on_closing(self):
         if not DEBUG:
-            if self.proc.stop_event.is_set(): self.stop_process() 
+            self.stop_process() 
         if not self.is_update: 
             if self.settings_window and self.settings_window.is_alive():
                 self.settings_window.terminate()
