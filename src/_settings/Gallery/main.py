@@ -103,7 +103,7 @@ class Backend(QObject):
     @Slot(result=str)
     def load_logo(self):
         print(os.path.abspath('data/icon.png'))
-        return 'file:///'+os.path.abspath('data/icon.png')
+        return "qrc:/qt/qml/Gallery/res/image/logo.png" 
 
     # Opening Utils
     @Slot(result=str)
