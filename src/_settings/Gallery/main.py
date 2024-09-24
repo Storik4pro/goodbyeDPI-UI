@@ -183,7 +183,7 @@ class DownloadWorker(QObject):
 
         time.sleep(5)
 
-        return version if version != settings.settings['GLOBAL']['version'] else 'false'
+        return version if version != VERSION else 'false'
     
     
 class UpdateDownloadWorker(QObject):
