@@ -6,6 +6,7 @@ import sys
 import subprocess
 import os
 import ctypes
+from ctypes import windll, c_char_p
 import psutil
 import requests
 from toasted import ToastDismissReason
@@ -16,7 +17,7 @@ import ctypes.wintypes
 import darkdetect
 from customtkinter import *
 from _data import settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, BACKUP_SETTINGS_FILE_PATH, text
-from utils import install_font, register_app, is_process_running, change_setting
+from utils import check_mica, install_font, register_app, is_process_running, change_setting
 from quick_start import merge_settings, merge_blacklist, rename_update_exe
 import pywintypes
 import configparser
@@ -26,6 +27,8 @@ import pystray
 from pystray import MenuItem as item
 from PIL import Image, ImageTk
 import threading
+try: from win32material import *
+except:pass
 
 from window import MainWindow
 
@@ -106,10 +109,13 @@ if __name__ == "__main__":
                 config.write(configfile)
 
         mode = settings.settings['APPEARANCE_MODE']['mode']
-        set_appearance_mode(mode)
+        mica = settings.settings['APPEARANCE_MODE']['use_mica'] if check_mica() else "False"
+        
+        set_appearance_mode(mode if mica == "True" else "dark")
         set_widget_scaling(1)
         try:
             window.iconbitmap(DIRECTORY+'data/icon.ico')
+            if mica == "True": ApplyMica(windll.user32.FindWindowW(c_char_p(None), window.title()), True, False)
             window.mainloop()
         except: pass
         
