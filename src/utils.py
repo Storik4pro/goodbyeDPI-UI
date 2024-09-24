@@ -1,6 +1,7 @@
 import asyncio
 import configparser
 import os
+import platform
 import queue
 import re
 import shutil
@@ -74,11 +75,11 @@ async def show_message(app_id : str, title, description):
     result = await toast.show()
     return result
 
-async def show_error(app_id : str, title, description, btnText):
+async def show_error(app_id : str, title, description, btnText, btnText2):
     toast = Toast(
         app_id = app_id
     )
-    toast.elements = [
+    elements = [
         Image(f"file:///{(DIRECTORY if not DEBUG else 'E:/ByeDPI')+'/data/warning.png'}?foreground=#FFFFFF&background=#F7630C&padding=40",
             placement = ToastImagePlacement.LOGO
         ),
@@ -90,6 +91,15 @@ async def show_error(app_id : str, title, description, btnText):
             style = ToastButtonStyle.CRITICAL
         ),
     ]
+    if btnText2:
+        elements.append(
+            Button(
+                btnText2,
+                arguments = "call2",
+            )
+        )
+    toast.elements = elements
+
     result = await toast.show()
     return result
 
@@ -378,3 +388,8 @@ def change_settings(setting_group, settings_list):
 
 def open_custom_blacklist():
     os.startfile(f"{GOODBYE_DPI_PATH}/custom_blacklist.txt")
+
+def check_mica():
+    version = platform.version()
+    major, minor, build = map(int, version.split('.'))
+    return build >= 22000
