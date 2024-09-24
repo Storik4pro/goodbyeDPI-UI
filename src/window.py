@@ -35,7 +35,7 @@ def func():pass
 BaseWindow = tkinter.Tk if settings.settings.getboolean('APPEARANCE_MODE', 'use_mica') and check_mica() else CTk
 
 class MainWindow(BaseWindow):
-    def __init__(self:CTk|tkinter.Tk, install_font_result, autorun, first_run) -> None:
+    def __init__(self, install_font_result, autorun, first_run) -> None:
         super().__init__()
         self.geometry('300x400')
         self.title(f'goodbyeDPI UI - v {version}')
@@ -210,7 +210,7 @@ class MainWindow(BaseWindow):
                     self.update_txt()
                 if data == 'ADD_TO_AUTORUN':
                     print("adding")
-                    if not DEBUG:
+                    if DEBUG:
                         self.install_service()
                 if data == 'REMOVE_FROM_AUTORUN':
                     print("removing")
@@ -399,11 +399,18 @@ class MainWindow(BaseWindow):
             executable = sys.executable
             command_line = f'"{executable}" --autorun'
 
-            tr_param = f'"\\"{command_line}\\""'
+            tr_param = f'cmd /c "{command_line}"'
 
-            command = f'schtasks /create /tn "{task_name}" /tr {tr_param} /sc onlogon /rl highest /f'
+            command = [
+                'schtasks', '/create',
+                '/tn', task_name,
+                '/tr', tr_param,
+                '/sc', 'onlogon',
+                '/rl', 'highest',
+                '/f'
+            ]
 
-            subprocess.run(command, check=True, shell=True)
+            subprocess.run(command, check=True)
             
             config = configparser.ConfigParser()
             config.read(SETTINGS_FILE_PATH)
@@ -448,7 +455,7 @@ class MainWindow(BaseWindow):
             elif result.arguments == 'call2':
                 error_info = "Type: " +error[0] + "\n" + \
                              "From: " +error[3] + "\n" + \
-                             str(*error[1]) + "\n"
+                             error[1] + "\n"
                 if self.error_info_app and self.error_info_app.winfo_exists():
                     self.error_info_app.destroy()
                 
