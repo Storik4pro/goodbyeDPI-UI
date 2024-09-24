@@ -12,14 +12,16 @@ import psutil
 import pystray
 from pystray import MenuItem as item
 from tktooltip import ToolTip
+import tkinter
 from toasted import ToastDismissReason
 from _data import VERSION, settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, \
                     BACKUP_SETTINGS_FILE_PATH, PARAMETER_MAPPING, VALUE_PARAMETERS, text
-from utils import change_setting, install_font, start_process, download_blacklist, move_settings_file, \
+from utils import change_setting, check_mica, install_font, start_process, download_blacklist, move_settings_file, \
                     ProgressToast, register_app, show_message, show_error, get_latest_release,\
                     is_process_running, GoodbyedpiProcess
 from settings import start_qt_settings
 from pseudo_console_view import GoodbyedpiApp
+from error_view import ErrorWindow
 
 version = VERSION
 
@@ -30,24 +32,31 @@ regions = {
 
 def func():pass
 
-class MainWindow(CTk):
-    def __init__(self, install_font_result, autorun, first_run) -> None:
+BaseWindow = tkinter.Tk if settings.settings.getboolean('APPEARANCE_MODE', 'use_mica') and check_mica() else CTk
+
+class MainWindow(BaseWindow):
+    def __init__(self:CTk|tkinter.Tk, install_font_result, autorun, first_run) -> None:
         super().__init__()
         self.geometry('300x400')
         self.title(f'goodbyeDPI UI - v {version}')
         self.resizable(False, False)
 
+        self.mica = settings.settings.getboolean('APPEARANCE_MODE', 'use_mica') if check_mica() else False
+
+        if self.mica:self.configure(bg="black")
+
         self.notification_thread = None
         self.is_update = False
 
-        self.frame1 = CTkFrame(self, width=400) 
-        self.frame2 = CTkFrame(self, width=400)
+        self.frame1 = CTkFrame(self, width=400, fg_color='#0f0f0f') 
 
         self.region = settings.settings['REGION']['region']
         self.process = False
 
         self.proc = GoodbyedpiProcess(self)
         self.proc_terminal = None
+
+        self.error_info_app = None
 
         self.settings_window = None
         self.updates_availible = False
@@ -100,7 +109,7 @@ class MainWindow(CTk):
             self.show_notification(text.inAppText['font_error_info'], title=text.inAppText['font_error'], func=self.open_folder, button=text.inAppText['fix_manually'], _type='error')
 
     def create_region(self, region=None):
-        self.header_frame = CTkFrame(self)
+        self.header_frame = CTkFrame(self, fg_color='#0f0f0f' if self.mica else None)
         self.logo = CTkImage(light_image=Image.open(DIRECTORY+"data/icon.ico"), size=(50, 50))
         self.logo_label = CTkLabel(self.header_frame, image=self.logo, text="")
         self.logo_label.pack(side="left", pady=10, padx=(10, 5))
@@ -131,7 +140,7 @@ class MainWindow(CTk):
     def create_other(self):
         self.frame1.destroy()
 
-        self.frame1 = CTkFrame(self, width=400)
+        self.frame1 = CTkFrame(self, width=400, fg_color='#0f0f0f' if self.mica else None)
         switch = CTkSwitch(self.frame1, text=text.inAppText['on'], command=self.toggle_process, font=(FONT, 15), width=400,
                                 variable=self.switch_var, onvalue="on", offvalue="off")
         switch.pack(padx=10, pady=(15, 10), side=TOP)
@@ -164,7 +173,7 @@ class MainWindow(CTk):
         try:
             download_blacklist("https://p.thenewone.lol/domains-export.txt", progress_toast)
         except Exception as ex:
-            self.show_notification(f"{ex}",title=text.inAppText['error'], func=self.update_txt, _type='error')
+            self.show_notification(f"{ex}",title=text.inAppText['error'], func=self.update_txt, _type='error', error=[type(ex).__name__, ex.args, 'NOT_CRITICAL_ERROR', 'window:update_blacklist_thread'])
             return_code = 1
             
         self.is_update = False 
@@ -307,7 +316,7 @@ class MainWindow(CTk):
             else:
                 self.show_notification(f"Cannot run process goodbyedpi.exe while updating is running", title=text.inAppText['error'], func=self.start_process, _type='error')
         except Exception as ex:
-            self.show_notification(f"{ex}", title=text.inAppText['error'], func=self.start_process, _type='error')           
+            self.show_notification(f"{ex}", title=text.inAppText['error'], func=self.start_process, _type='error', error=[type(ex).__name__, ex.args, 'CRITICAL_ERROR', 'window:start_process'])           
     
     def stop_process(self, notf=True):
         print("stopping")
@@ -317,7 +326,7 @@ class MainWindow(CTk):
                     self.proc.stop_goodbyedpi()
                 except Exception as ex:
                     if not '[WinError 5]' in str(ex):
-                        self.show_notification(text.inAppText['close_error'] +" goodbyedpi.exe. " + text.inAppText['close_error1'] + str(ex), title=text.inAppText['error_title'], func=self.stop_process, _type='error')
+                        self.show_notification(text.inAppText['close_error'] +" goodbyedpi.exe. " + text.inAppText['close_error1'] + str(ex), title=text.inAppText['error_title'], func=self.stop_process, _type='error', error=[type(ex).__name__, ex.args, 'NOT_CRITICAL_ERROR', 'window:stop_process[self.proc.stop_goodbyedpi]'])
                         return False
                 if notf:self.show_notification(text.inAppText['process'] + " goodbyedpi.exe " + text.inAppText['close_complete'])
                 self.switch_var.set("off")
@@ -326,7 +335,7 @@ class MainWindow(CTk):
                 self.process = False
                 return True
             except Exception as ex:
-                self.show_notification(text.inAppText['close_error'] +" goodbyedpi.exe. " + text.inAppText['close_error1'] + str(ex), title=text.inAppText['error_title'], func=self.stop_process, _type='error')
+                self.show_notification(text.inAppText['close_error'] +" goodbyedpi.exe. " + text.inAppText['close_error1'] + str(ex), title=text.inAppText['error_title'], func=self.stop_process, _type='error', error=[type(ex).__name__, ex.args, 'NOT_CRITICAL_ERROR', 'window:stop_process[internal_error]'])
                 return False
         return True
     
@@ -387,10 +396,12 @@ class MainWindow(CTk):
             script_path = os.path.abspath(sys.argv[0])
             
             task_name = "GoodbyeDPI_UI_Autostart"
+            executable = sys.executable
+            command_line = f'"{executable}" --autorun'
 
-            executable = f'"{sys.executable.replace("Program Files", "PROGRA~1")}" --autorun'
+            tr_param = f'"\\"{command_line}\\""'
 
-            command = f'schtasks /create /tn "{task_name}" /tr "{executable}" /sc onlogon /rl highest /f'
+            command = f'schtasks /create /tn "{task_name}" /tr {tr_param} /sc onlogon /rl highest /f'
 
             subprocess.run(command, check=True, shell=True)
             
@@ -404,7 +415,7 @@ class MainWindow(CTk):
 
             self.show_notification(text.inAppText['autorun_complete'])
         except Exception as ex:
-            self.show_notification(f"{ex}", title=text.inAppText['autorun_error'], func=self.install_service, _type='error')
+            self.show_notification(f"{ex}", title=text.inAppText['autorun_error'], func=self.install_service, _type='error', error=[type(ex).__name__, ex.args, 'NOT_CRITICAL_ERROR', 'window:install_service'])
 
     def remove_service(self):
         if settings.settings['GLOBAL']['autorun'] == 'False':return
@@ -423,16 +434,27 @@ class MainWindow(CTk):
             self.autorun = False
             self.show_notification(text.inAppText['autorun_complete1'])
         except Exception as ex:
-            self.show_notification(f"{ex}", title=text.inAppText['autorun_error1'], func=self.remove_service, _type='error')
+            self.show_notification(f"{ex}", title=text.inAppText['autorun_error1'], func=self.remove_service, _type='error', error=[type(ex).__name__, ex.args, 'NOT_CRITICAL_ERROR', 'window:remove_service'])
 
-    def show_notification_tread(self, title="GoodbyeDPI UI", message='123', button=None, func=None, _type='normal'):
+    def show_notification_tread(self, title="GoodbyeDPI UI", message='123', button=None, func=None, _type='normal', error:tuple=None):
         if _type=='normal':
             result = asyncio.run(show_message("GoodbyeDPI_app", title, message))
         else:
-            result = asyncio.run(show_error("GoodbyeDPI_app", title, message, button if button else text.inAppText['retry']))
+            result = asyncio.run(show_error("GoodbyeDPI_app", title, message, button if button else text.inAppText['retry'], "подробности" if error else None))
         if result.dismiss_reason == ToastDismissReason.NOT_DISMISSED:
-            if func:
-                func()
+            if result.arguments == 'accept':
+                if func:
+                    func()
+            elif result.arguments == 'call2':
+                error_info = "Type: " +error[0] + "\n" + \
+                             "From: " +error[3] + "\n" + \
+                             str(*error[1]) + "\n"
+                if self.error_info_app and self.error_info_app.winfo_exists():
+                    self.error_info_app.destroy()
+                
+                self.error_info_app = ErrorWindow(error[0], error[3], error[2], error_info)
+            else:
+                if func: func()
 
     def connect_terminal(self, error=False):
         if error:
@@ -445,8 +467,8 @@ class MainWindow(CTk):
         else:
             self.proc_terminal.focus()
 
-    def show_notification(self, message, title="GoodbyeDPI UI", func=None, button=None, _type='normal'):
-        self.notification_thread = threading.Thread(target=lambda: self.show_notification_tread(title, message, func=func, button=button, _type=_type))
+    def show_notification(self, message, title="GoodbyeDPI UI", func=None, button=None, _type='normal', error=None):
+        self.notification_thread = threading.Thread(target=lambda: self.show_notification_tread(title, message, func=func, button=button, _type=_type, error=error))
         self.notification_thread.start() 
 
     def on_notification_click(self):
