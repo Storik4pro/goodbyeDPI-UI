@@ -7,6 +7,9 @@ def merge_blacklist(goodbye_dpi_path):
     russia_youtube_file = os.path.join(goodbye_dpi_path, 'russia-youtube.txt')
     custom_blacklist_file = os.path.join(goodbye_dpi_path, 'custom_blacklist.txt')
 
+    if not os.path.exists(russia_youtube_file):
+        return
+
     if os.path.exists(custom_blacklist_file):
         os.remove(custom_blacklist_file)
         print(f"Deleted existing {custom_blacklist_file}")
