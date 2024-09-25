@@ -86,7 +86,7 @@ if __name__ == "__main__":
             settings.reload_settings()
             change_setting('GLOBAL', 'after_update', 'False')
 
-        if after_update == 'False' and first_run == 'True':
+        if after_update == 'True' or first_run == 'True':
             update_result = rename_update_exe()
 
         if first_run == 'True':
