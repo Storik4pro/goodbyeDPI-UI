@@ -1,5 +1,6 @@
 import asyncio
 import configparser
+from datetime import datetime
 import os
 import platform
 import queue
@@ -7,6 +8,7 @@ import re
 import shutil
 import ctypes
 import subprocess
+import tempfile
 import threading
 import time
 import webbrowser
@@ -393,3 +395,57 @@ def check_mica():
     version = platform.version()
     major, minor, build = map(int, version.split('.'))
     return build >= 22000
+
+# autorun
+
+def create_xml(author, executable, arguments):
+  xml_content = f"""<?xml version="1.0" encoding="UTF-16"?>
+  <Task xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+    <RegistrationInfo>
+      <Date>{datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}</Date>
+      <Author>{author}</Author>
+    </RegistrationInfo>
+    <Triggers>
+      <LogonTrigger>
+        <Enabled>true</Enabled>
+      </LogonTrigger>
+    </Triggers>
+    <Principals>
+      <Principal id="Author">
+        <RunLevel>HighestAvailable</RunLevel>
+      </Principal>
+    </Principals>
+    <Settings>
+      <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+      <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+      <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+      <AllowHardTerminate>true</AllowHardTerminate>
+      <StartWhenAvailable>true</StartWhenAvailable>
+      <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+      <IdleSettings>
+        <StopOnIdleEnd>false</StopOnIdleEnd>
+        <RestartOnIdle>false</RestartOnIdle>
+      </IdleSettings>
+      <AllowStartOnDemand>true</AllowStartOnDemand>
+      <Enabled>true</Enabled>
+      <Hidden>false</Hidden>
+      <RunOnlyIfIdle>false</RunOnlyIfIdle>
+      <WakeToRun>false</WakeToRun>
+      <ExecutionTimeLimit>P3D</ExecutionTimeLimit>
+      <Priority>7</Priority>
+    </Settings>
+    <Actions Context="Author">
+      <Exec>
+        <Command>{executable}</Command>
+        <Arguments>{arguments}</Arguments>
+      </Exec>
+    </Actions>
+  </Task>
+  """
+  with tempfile.NamedTemporaryFile('w', encoding='utf-16', suffix='.xml', delete=False) as temp_xml:
+      temp_xml.write(xml_content)
+      temp_xml_path = temp_xml.name
+  return temp_xml_path
+
+def remove_xml(path):
+    os.remove(path)

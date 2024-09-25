@@ -16,7 +16,7 @@ import tkinter
 from toasted import ToastDismissReason
 from _data import VERSION, settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, \
                     BACKUP_SETTINGS_FILE_PATH, PARAMETER_MAPPING, VALUE_PARAMETERS, text
-from utils import change_setting, check_mica, install_font, start_process, download_blacklist, move_settings_file, \
+from utils import change_setting, check_mica, create_xml, install_font, remove_xml, start_process, download_blacklist, move_settings_file, \
                     ProgressToast, register_app, show_message, show_error, get_latest_release,\
                     is_process_running, GoodbyedpiProcess
 from settings import start_qt_settings
@@ -210,12 +210,10 @@ class MainWindow(BaseWindow):
                     self.update_txt()
                 if data == 'ADD_TO_AUTORUN':
                     print("adding")
-                    if DEBUG:
-                        self.install_service()
+                    self.install_service()
                 if data == 'REMOVE_FROM_AUTORUN':
                     print("removing")
-                    if not DEBUG:
-                        self.remove_service()
+                    self.remove_service()
                 if data == 'UPDATE_INSTALL':
                     self.stop_process()
                     move_settings_file(SETTINGS_FILE_PATH, BACKUP_SETTINGS_FILE_PATH)
@@ -393,24 +391,28 @@ class MainWindow(BaseWindow):
     def install_service(self):
         if settings.settings['GLOBAL']['autorun'] == 'True':return
         try:
-            script_path = os.path.abspath(sys.argv[0])
-            
             task_name = "GoodbyeDPI_UI_Autostart"
             executable = sys.executable
-            command_line = f'"{executable}" --autorun'
+            arguments = '--autorun'
 
-            tr_param = f'cmd /c "{command_line}"'
-
+            temp_xml_path = create_xml("GoodbyeDPI UI", executable, arguments)
+            
             command = [
                 'schtasks', '/create',
                 '/tn', task_name,
-                '/tr', tr_param,
-                '/sc', 'onlogon',
-                '/rl', 'highest',
+                '/xml', temp_xml_path,
                 '/f'
             ]
 
-            subprocess.run(command, check=True)
+            result = subprocess.run(
+                command,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=False
+            )
+
+            remove_xml(temp_xml_path)
             
             config = configparser.ConfigParser()
             config.read(SETTINGS_FILE_PATH)
@@ -419,8 +421,16 @@ class MainWindow(BaseWindow):
                 config.write(configfile)
             settings.reload_settings()
             self.autorun = True
-
             self.show_notification(text.inAppText['autorun_complete'])
+        except subprocess.CalledProcessError as ex:
+            error_output = str(ex.stdout.decode('cp866', errors='replace'))
+            self.show_notification(
+                error_output.split("\n")[0],
+                title=text.inAppText['autorun_error'],
+                func=self.install_service,
+                _type='error',
+                error=["SYSTEM ERROR", error_output, 'NOT_CRITICAL_ERROR', 'window:install_service']
+            )
         except Exception as ex:
             self.show_notification(f"{ex}", title=text.inAppText['autorun_error'], func=self.install_service, _type='error', error=[type(ex).__name__, ex.args, 'NOT_CRITICAL_ERROR', 'window:install_service'])
 
@@ -431,7 +441,14 @@ class MainWindow(BaseWindow):
 
             command = f'schtasks /delete /tn "{task_name}" /f'
 
-            subprocess.run(command, check=True, shell=True)
+            result = subprocess.run(
+                command,
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=False
+            )
+            
             config = configparser.ConfigParser()
             config.read(SETTINGS_FILE_PATH)
             config['GLOBAL']['autorun'] = 'False'
@@ -440,6 +457,15 @@ class MainWindow(BaseWindow):
             settings.reload_settings()
             self.autorun = False
             self.show_notification(text.inAppText['autorun_complete1'])
+        except subprocess.CalledProcessError as ex:
+            error_output = str(ex.stdout.decode('cp866', errors='replace'))
+            self.show_notification(
+                error_output.split("\n")[0],
+                title=text.inAppText['autorun_error'],
+                func=self.remove_service,
+                _type='error',
+                error=["SYSTEM ERROR", error_output, 'NOT_CRITICAL_ERROR', 'window:remove_service']
+            )
         except Exception as ex:
             self.show_notification(f"{ex}", title=text.inAppText['autorun_error1'], func=self.remove_service, _type='error', error=[type(ex).__name__, ex.args, 'NOT_CRITICAL_ERROR', 'window:remove_service'])
 
@@ -455,7 +481,7 @@ class MainWindow(BaseWindow):
             elif result.arguments == 'call2':
                 error_info = "Type: " +error[0] + "\n" + \
                              "From: " +error[3] + "\n" + \
-                             error[1] + "\n"
+                             str(error[1]) + "\n"
                 if self.error_info_app and self.error_info_app.winfo_exists():
                     self.error_info_app.destroy()
                 
