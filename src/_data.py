@@ -11,7 +11,7 @@ else:
 
 DIRECTORY = f'{application_path}/_internal/' if not DEBUG else ''
 
-VERSION = "1.1.1"
+VERSION = "1.1.2"
 
 SETTINGS_FILE_PATH = DIRECTORY+'data/settings/settings.ini'
 BACKUP_SETTINGS_FILE_PATH = DIRECTORY+'data/settings/_settings.ini'
