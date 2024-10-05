@@ -292,7 +292,7 @@ class UpdaterApp(CTk):
             goodbye_dpi_exe = os.path.join(self.unpack_directory, "goodbyeDPI.exe")
             if os.path.exists(goodbye_dpi_exe):
                 self.create_logs("Launching goodbyeDPI.exe with --after-update parameter")
-                subprocess.Popen([goodbye_dpi_exe, "--after-update"])
+                subprocess.Popen([goodbye_dpi_exe, "--after-update"], creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
 
                 self.end = True
                 self.safe_exit()

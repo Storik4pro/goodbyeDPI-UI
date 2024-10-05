@@ -75,6 +75,7 @@ if __name__ == "__main__":
             autorun = 'True'
         if name == '--after-update':
             after_update = 'True'
+            change_setting('GLOBAL', 'update_coplete', "False")
         pompt+=name+value
         
     if not is_admin():
@@ -86,10 +87,13 @@ if __name__ == "__main__":
             settings.reload_settings()
             change_setting('GLOBAL', 'after_update', 'False')
 
-        if after_update == 'True' or first_run == 'True':
-            kill_update()
-            update_result = rename_update_exe()
-
+        if after_update == 'True' or first_run == 'True' or settings.settings['GLOBAL']['update_coplete'] == 'False':
+            try:
+                kill_update()
+                update_result = rename_update_exe()
+                change_setting('GLOBAL', 'update_coplete', "True")
+            except:
+                change_setting('GLOBAL', 'update_coplete', "False")
         if first_run == 'True':
             change_setting('GLOBAL', 'work_directory', DIRECTORY)
         
@@ -112,7 +116,7 @@ if __name__ == "__main__":
         mode = settings.settings['APPEARANCE_MODE']['mode']
         mica = settings.settings['APPEARANCE_MODE']['use_mica'] if check_mica() else "False"
         
-        set_appearance_mode(mode if mica == "True" else "dark")
+        set_appearance_mode(mode if mica != "True" else "dark")
         set_widget_scaling(1)
         try:
             window.iconbitmap(DIRECTORY+'data/icon.ico')
