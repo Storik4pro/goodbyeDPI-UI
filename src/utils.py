@@ -200,36 +200,8 @@ class GoodbyedpiProcess:
             self.cleanup()
 
         else:
-            self.proc = subprocess.Popen(
-                command,
-                cwd=os.path.join(GOODBYE_DPI_PATH, 'x86_64'),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                stdin=subprocess.PIPE,
-                text=True,
-                bufsize=1
-            )
-
-            if sys.platform == 'win32':
-                job = ctypes.windll.kernel32.CreateJobObjectW(None, None)
-                extended_info = ctypes.create_string_buffer(24)
-                
-                ctypes.memmove(ctypes.byref(extended_info), b'\0'*24, 24)
-                ctypes.windll.kernel32.SetInformationJobObject(
-                    job, 9, ctypes.byref(extended_info), ctypes.sizeof(extended_info)
-                )
-                ctypes.windll.kernel32.AssignProcessToJobObject(job, self.proc._handle)
-
-            while not self.stop_event.is_set():
-                if self.proc.poll() is None:
-                    data = self.proc.stdout.readline()
-                    if data:
-                        data = remove_ansi_sequences(data)
-                        self.queue.put(data)
-                        self.output.append(data)
-                else:
-                    break
-
+            self.proc = start_process(*command)
+            self.queue.put("Filter activated")
             self.cleanup()
 
         return

@@ -23,7 +23,7 @@ from win32material import *
 from _data import VERSION, settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, \
                     BACKUP_SETTINGS_FILE_PATH, PARAMETER_MAPPING, VALUE_PARAMETERS, text
 from chk_preset import ChkPresetApp
-from utils import change_setting, check_mica, check_urls, create_xml, install_font, remove_xml, sni_support, start_process, download_blacklist, move_settings_file, \
+from utils import change_setting, check_mica, check_urls, check_winpty, create_xml, install_font, remove_xml, sni_support, start_process, download_blacklist, move_settings_file, \
                     ProgressToast, register_app, show_message, show_error, get_latest_release,\
                     is_process_running, GoodbyedpiProcess, stop_servise
 from settings import start_qt_settings
@@ -531,6 +531,17 @@ class MainWindow(BaseWindow):
     
     def stop_process(self, notf=True):
         print("stopping")
+        if not check_winpty():
+            for proc in psutil.process_iter(['pid', 'name']):
+                if proc.info['name'] == 'goodbyedpi.exe':
+                    try:
+                        proc.terminate()
+                        if notf:self.show_notification(text.inAppText['process'] + " goodbyedpi.exe " + text.inAppText['close_complete'])
+                        self.process = None
+                        
+                    except psutil.NoSuchProcess:
+                        self.show_notification((text.inAppText['close_error'] + " goodbyedpi.exe. " + text.inAppText['close_error2']) , title=text.inAppText['error_title'], func=self.stop_process, _type='error')
+                        
         if not self.proc.stop_event.is_set():
             try:
                 try:
