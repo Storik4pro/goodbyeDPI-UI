@@ -16,7 +16,7 @@ from ..Gallery import GlobalConfig
 from ..Gallery.AppInfo import AppInfo
 from ..Gallery.Helper import Logger
 
-from utils import change_setting, change_settings, get_latest_release, get_download_url, download_update, open_custom_blacklist
+from utils import change_setting, change_settings, check_version, check_winpty, get_latest_release, get_download_url, download_update, open_custom_blacklist
 from _data import REPO_NAME, REPO_OWNER, VERSION, settings, DEBUG, DIRECTORY, text
 
 
@@ -108,10 +108,19 @@ class Backend(QObject):
     # Opening Utils
     @Slot(result=str)
     def get_GDPI_version(self):
-        return "0.2.3rc3"
+        return check_version()
+    
     @Slot()
     def open_pseudoconsole(self):
         self.pipe.send('OPEN_PSEUDOCONSOLE')
+
+    @Slot()
+    def open_chkpreset(self):
+        self.pipe.send('OPEN_CHKPRESET')
+
+    @Slot(result=bool)
+    def check_winpty(self):
+        return check_winpty()
 
     @Slot()
     def add_to_autorun(self):
