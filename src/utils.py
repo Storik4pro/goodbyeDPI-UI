@@ -1,8 +1,17 @@
+import hashlib
+import platform
+import sys
+
+def check_winpty():
+    version = platform.version()
+    major, minor, build = map(int, version.split('.'))
+    return build >= 17763
+winpty_support = check_winpty()
+
 import asyncio
 import configparser
 from datetime import datetime
 import os
-import platform
 import queue
 import re
 import shutil
@@ -14,7 +23,7 @@ import time
 import webbrowser
 import winreg
 import psutil
-import winpty
+if winpty_support: import winpty
 from toasted import Button, Image, Progress, Text, Toast, ToastButtonStyle, ToastImagePlacement
 import winsound
 
@@ -165,29 +174,66 @@ class GoodbyedpiProcess:
         command.extend(*args)
         print(command)
 
-        self.pty_process = winpty.PtyProcess.spawn(command, cwd=os.path.join(GOODBYE_DPI_PATH, 'x86_64'))
-
-
         self.output = []
 
-        while not self.stop_event.is_set():
-            if self.pty_process.isalive():
-                try:
-                    data = self.pty_process.read(10000) 
-                    print("data2")
-                    if not data:
-                        pass
-                    data = remove_ansi_sequences(data)
-                    self.queue.put(data)
-                    self.output.append(data)
-                except OSError as e:
-                    print(e)
-                    break
-            else: break
+        if winpty_support:
+            self.pty_process = winpty.PtyProcess.spawn(
+                command,
+                cwd=os.path.join(GOODBYE_DPI_PATH, 'x86_64')
+            )
 
-        self.cleanup()
+            while not self.stop_event.is_set():
+                if self.pty_process.isalive():
+                    try:
+                        data = self.pty_process.read(10000)
+                        if data:
+                            data = remove_ansi_sequences(data)
+                            print("data2")
+                            self.queue.put(data)
+                            self.output.append(data)
+                    except OSError as e:
+                        print(e)
+                        break
+                else:
+                    break
+
+            self.cleanup()
+
+        else:
+            self.proc = subprocess.Popen(
+                command,
+                cwd=os.path.join(GOODBYE_DPI_PATH, 'x86_64'),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                stdin=subprocess.PIPE,
+                text=True,
+                bufsize=1
+            )
+
+            if sys.platform == 'win32':
+                job = ctypes.windll.kernel32.CreateJobObjectW(None, None)
+                extended_info = ctypes.create_string_buffer(24)
+                
+                ctypes.memmove(ctypes.byref(extended_info), b'\0'*24, 24)
+                ctypes.windll.kernel32.SetInformationJobObject(
+                    job, 9, ctypes.byref(extended_info), ctypes.sizeof(extended_info)
+                )
+                ctypes.windll.kernel32.AssignProcessToJobObject(job, self.proc._handle)
+
+            while not self.stop_event.is_set():
+                if self.proc.poll() is None:
+                    data = self.proc.stdout.readline()
+                    if data:
+                        data = remove_ansi_sequences(data)
+                        self.queue.put(data)
+                        self.output.append(data)
+                else:
+                    break
+
+            self.cleanup()
 
         return
+
 
     def cleanup(self):
         if self.pty_process:
@@ -212,7 +258,7 @@ class GoodbyedpiProcess:
             if self.app: 
                 self.app.after(5000, self.check_process_status)
 
-    def start_goodbyedpi(self, *args):
+    def start_goodbyedpi(self, notf=True, *args):
         if not self.goodbyedpi_thread or not self.goodbyedpi_thread.is_alive():
             self.stop_event.clear()
             self.goodbyedpi_thread = threading.Thread(target=lambda: self.start_goodbyedpi_thread(*args))
@@ -221,7 +267,7 @@ class GoodbyedpiProcess:
             if self.output_app and self.output_app.winfo_exists():
                 self.output_app.clear_output()
 
-            self.check_queue()
+            self.check_queue(notf)
             
             return True
         else:
@@ -234,13 +280,13 @@ class GoodbyedpiProcess:
         if self.pty_process:
             self.pty_process.close(True)
 
-    def check_queue(self):
+    def check_queue(self, notf=True):
         while not self.queue.empty():
             data = self.queue.get()
             if self.output_app and self.output_app.winfo_exists():
                 self.output_app.add_output(data)
             if "Filter activated" in data:
-                self.app.show_notification(text.inAppText['process']+" goodbyedpi.exe " + text.inAppText['run_comlete'])
+                if notf: self.app.show_notification(text.inAppText['process']+" goodbyedpi.exe " + text.inAppText['run_comlete'])
             elif "Error opening filter" in data or "unknown option" in data:
                 self.reason = 'for unknown reason'
                 self.error = True
@@ -249,7 +295,7 @@ class GoodbyedpiProcess:
                 self.app.connect_terminal(error=True)
                 self.app.show_notification(f"Unable to connect goodbyedpi.exe. See pseudo console for more information", title=text.inAppText['error'], button='open pseudo console', func=self.app.connect_terminal, _type='error')
         if self.goodbyedpi_thread.is_alive():
-            self.app.after(100, self.check_queue)
+            self.app.after(100, lambda: self.check_queue(notf=notf))
 
     def connect_app(self, output_app):
         self.output_app = output_app
@@ -449,3 +495,60 @@ def create_xml(author, executable, arguments):
 
 def remove_xml(path):
     os.remove(path)
+
+# goodbyeDPI
+
+hash_gdpi_64_023rc32="afa7f66231b9cec7237e738b622c0181"
+hash_gdpi_64_023testbuild="4d060be292eb50783c0d8022d4bf246c"
+hash_gdpi_64_testbuild_by_Decavoid="c25b01de6d5471f3b7337122049827f6"
+
+def calculate_hash(file_path, algorithm='md5'):
+    hash_function = hashlib.new(algorithm)
+
+    with open(file_path, 'rb') as f:
+        while chunk := f.read(8192):
+            hash_function.update(chunk)
+
+    return hash_function.hexdigest()
+
+def check_version(gdpi_exe_fullpath=GOODBYE_DPI_PATH+"\\x86_64\\goodbyedpi.exe"):
+    hash_value = calculate_hash(gdpi_exe_fullpath)
+    
+    if hash_value == hash_gdpi_64_023testbuild:
+        return "test version - FWSNI support"
+    elif hash_value == hash_gdpi_64_testbuild_by_Decavoid:
+        return "test version (Decavoid) - FWSNI support"
+    elif hash_value == hash_gdpi_64_023rc32:
+        return "0.2.3-rc3-2"
+    
+    return "UNKNOWN VERSION"
+
+def sni_support():
+    if "FWSNI support" in check_version():
+        return True
+    else:
+        return False 
+    
+def check_urls():
+    with open(f"{'E:/ByeDPI' if not DEBUG else '' + GOODBYE_DPI_PATH}/custom_blacklist.txt", 'r') as file:
+        urls = file.read().splitlines()
+
+    sites = []
+    print(urls)
+
+    for url in urls:
+        try:
+            print(url)
+            response = requests.head("https://"+url, timeout=5)
+            print(response)
+            if response.status_code != 404:
+                sites.append("https://"+url)
+        except requests.RequestException as ex:
+            if "Read timed out." in str(ex):
+                sites.append("https://"+url)
+            print(str(ex), ex)
+            continue
+        except Exception as ex:
+            continue
+    
+    return sites
