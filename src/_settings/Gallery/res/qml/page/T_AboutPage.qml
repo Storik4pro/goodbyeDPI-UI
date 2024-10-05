@@ -273,6 +273,94 @@ ScrollablePage {
                         }
                     }
                 }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: -15
+                    Layout.topMargin: 5
+                    Layout.bottomMargin: 5
+                    height: 3
+                    color: Qt.rgba(0.0, 0.0, 0.0, 0.3)
+                    opacity: 0.3
+                }
+                
+                ColumnLayout {
+
+                    RowLayout {
+                        spacing: 20
+                        anchors {
+                            verticalCenter: parent.verticalCenter
+                            left: parent.left
+                            leftMargin: 15
+                        }
+                        
+                        Column {
+                            spacing: 10
+                            anchors.verticalCenter: parent.verticalCenter
+                            Label {
+                                text: "BlockCheck strategies"
+                                font: Typography.subtitle
+                                Layout.preferredWidth: 350
+                                Layout.topMargin:0
+                            }
+                            RowLayout {
+                                spacing: 10
+                                Label {
+                                    text: backend.get_element_loc('about_about')
+                                    font: Typography.body
+                                    Layout.preferredWidth: 350
+                                }
+                                CopyableText {
+                                    text: backend.get_element_loc('about_blockcheck')
+                                    font: Typography.body
+                                    color: "#c0c0c0"
+                                }
+                            }
+
+                            RowLayout {
+                                spacing: 10
+                                Label {
+                                    text: "Developer"
+                                    font: Typography.body
+                                    Layout.preferredWidth: 350
+                                }
+                                CopyableText {
+                                    text: 'Ori'
+                                    font: Typography.body
+                                    color: "#c0c0c0"
+                                }
+                            }
+
+                            RowLayout {
+                                spacing: 10
+                                Label {
+                                    text: "Links:"
+                                    font: Typography.body
+                                    Layout.preferredWidth: 350
+                                }
+                                
+                            }
+                            RowLayout {
+                                spacing: 10
+                                ColumnLayout {
+                                    Layout.preferredWidth: 350
+
+                                    HyperlinkButton{
+                                        anchors {
+                                            leftMargin: 15
+                                            topMargin:0
+                                        }
+                                        text: "https://ntc.party/"
+                                        onClicked: {
+                                            Qt.openUrlExternally("https://ntc.party/t/goodcheck-%D0%B1%D0%BB%D0%BE%D0%BA%D1%87%D0%B5%D0%BA-%D1%81%D0%BA%D1%80%D0%B8%D0%BF%D1%82-%D0%B4%D0%BB%D1%8F-goodbyedpi-zapret-byedpi/10880")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                }
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.leftMargin: -15
