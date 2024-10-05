@@ -21,6 +21,7 @@ ScrollablePage {
             Layout.minimumWidth: 300 
             Layout.maximumWidth: 1000
             Layout.alignment: Qt.AlignHCenter
+            enabled: backend.check_winpty()
             ColumnLayout{
                 spacing: 2
                 anchors{
@@ -68,6 +69,63 @@ ScrollablePage {
             onClicked: {
                 backend.open_pseudoconsole()
             }
+        }
+        Button{
+            Layout.preferredHeight: 68
+            Layout.fillWidth: true
+            Layout.preferredWidth: Math.min(1000, parent.width * 0.9) 
+            Layout.minimumWidth: 300 
+            Layout.maximumWidth: 1000
+            Layout.alignment: Qt.AlignHCenter
+            visible: backend.getBool('GLOBAL', 'usebetafeatures')
+            ColumnLayout{
+                spacing: 2
+                anchors{
+                    verticalCenter: parent.verticalCenter
+                    left: parent.left
+                    leftMargin: 20
+                }
+                Label{
+                    text: backend.get_element_loc('chk_preset')
+                    horizontalAlignment: Qt.AlignHCenter
+                    font: Typography.body
+                }
+                Label {
+                    text: backend.get_element_loc('chk_preset_tip')
+                    horizontalAlignment: Qt.AlignHCenter
+                    font: Typography.caption
+                    color: "#c0c0c0"
+                }
+            }
+            Item{
+                implicitWidth: 50
+                Layout.fillHeight: true
+                anchors{
+                    verticalCenter: parent.verticalCenter
+                    right: parent.right
+                    rightMargin: 0
+                }
+                IconButton{
+                    id: btn_icon1
+                    anchors.centerIn: parent
+                    width: 30
+                    height: 30
+                    Icon{
+                        anchors.centerIn: parent
+                        source: FluentIcons.graph_OpenInNewWindow
+                        width: 15
+                        height: 15
+                    }
+                    onClicked: {
+                        backend.open_chkpreset()
+                    }
+                }
+            }
+            
+            onClicked: {
+                backend.open_chkpreset()
+            }
+            
         }
     }
 }
