@@ -21,7 +21,6 @@ ELEMENT_COLOR = '#212121' if mica else None
 class ChkPresetApp(BaseWindow):
     def __init__(self, app, start_func, start_additional):
         super().__init__()
-        self.transient(app)
         self.app = app
 
         window_width = 800
@@ -372,7 +371,7 @@ class ChkPresetApp(BaseWindow):
         print(self.stop_servise)
 
     def start(self):
-        self.app.set_focus()
+        self.app._set_focus()
         self.grab_set()
 
         if "1. " in self.combobox.get():

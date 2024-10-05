@@ -67,7 +67,9 @@ class Backend(QObject):
     
     @Slot(str, str, result=bool)
     def getBool(self, key, setting):
-        return True if settings.settings[key][setting] == 'True' else False
+        sett = settings.settings[key][setting]
+        if setting == "usebetafeatures" and DEBUG: sett = "True"
+        return True if sett == 'True' else False
     
     @Slot(str, str, str)  
     def changeValue(self, key, setting, value):

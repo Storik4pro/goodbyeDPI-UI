@@ -62,6 +62,7 @@ class MainWindow(BaseWindow):
 
         self.proc = GoodbyedpiProcess(self)
         self.proc_terminal = None
+        self.chk_preset_window = None
 
         self.timeout = 5000
         self.error_info_app = None
@@ -199,14 +200,21 @@ class MainWindow(BaseWindow):
         update_thread = threading.Thread(target=self.update_blacklist_thread)
         update_thread.start()
 
-    def set_focus(self):
+    def _set_focus(self):
         if self.settings_window and self.settings_window.is_alive():
             self.settings_window.terminate()
 
     def chkn_start_settings(self):
-        self.chk_preset_window = ChkPresetApp(self, self.check_presets, self.check_strategies_from_file)
-        if settings.settings.getboolean('APPEARANCE_MODE', 'use_mica') and check_mica():
-            ApplyMica(ctypes.windll.user32.GetParent(self.chk_preset_window.winfo_id()), True, False)
+        if self.chk_preset_window is None or not self.chk_preset_window.winfo_exists():
+            self.chk_preset_window = ChkPresetApp(self, self.check_presets, self.check_strategies_from_file)
+            hwnd = ctypes.windll.user32.GetParent(self.chk_preset_window.winfo_id())
+            if settings.settings.getboolean('APPEARANCE_MODE', 'use_mica') and check_mica():
+                ApplyMica(hwnd, True, False)
+        if self.chk_preset_window.winfo_exists():
+            self.chk_preset_window.lift()
+            self.chk_preset_window.attributes('-topmost', True)
+            self.chk_preset_window.focus_force()
+            self.chk_preset_window.after(0, lambda: self.chk_preset_window.attributes('-topmost', False))
 
     def check_presets(self, put_func, timeout, _stop_servise):
         best_preset = None
@@ -439,6 +447,7 @@ class MainWindow(BaseWindow):
                 if data == "OPEN_CHKPRESET":
                     self.chkn_start_settings()
 
+
             self.after(100, check_pipe)
 
         self.after(100, check_pipe) 
@@ -579,6 +588,8 @@ class MainWindow(BaseWindow):
                 self.proc_terminal.destroy()
             if self.settings_window and self.settings_window.is_alive():
                 self.settings_window.terminate()
+            if self.chk_preset_window and self.chk_preset_window.winfo_exists():
+                self.chk_preset_window.destroy()
             self.hide_window()
 
     def hide_window(self):
@@ -723,8 +734,11 @@ class MainWindow(BaseWindow):
             self.proc_terminal = GoodbyedpiApp(self.stop_process, self.start_process)
             self.proc.connect_app(self.proc_terminal)
 
-        else:
-            self.proc_terminal.focus()
+        if self.proc_terminal.winfo_exists():
+            self.proc_terminal.lift()
+            self.proc_terminal.attributes('-topmost', True)
+            self.proc_terminal.focus_force()
+            self.proc_terminal.after(0, lambda: self.proc_terminal.attributes('-topmost', False))
 
     def show_notification(self, message, title="GoodbyeDPI UI", func=None, button=None, _type='normal', error=None, icon=True):
         self.notification_thread = threading.Thread(target=lambda: self.show_notification_tread(title, message, func=func, button=button, _type=_type, error=error, icon=icon))
