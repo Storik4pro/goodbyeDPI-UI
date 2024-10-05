@@ -18,7 +18,7 @@ import darkdetect
 from customtkinter import *
 from _data import settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, BACKUP_SETTINGS_FILE_PATH, text
 from utils import check_mica, install_font, register_app, is_process_running, change_setting
-from quick_start import merge_settings, merge_blacklist, rename_update_exe
+from quick_start import kill_update, merge_settings, merge_blacklist, rename_update_exe
 import pywintypes
 import configparser
 from win10toast_click import ToastNotifier
@@ -87,6 +87,7 @@ if __name__ == "__main__":
             change_setting('GLOBAL', 'after_update', 'False')
 
         if after_update == 'True' or first_run == 'True':
+            kill_update()
             update_result = rename_update_exe()
 
         if first_run == 'True':
