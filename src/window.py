@@ -1,24 +1,31 @@
 import asyncio
 import configparser
+import ctypes
 from datetime import datetime
 import random
 import shlex
+import socket
 import subprocess
 import threading
+import time
 from tkinter import messagebox
 from PIL import Image, ImageTk
 from customtkinter import *
 import psutil
 import pystray
 from pystray import MenuItem as item
+import requests
 from tktooltip import ToolTip
 import tkinter
+from concurrent.futures import ThreadPoolExecutor
 from toasted import ToastDismissReason
+from win32material import *
 from _data import VERSION, settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, \
                     BACKUP_SETTINGS_FILE_PATH, PARAMETER_MAPPING, VALUE_PARAMETERS, text
-from utils import change_setting, check_mica, create_xml, install_font, remove_xml, start_process, download_blacklist, move_settings_file, \
+from chk_preset import ChkPresetApp
+from utils import change_setting, check_mica, check_urls, create_xml, install_font, remove_xml, sni_support, start_process, download_blacklist, move_settings_file, \
                     ProgressToast, register_app, show_message, show_error, get_latest_release,\
-                    is_process_running, GoodbyedpiProcess
+                    is_process_running, GoodbyedpiProcess, stop_servise
 from settings import start_qt_settings
 from pseudo_console_view import GoodbyedpiApp
 from error_view import ErrorWindow
@@ -56,6 +63,7 @@ class MainWindow(BaseWindow):
         self.proc = GoodbyedpiProcess(self)
         self.proc_terminal = None
 
+        self.timeout = 5000
         self.error_info_app = None
 
         self.settings_window = None
@@ -65,9 +73,13 @@ class MainWindow(BaseWindow):
                 if settings.settings['GLOBAL']['notifyaboutupdates'] == "True":
                     version_to_update = get_latest_release()
                     self.updates_availible = version!=version_to_update
+                    change_setting('GLOBAL', 'lastcheckedtime', datetime.now().strftime("%H:%M %d.%m.%Y"))
                     if self.updates_availible: 
                         change_setting('GLOBAL', 'version_to_update', version_to_update)
-                        change_setting('GLOBAL', 'lastcheckedtime', datetime.now().strftime("%H:%M %d.%m.%Y"))
+                        change_setting('GLOBAL', 'updatesavailable', "True")
+                    else:
+                        change_setting('GLOBAL', 'updatesavailable', "False")
+                        change_setting('GLOBAL', 'version_to_update', "")
 
             except:pass
         facts = tuple(text.inAppText[f'fact{i}'] for i in range(1, 16))
@@ -99,15 +111,16 @@ class MainWindow(BaseWindow):
         self.switch_var = StringVar(value="on" if self.process else "off")
         print(self.autorun)
         if self.autorun:
-            
             self.perform_autorun_actions()
             self.hide_window()
             return
         self.create_region()
-        
+
         if not install_font_result:
             self.show_notification(text.inAppText['font_error_info'], title=text.inAppText['font_error'], func=self.open_folder, button=text.inAppText['fix_manually'], _type='error')
-
+        if self.updates_availible:
+            self.show_notification(text.inAppText['update_available_info'], func=self.open_settings, button=text.inAppText['open_settings'].lower())
+    
     def create_region(self, region=None):
         self.header_frame = CTkFrame(self, fg_color='#0f0f0f' if self.mica else None)
         self.logo = CTkImage(light_image=Image.open(DIRECTORY+"data/icon.ico"), size=(50, 50))
@@ -129,7 +142,7 @@ class MainWindow(BaseWindow):
         self.header_text_frame.pack(fill='x', padx=(0,5))
         self.header_frame.pack(fill="x",pady=(10, 0), padx=10)
 
-        reg = CTkButton(self, text=text.inAppText['open_settings'], font=(FONT, 15), command=self.open_settings, width=200)
+        reg = CTkButton(self, text=text.inAppText['open_settings'].lower(), font=(FONT, 15), command=self.open_settings, width=200)
         
         
 
@@ -184,10 +197,208 @@ class MainWindow(BaseWindow):
 
     def update_txt(self):
         update_thread = threading.Thread(target=self.update_blacklist_thread)
-        update_thread.start()   
+        update_thread.start()
+
+    def set_focus(self):
+        if self.settings_window and self.settings_window.is_alive():
+            self.settings_window.terminate()
+
+    def chkn_start_settings(self):
+        self.chk_preset_window = ChkPresetApp(self, self.check_presets, self.check_strategies_from_file)
+        if settings.settings.getboolean('APPEARANCE_MODE', 'use_mica') and check_mica():
+            ApplyMica(ctypes.windll.user32.GetParent(self.chk_preset_window.winfo_id()), True, False)
+
+    def check_presets(self, put_func, timeout, _stop_servise):
+        best_preset = None
+        best_total_response_time = None
+        self.timeout = timeout
+
+        domains_to_check = check_urls()
+        if not domains_to_check:
+            message = text.inAppText["empty_domains_list"]
+            put_func("[CRITICAL_ERROR] " + message)
+            return
+
+        message = text.inAppText["tool_prepared"]
+        put_func("[INFO] " + message)
+        for preset in range(1, 12):
+            message = text.inAppText["checking_preset"].format(preset)
+            put_func("[INFO] ==========> " + message)
+            if not DEBUG: self.start_process(notf=False, preset=preset)
+            time.sleep(1)
+
+            total_response_time = 0
+            all_sites_accessible = True
+
+            site_results = self.measure_sites_parallel(domains_to_check)
+
+            for url, (response_time, accessible) in site_results.items():
+                if not accessible:
+                    all_sites_accessible = False
+                    error_message = text.inAppText["preset_site_unavailable"].format(preset, url)
+                    put_func("[ERROR] " + error_message)
+                    break
+                info_message = text.inAppText["preset_site_available"].format(
+                    preset, url, int(response_time)
+                )
+                put_func("[INFO] " + info_message)
+                total_response_time += response_time
+
+            if not DEBUG: self.stop_process(notf=False)
+            if _stop_servise:
+                put_func("[INFO] " + text.inAppText["stopping_windrivert_service"])
+                try:
+                    if not DEBUG: stop_servise()
+                    put_func("[INFO] " + text.inAppText["service_stopped"])
+                except Exception as ex:
+                    error_message = text.inAppText["failed_to_stop_service"].format(ex)
+                    put_func("[ERROR] " + error_message)
+
+            if all_sites_accessible:
+                info_message = text.inAppText["preset_all_sites_accessible"].format(preset)
+                put_func(f"[INFO_CNN{preset}] " + info_message)
+                if best_total_response_time is None or total_response_time < best_total_response_time:
+                    best_preset = preset
+                    best_total_response_time = total_response_time
+            else:
+                error_message = text.inAppText["preset_some_sites_unavailable"].format(preset)
+                put_func(f"[ERROR_CNN{preset}] " + error_message)
+
+        if best_preset is not None:
+            info_message = text.inAppText["best_preset_found"].format(best_preset)
+            put_func(f"[INFO_CNNBST{best_preset}] " + info_message)
+        else:
+            put_func("[ERROR_CNNALL] " + text.inAppText["no_suitable_preset_found"])
+
+        put_func("[END] Completed")
+
+    def check_strategies_from_file(self, put_func, timeout, HEX, SNI, _stop_servise):
+        self.timeout = timeout
+
+        domains_to_check = check_urls()
+        if not domains_to_check:
+            message = text.inAppText["empty_domains_list"]
+            put_func("[CRITICAL_ERROR] " + message)
+            return
+
+        strategies_file = f'{GOODBYE_DPI_PATH}+strategies_gdpi.txt'
+        try:
+            with open(strategies_file, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+        except FileNotFoundError:
+            error_message = text.inAppText["strategies_file_not_found"].format(strategies_file)
+            put_func("[CRITICAL_ERROR] " + error_message)
+            return
+
+        strategies = [
+            line.strip() for line in lines if not line.strip().startswith('/') and line.strip()
+        ]
+
+        if not strategies:
+            put_func("[CRITICAL_ERROR] " + text.inAppText["no_strategies_to_check"])
+            return
+
+        best_strategy = None
+        best_total_response_time = None
+
+        put_func("[INFO] " + text.inAppText["tool_prepared"])
+        for i, strategy_line in enumerate(strategies):
+            message = text.inAppText["checking_strategy"].format(strategy_line)
+            put_func("[INFO] ==========> " + message)
+            strategy_line = strategy_line.replace("FAKEHEX", HEX)
+            if "FAKESNI" in strategy_line:
+                if sni_support():
+                    strategy_line = strategy_line.replace("FAKESNI", SNI)
+                else:
+                    put_func("[INFO] " + text.inAppText["skipping_fakesni_strategies"])
+                    break
+
+            args = strategy_line.split()
+            if not DEBUG: self.start_process(notf=False, args=args)
+            time.sleep(1)
+
+            total_response_time = 0
+            all_sites_accessible = True
+
+            site_results = self.measure_sites_parallel(domains_to_check)
+
+            for url, (response_time, accessible) in site_results.items():
+                if not accessible:
+                    all_sites_accessible = False
+                    error_message = text.inAppText["strategy_site_unavailable"].format(
+                        strategy_line, url
+                    )
+                    put_func("[ERROR] " + error_message)
+                    break
+                info_message = text.inAppText["strategy_site_available"].format(
+                    strategy_line, url, int(response_time)
+                )
+                put_func("[INFO] " + info_message)
+                total_response_time += response_time
+
+            if not DEBUG: self.stop_process(notf=False)
+            if _stop_servise:
+                put_func("[INFO] " + text.inAppText["stopping_windrivert_service"])
+                try:
+                    if not DEBUG: stop_servise()
+                    put_func("[INFO] " + text.inAppText["service_stopped"])
+                except Exception as ex:
+                    error_message = text.inAppText["failed_to_stop_service"].format(ex)
+                    put_func("[ERROR] " + error_message)
+
+            if all_sites_accessible:
+                info_message = text.inAppText["strategy_all_sites_accessible"].format(strategy_line)
+                put_func(f"[INFO_ST{i}] " + info_message)
+                if best_total_response_time is None or total_response_time < best_total_response_time:
+                    best_strategy = strategy_line
+                    best_total_response_time = total_response_time
+            else:
+                error_message = text.inAppText["strategy_some_sites_unavailable"].format(
+                    strategy_line
+                )
+                put_func(f"[ERROR_ST{i}] " + error_message)
+
+        if best_strategy is not None:
+            info_message = text.inAppText["best_strategy_found"].format(best_strategy)
+            put_func(f"[INFO_STBST{i}] " + info_message)
+        else:
+            put_func("[ERROR_CNNALL] " + text.inAppText["no_suitable_strategy_found"])
+
+        put_func("[END] Completed")
+
+
+    def measure_site_access(self, url):
+        try:
+            start = time.time()
+            response = requests.get(url, timeout=int(self.timeout)//1000)
+            end = time.time()
+            response_time = (end - start) * 1000 
+
+            if response.status_code == 200:
+                return response_time, True
+            else:
+                return response_time, False
+
+        except requests.RequestException:
+            return None, False
+
+    def measure_sites_parallel(self, urls):
+        site_results = {}
+        with ThreadPoolExecutor() as executor:
+            futures = {executor.submit(self.measure_site_access, url): url for url in urls}
+            for future in futures:
+                url = futures[future]
+                try:
+                    response_time, accessible = future.result()
+                    site_results[url] = (response_time, accessible)
+                except Exception:
+                    site_results[url] = (None, False)
+        return site_results
+
     
     def open_settings(self):
         if self.settings_window is None or not self.settings_window.is_alive():
+            self.show_window()
             self._open_settings()
 
     def _open_settings(self):
@@ -223,13 +434,15 @@ class MainWindow(BaseWindow):
                     settings.reload_settings()
                     if settings.settings['APPEARANCE_MODE']['mode'] != get_appearance_mode():
                         set_appearance_mode(settings.settings['APPEARANCE_MODE']['mode'])
+                if data == "OPEN_CHKPRESET":
+                    self.chkn_start_settings()
 
             self.after(100, check_pipe)
 
         self.after(100, check_pipe) 
 
-    def check_args(self):
-        if settings.settings['GLOBAL']['use_advanced_mode'] == 'True':
+    def check_args(self, preset):
+        if settings.settings['GLOBAL']['use_advanced_mode'] == 'True' and preset == -1:
             command = []
 
             params = settings.settings['GOODBYEDPI']
@@ -278,7 +491,7 @@ class MainWindow(BaseWindow):
         else:
             command = []
 
-            preset = int(settings.settings['GOODBYEDPI']['preset'])
+            preset = int(settings.settings['GOODBYEDPI']['preset']) if preset == -1 else preset
             if preset <= 9:
                 command.append("-"+str(preset))
             elif preset == 10:
@@ -301,12 +514,12 @@ class MainWindow(BaseWindow):
         else:
             self.stop_process()
     
-    def start_process(self, notf=True):
+    def start_process(self, notf=True, preset=-1, args:list=None):
         settings.reload_settings()
-        _args = self.check_args()
+        _args = self.check_args(preset) if args is None else args
         try:
             if not self.is_update:
-                _q = self.proc.start_goodbyedpi(_args)
+                _q = self.proc.start_goodbyedpi(notf, _args)
                 self.switch_var.set("on")
                 self.proc_state.set(text.inAppText['work'] if self.switch_var.get() == 'on' else text.inAppText['stop'])
                 print(self.switch_var.get())
@@ -469,11 +682,11 @@ class MainWindow(BaseWindow):
         except Exception as ex:
             self.show_notification(f"{ex}", title=text.inAppText['autorun_error1'], func=self.remove_service, _type='error', error=[type(ex).__name__, ex.args, 'NOT_CRITICAL_ERROR', 'window:remove_service'])
 
-    def show_notification_tread(self, title="GoodbyeDPI UI", message='123', button=None, func=None, _type='normal', error:tuple=None):
+    def show_notification_tread(self, title="GoodbyeDPI UI", message='123', button=None, func=None, _type='normal', error:tuple=None, icon:bool=True):
         if _type=='normal':
             result = asyncio.run(show_message("GoodbyeDPI_app", title, message))
         else:
-            result = asyncio.run(show_error("GoodbyeDPI_app", title, message, button if button else text.inAppText['retry'], "подробности" if error else None))
+            result = asyncio.run(show_error("GoodbyeDPI_app", title, message, button if button else text.inAppText['retry'], text.inAppText['about_first'].lower() if error else None))
         if result.dismiss_reason == ToastDismissReason.NOT_DISMISSED:
             if result.arguments == 'accept':
                 if func:
@@ -500,8 +713,8 @@ class MainWindow(BaseWindow):
         else:
             self.proc_terminal.focus()
 
-    def show_notification(self, message, title="GoodbyeDPI UI", func=None, button=None, _type='normal', error=None):
-        self.notification_thread = threading.Thread(target=lambda: self.show_notification_tread(title, message, func=func, button=button, _type=_type, error=error))
+    def show_notification(self, message, title="GoodbyeDPI UI", func=None, button=None, _type='normal', error=None, icon=True):
+        self.notification_thread = threading.Thread(target=lambda: self.show_notification_tread(title, message, func=func, button=button, _type=_type, error=error, icon=icon))
         self.notification_thread.start() 
 
     def on_notification_click(self):
