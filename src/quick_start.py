@@ -61,6 +61,9 @@ def rename_update_exe():
     update_path = DIRECTORY.replace("_internal/", "")+'update.exe'
     temp_update_path = DIRECTORY.replace("_internal/", "")+'_update.exe'
 
+    if not os.path.exists(temp_update_path):
+        return
+
     if os.path.exists(update_path):
         os.remove(update_path)
 
