@@ -103,7 +103,7 @@
             "QtQml",
             "QtQuick"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/ControlBackgroundImpl.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/ControlBackgroundImpl.py"
     },
     {
         "classes": [
@@ -292,7 +292,7 @@
             "QtCore",
             "QtQml"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/DataGridModel.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/DataGridModel.py"
     },
     {
         "classes": [
@@ -488,7 +488,7 @@
         "QT_MODULES": [
             "QtCore"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/Def.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/Def.py"
     },
     {
         "classes": [
@@ -588,7 +588,7 @@
             "QtQml",
             "QtQuick"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/DesktopCaptureItem.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/DesktopCaptureItem.py"
     },
     {
         "classes": [
@@ -642,7 +642,7 @@
             "QtCore",
             "QtQml"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/FileWatcher.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/FileWatcher.py"
     },
     {
         "classes": [
@@ -779,7 +779,7 @@
             "QtGui",
             "QtQml"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/FluentUI.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/FluentUI.py"
     },
     {
         "classes": [
@@ -1004,7 +1004,7 @@
             "QtQml",
             "QtQuick"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/Frameless.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/Frameless.py"
     },
     {
         "classes": [
@@ -1054,7 +1054,7 @@
             "QtQml",
             "QtQuick"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/ImageItem.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/ImageItem.py"
     },
     {
         "classes": [
@@ -1188,7 +1188,7 @@
             "QtQml",
             "QtQuick"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/InputBackgroundImpl.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/InputBackgroundImpl.py"
     },
     {
         "classes": [
@@ -1254,7 +1254,7 @@
             "QtQml",
             "QtQuick"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/LineNumberModel.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/LineNumberModel.py"
     },
     {
         "classes": [
@@ -1346,7 +1346,7 @@
             "QtQml",
             "QtQuick"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/QRCodeImpl.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/QRCodeImpl.py"
     },
     {
         "classes": [
@@ -1410,7 +1410,7 @@
             "QtQml",
             "QtQuick"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/RoundRectangle.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/RoundRectangle.py"
     },
     {
         "classes": [
@@ -1484,7 +1484,7 @@
             "QtGui",
             "QtQml"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/StarterImpl.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/StarterImpl.py"
     },
     {
         "classes": [
@@ -1565,7 +1565,7 @@
             "QtGui",
             "QtQml"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/SyntaxHighlighterImpl.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/SyntaxHighlighterImpl.py"
     },
     {
         "classes": [
@@ -1643,7 +1643,7 @@
             "QtQml",
             "QtQuick"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/TabBackgroundImpl.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/TabBackgroundImpl.py"
     },
     {
         "classes": [
@@ -1710,7 +1710,7 @@
             "QtGui",
             "QtQml"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/TextCharFormat.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/TextCharFormat.py"
     },
     {
         "classes": [
@@ -1867,7 +1867,7 @@
             "QtGui",
             "QtQml"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/Tools.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/Tools.py"
     },
     {
         "classes": [
@@ -1973,7 +1973,7 @@
             "QtQml",
             "QtQuick"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/TourBackgroundImpl.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/TourBackgroundImpl.py"
     },
     {
         "classes": [
@@ -2205,7 +2205,7 @@
             "QtCore",
             "QtQml"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/TreeDataGridModel.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/TreeDataGridModel.py"
     },
     {
         "classes": [
@@ -2325,6 +2325,6 @@
             "QtQml",
             "QtQuick"
         ],
-        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/FluentUI/impl/WatermarkImpl.py"
+        "inputFile": "E:/ByeDPI/src/_settings/FluentUI/impl/WatermarkImpl.py"
     }
 ]
