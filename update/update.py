@@ -12,10 +12,27 @@ from PIL import Image
 import subprocess
 import shutil
 
+import psutil
+
 FONT = 'Nunito SemiBold'
 DIRECTORY = f'{os.path.dirname(os.path.abspath(__file__))}/'
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='update.log', level=logging.INFO)
+
+def close_procces():
+    for proc in psutil.process_iter(['pid', 'name']):
+        if proc.info['name'] == 'goodbyedpi.exe':
+            try:
+                proc.terminate()
+                logger.info(f'process goodbyedpi.exe terminated')
+            except psutil.NoSuchProcess:
+                pass
+        if proc.info['name'] == 'goodbyeDPI.exe':
+            try:
+                proc.terminate()
+                logger.info(f'process goodbyeDPI.exe terminated')
+            except psutil.NoSuchProcess:
+                pass
 
 class Text:
     def __init__(self, language) -> None:
@@ -309,6 +326,7 @@ if __name__ == "__main__":
     text = Text(loc)
 
     logger.info('Starting UpdaterApp')
+    close_procces()
     app = UpdaterApp(zip_file_path, unpack_directory, text)
     logger.info('App started successfully')
     app.mainloop()
