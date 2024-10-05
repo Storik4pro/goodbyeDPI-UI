@@ -1,7 +1,17 @@
 import os
 import configparser
+import psutil
 
-from _data import DIRECTORY
+from _data import FONT, DIRECTORY, text
+
+def kill_update():
+    path = DIRECTORY.replace("_internal/", "")
+    for proc in psutil.process_iter(['pid', 'name', 'exe']):
+        try:
+            if proc.info['name'].lower() == 'update.exe' and proc.info['exe'] and proc.info['exe'].lower() == path.lower():
+                proc.kill()
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
 
 def merge_blacklist(goodbye_dpi_path):
     russia_youtube_file = os.path.join(goodbye_dpi_path, 'russia-youtube.txt')
@@ -59,4 +69,3 @@ def rename_update_exe():
         return True
     else:
         return False
-
