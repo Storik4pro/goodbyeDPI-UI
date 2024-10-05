@@ -33,7 +33,8 @@ class ChkPresetApp(BaseWindow):
         self.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
         self.title('goodbyeDPI UI - chkpreset [BETA]')
         self.minsize(800, 500)
-        self.after(200, lambda: self.iconbitmap(DIRECTORY+'data/find.ico'))
+        if mica:self.iconbitmap(DIRECTORY+'data/find.ico')
+        else:self.after(200, lambda: self.iconbitmap(DIRECTORY+'data/find.ico'))
         if mica: self.configure(bg="black")
         self.resizable(False, False)
 
