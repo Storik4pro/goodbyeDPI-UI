@@ -87,7 +87,7 @@ if __name__ == "__main__":
             settings.reload_settings()
             change_setting('GLOBAL', 'after_update', 'False')
 
-        if after_update == 'True' or first_run == 'True' or settings.settings['GLOBAL']['update_coplete'] == 'False':
+        if (after_update == 'True' or first_run == 'True' or settings.settings['GLOBAL']['update_coplete'] == 'False') and not DEBUG:
             try:
                 kill_update()
                 update_result = rename_update_exe()
