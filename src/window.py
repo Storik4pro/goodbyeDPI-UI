@@ -212,8 +212,10 @@ class MainWindow(BaseWindow):
         best_preset = None
         best_total_response_time = None
         self.timeout = timeout
-
-        domains_to_check = check_urls()
+        try:
+            domains_to_check = check_urls()
+        except Exception as ex:
+            put_func(f"[CRITICAL_ERROR] " + f"UNKNOWN ERROR: {ex}")
         if not domains_to_check:
             message = text.inAppText["empty_domains_list"]
             put_func("[CRITICAL_ERROR] " + message)
