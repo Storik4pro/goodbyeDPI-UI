@@ -291,7 +291,7 @@ class MainWindow(BaseWindow):
             put_func("[CRITICAL_ERROR] " + message)
             return
 
-        strategies_file = f'{GOODBYE_DPI_PATH}+strategies_gdpi.txt'
+        strategies_file = f'{GOODBYE_DPI_PATH}strategies_gdpi.txt'
         try:
             with open(strategies_file, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
