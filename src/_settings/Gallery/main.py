@@ -134,7 +134,7 @@ class Backend(QObject):
 
     @Slot()
     def _update(self):
-        self.pipe.send('UPDATE_INSTALL')
+        if not DEBUG:self.pipe.send('UPDATE_INSTALL')
 
     @Slot(str)
     def changeMode(self, mode):

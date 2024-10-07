@@ -332,7 +332,7 @@ def get_latest_release():
     data = response.json()
     latest_version = data["tag_name"]
 
-    return latest_version
+    return latest_version if not DEBUG else "1.1.3"
 
 def get_release_info(version):
     url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/releases/tags/{version}"
@@ -341,6 +341,7 @@ def get_release_info(version):
     return data
 
 def get_download_url(version):
+    if DEBUG: return "https://google.com"
     try:
         data = get_release_info(version)
         download_url = None
@@ -360,19 +361,26 @@ def get_download_url(version):
         return 'ERR_UNKNOWN'
     
 def download_update(url, directory, signal):
-    with requests.get(url, stream=True) as r:
-        total_length = r.headers.get('content-length')
-        if total_length is None:
-            with open(directory, 'wb') as f:
-                shutil.copyfileobj(r.raw, f)
-        else:
-            dl = 0
-            total_length = int(total_length)
-            with open(directory, 'wb') as f:
-                for data in r.iter_content(chunk_size=4096):
-                    signal.emit(float((dl / total_length)*100))
-                    dl += len(data)
-                    f.write(data)
+    if not DEBUG:
+        with requests.get(url, stream=True) as r:
+            total_length = r.headers.get('content-length')
+            if total_length is None:
+                with open(directory, 'wb') as f:
+                    shutil.copyfileobj(r.raw, f)
+            else:
+                dl = 0
+                total_length = int(total_length)
+                with open(directory, 'wb') as f:
+                    for data in r.iter_content(chunk_size=4096):
+                        signal.emit(float((dl / total_length)*100))
+                        dl += len(data)
+                        f.write(data)
+    else:
+        i=0
+        while i < 100:
+            i+=1
+            signal.emit(i)
+            time.sleep(0.05)
 
 def is_process_running(process_name):
     for proc in psutil.process_iter(['pid', 'name']):
