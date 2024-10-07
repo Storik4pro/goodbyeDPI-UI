@@ -57,7 +57,6 @@ ScrollablePage {
                         right: parent.right
                         rightMargin: 0
                     }
-                    width: 300
                     model: [
                         backend.get_element_loc("mode_d"),
                         backend.get_element_loc("mode_l"),
@@ -147,35 +146,25 @@ ScrollablePage {
             border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
             radius:6
 
-            ColumnLayout {
-                spacing: 2
-                anchors {
-                    verticalCenter: parent.verticalCenter
-                    left: parent.left
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 0
+                spacing: 10
+                anchors{
+                    rightMargin: 15
                     leftMargin: 20
                 }
-
+                
                 Label {
+                    Layout.fillWidth: true
                     text: backend.get_element_loc("p_advanced_GDPI")
-                    horizontalAlignment: Qt.AlignHCenter
+                    horizontalAlignment: Text.AlignLeft
                     font: Typography.body
-                }
-            }
-
-            Item {
-                Layout.fillHeight: true
-                anchors {
-                    verticalCenter: parent.verticalCenter
-                    right: parent.right
-                    rightMargin: 15
+                    wrapMode: Text.Wrap
                 }
 
                 Switch {
-                    anchors {
-                        verticalCenter: parent.verticalCenter
-                        right: parent.right
-                        rightMargin: 0
-                    }
+                    Layout.preferredWidth: implicitWidth
                     text: checked ? backend.get_element_loc("on_") : backend.get_element_loc("off")
                     checked: backend.getBool('GLOBAL', 'use_advanced_mode')
                     onCheckedChanged: {

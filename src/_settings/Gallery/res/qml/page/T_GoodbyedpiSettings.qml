@@ -21,7 +21,6 @@ ScrollablePage {
         Layout.alignment: Qt.AlignHCenter
 
         Rectangle {
-            Layout.preferredHeight: 68
             Layout.fillWidth: true
             Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
             Layout.minimumWidth: 300
@@ -29,59 +28,64 @@ ScrollablePage {
             Layout.alignment: Qt.AlignHCenter
             color: Theme.res.controlFillColorDefault
             border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
-            radius:6
+            radius: 6
+            Layout.minimumHeight: 68
+            Layout.preferredHeight:lbl1.height+lbl2.height+20
+            
 
-            ColumnLayout {
-                spacing: 2
-                anchors {
-                    verticalCenter: parent.verticalCenter
-                    left: parent.left
+            RowLayout {
+                id:rwlay
+                anchors.fill: parent
+                anchors{
                     leftMargin: 20
-                }
-
-                Label {
-                    text: backend.get_element_loc("preset")
-                    horizontalAlignment: Qt.AlignHCenter
-                    font: Typography.body
-                }
-
-                Label {
-                    text: backend.get_element_loc("preset_tip")
-                    horizontalAlignment: Qt.AlignHCenter
-                    font: Typography.caption
-                    color: "#c0c0c0"
-                }
-            }
-
-            Item {
-                Layout.fillHeight: true
-                anchors {
-                    verticalCenter: parent.verticalCenter
-                    right: parent.right
                     rightMargin: 20
+                    topMargin: 10
+                    bottomMargin: 10
+                }
+                spacing: 10
+
+                ColumnLayout {
+                    id:clmn
+                    Layout.fillWidth: true
+                    spacing: 2
+
+                    Label {
+                        id:lbl1
+                        Layout.fillWidth: true
+                        text: backend.get_element_loc("preset")
+                        horizontalAlignment: Text.AlignLeft
+                        font: Typography.body
+                        wrapMode: Text.Wrap
+                    }
+
+                    Label {
+                        id:lbl2
+                        Layout.fillWidth: true
+                        text: backend.get_element_loc("preset_tip")
+                        horizontalAlignment: Text.AlignLeft
+                        font: Typography.caption
+                        color: "#c0c0c0"
+                        wrapMode: Text.Wrap
+                    }
                 }
 
                 ComboBox {
-                    anchors {
-                        verticalCenter: parent.verticalCenter
-                        right: parent.right
-                        rightMargin: 0
-                    }
-                    width: 300
+                    Layout.preferredWidth: 300
+                    Layout.fillWidth: false
                     model: [
-                        "<separator>"+backend.get_element_loc("standart"),
-                        "1. "+backend.get_element_loc("preset_1"),
-                        "2. "+backend.get_element_loc("preset_2"),
-                        "3. "+backend.get_element_loc("preset_3"),
-                        "4. "+backend.get_element_loc("preset_4"),
-                        "5. "+backend.get_element_loc("preset_5"),
-                        "6. "+backend.get_element_loc("preset_6"),
-                        "7. "+backend.get_element_loc("preset_7"),
-                        "8. "+backend.get_element_loc("preset_8"),
-                        "9. "+backend.get_element_loc("preset_9")+" ("+backend.get_element_loc("default")+")",
-                        "<separator>"+backend.get_element_loc("new"),
-                        "10."+backend.get_element_loc("preset_10")+" ("+backend.get_element_loc("recommended")+")",
-                        "11."+backend.get_element_loc("preset_11")+" ("+backend.get_element_loc("alt")+")",
+                        "<separator>" + backend.get_element_loc("standart"),
+                        "1. " + backend.get_element_loc("preset_1"),
+                        "2. " + backend.get_element_loc("preset_2"),
+                        "3. " + backend.get_element_loc("preset_3"),
+                        "4. " + backend.get_element_loc("preset_4"),
+                        "5. " + backend.get_element_loc("preset_5"),
+                        "6. " + backend.get_element_loc("preset_6"),
+                        "7. " + backend.get_element_loc("preset_7"),
+                        "8. " + backend.get_element_loc("preset_8"),
+                        "9. " + backend.get_element_loc("preset_9") + " (" + backend.get_element_loc("default") + ")",
+                        "<separator>" + backend.get_element_loc("new"),
+                        "10. " + backend.get_element_loc("preset_10") + " (" + backend.get_element_loc("recommended") + ")",
+                        "11. " + backend.get_element_loc("preset_11") + " (" + backend.get_element_loc("alt") + ")",
                     ]
                     currentIndex: backend.getPreset()
                     onCurrentIndexChanged: {
@@ -94,6 +98,8 @@ ScrollablePage {
                 }
             }
         }
+
+
 
         Expander {
             expanded: true 
@@ -146,7 +152,7 @@ ScrollablePage {
                         Label {
                             text: "DNS-"+backend.get_element_loc("server")+" IPv4:"
                             font: Typography.body
-                            Layout.preferredWidth: 250
+                            Layout.preferredWidth: 200
                         }
                         CopyableText {
                             text: currentDnsV4
@@ -159,7 +165,7 @@ ScrollablePage {
                         Label {
                             text: "DNS-"+backend.get_element_loc("port")+" IPv4:"
                             font: Typography.body
-                            Layout.preferredWidth: 250
+                            Layout.preferredWidth: 200
                         }
                         CopyableText {
                             text: currentPortV4
@@ -173,7 +179,7 @@ ScrollablePage {
                         Label {
                             text: "DNS-"+backend.get_element_loc("server")+" IPv6:"
                             font: Typography.body
-                            Layout.preferredWidth: 250
+                            Layout.preferredWidth: 200
                         }
                         CopyableText {
                             text: currentDnsV6
@@ -186,7 +192,7 @@ ScrollablePage {
                         Label {
                             text: "DNS-"+backend.get_element_loc("port")+" IPv6:"
                             font: Typography.body
-                            Layout.preferredWidth: 250
+                            Layout.preferredWidth: 200
                         }
                         CopyableText {
                             text: currentPortV6
@@ -306,6 +312,7 @@ ScrollablePage {
         }
 
         Expander {
+            id:exp
             expanded:true 
             Layout.fillWidth: true 
             Layout.preferredWidth: Math.min(1000, parent.width * 0.9) 
@@ -315,14 +322,17 @@ ScrollablePage {
 
             header: Label {
                 text: backend.get_element_loc("base_blacklist")
-                horizontalAlignment: Qt.AlignHCenter
+                horizontalAlignment: Qt.AlignVCenter
                 font: Typography.body  
             }
             subHeader: Label {
                 text: backend.get_element_loc("base_blacklist_tip")
-                horizontalAlignment: Qt.AlignHCenter
+                horizontalAlignment: Qt.AlignVCenter
                 font: Typography.caption
                 color: "#c0c0c0"
+                width:exp.width - 30 - 20 - 50
+                
+                wrapMode:Text.Wrap
             }
             content: ColumnLayout{
                 spacing:2
@@ -411,57 +421,56 @@ ScrollablePage {
             
         }
 
-        Button{
-            Layout.preferredHeight: 68
+        Button {
+            Layout.minimumHeight: 68
             Layout.fillWidth: true
-            Layout.preferredWidth: Math.min(1000, parent.width * 0.9) 
-            Layout.minimumWidth: 300 
+            Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
+            Layout.minimumWidth: 300
             Layout.maximumWidth: 1000
-            Layout.alignment: Qt.AlignHCenter 
+            Layout.alignment: Qt.AlignHCenter
 
-            Icon{
-                source: FluentIcons.graph_DeveloperTools
-                width: 20
-                height: 20
+            RowLayout {
+                anchors.fill: parent
                 anchors{
-                    verticalCenter: parent.verticalCenter
-                    left: parent.left
                     leftMargin: 20
+                    rightMargin: 20
                 }
-            }
-            ColumnLayout{
-                spacing: 2
-                anchors{
-                    verticalCenter: parent.verticalCenter
-                    left: parent.left
-                    leftMargin: 60
+                spacing: 10
+
+                Icon {
+                    source: FluentIcons.graph_DeveloperTools
+                    width: 20
+                    height: 20
+                    Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
                 }
-                Label{
-                    text: backend.get_element_loc("advanced")
-                    horizontalAlignment: Qt.AlignHCenter
-                    font: Typography.body
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 2
+
+                    Label {
+                        Layout.fillWidth: true
+                        text: backend.get_element_loc("advanced")
+                        horizontalAlignment: Text.AlignLeft
+                        font: Typography.body
+                        wrapMode: Text.Wrap
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        text: backend.get_element_loc("advanced_tip")
+                        horizontalAlignment: Text.AlignLeft
+                        font: Typography.caption
+                        color: "#c0c0c0"
+                        wrapMode: Text.Wrap
+                    }
                 }
-                Label{
-                    text: backend.get_element_loc("advanced_tip")
-                    horizontalAlignment: Qt.AlignHCenter
-                    font: Typography.caption
-                    color: "#c0c0c0"
-                }
-            }
-            Item{
-                implicitWidth: 50
-                Layout.fillHeight: true
-                anchors{
-                    verticalCenter: parent.verticalCenter
-                    right: parent.right
-                    rightMargin: 0
-                }
-                IconButton{
+
+                IconButton {
                     id: btn_icon
-                    anchors.centerIn: parent
                     width: 30
                     height: 30
-                    Icon{
+                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                    Icon {
                         anchors.centerIn: parent
                         source: FluentIcons.graph_ChevronRight
                         width: 15
@@ -472,11 +481,10 @@ ScrollablePage {
                     }
                 }
             }
-            
+
             onClicked: {
                 context.router.go("/goodbyedpiAdvanced")
             }
-            
         }
     }
     

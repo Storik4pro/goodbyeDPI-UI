@@ -156,7 +156,7 @@ ScrollablePage {
                 Layout.topMargin: 15
             }
             Rectangle {
-                Layout.preferredHeight: 80
+                Layout.preferredHeight: customParameters.implicitHeight + 20
                 Layout.fillWidth: true
                 Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
                 Layout.minimumWidth: 300
@@ -219,40 +219,41 @@ ScrollablePage {
                 font: Typography.bodyStrong
                 Layout.topMargin: 15
             }
-            Rectangle {
-                id:rest
-                Layout.preferredHeight: 80
-                Layout.fillWidth: true
-                Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
-                Layout.minimumWidth: 300
-                Layout.maximumWidth: 1000
-                Layout.alignment: Qt.AlignHCenter
-                color: "#1E1E1E"
-                border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
-                radius: 0
-                visible:true
-
-                ScrollView {
-                    anchors.fill: parent
-                    anchors{
-                        leftMargin:10
-                        rightMargin:10
-                        topMargin:10
-                        bottomMargin:10
-                    }
-                    contentWidth: parent.width-20
+            ColumnLayout {
+                id: contentLayout
+                Layout.minimumHeight:100
+                Layout.preferredHeight:commandLineOutput.implicitHeight + 20
+                
+                Rectangle {
+                    id: rest
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
+                    Layout.minimumWidth: 300
+                    Layout.maximumWidth: 1000
+                    Layout.alignment: Qt.AlignHCenter
+                    color: "#1E1E1E"
+                    border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
+                    radius: 0
+                    visible: true
+                    // Устанавливаем высоту в зависимости от высоты текста и отступов
+                    Layout.preferredHeight:parent.height
 
                     CopyableText {
                         id: commandLineOutput
-                        width:parent.width
+                        anchors.fill: parent
+                        anchors.margins: 10
+                        width: parent.width - 20
                         text: command
-                        wrapMode: Text.WordWrap
+                        wrapMode: Text.Wrap
                         font.pixelSize: 14
                         font.family: "Cascadia Code"
                         color: "#D4D4D4"
+                        // Устанавливаем высоту текста по его содержимому
+                        height: implicitHeight
                     }
                 }
             }
+
         }
     
     }

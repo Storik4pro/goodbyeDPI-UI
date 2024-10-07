@@ -26,7 +26,7 @@ ScrollablePage {
     }
 
     ColumnLayout {
-        id:base_layout
+        id: base_layout
         spacing: 15
         Layout.fillWidth: true
         Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
@@ -34,101 +34,130 @@ ScrollablePage {
         Layout.maximumWidth: 1000
         Layout.alignment: Qt.AlignHCenter
 
-        RowLayout {
+        ColumnLayout {
             Layout.fillWidth: true
-            spacing: 20
+            Layout.alignment: Qt.AlignHCenter
 
-            Image {
-                source: "qrc:/qt/qml/Gallery/res/image/update.png" 
-                width: 90
-                height: 90
-                fillMode: Image.PreserveAspectFit
-                sourceSize.width: width
-                sourceSize.height: height
-            }
+            // Изображение вверху по центру
+            
 
-            ColumnLayout {
+            // Используем Flow для адаптации макета
+            Flow {
+                id: mainFlow
                 Layout.fillWidth: true
-                Layout.preferredWidth: Math.min(700, base_layout.width * 0.65)
-                Layout.minimumWidth: 100
-                Layout.maximumWidth: 700
+                spacing: 20
+                flow: Flow.LeftToRight
 
-                Label {
-                    text: isError ? backend.get_element_loc("update_fail") :
-                          isDownloading ? backend.get_element_loc("update_downloading") :
-                          isUpdating ? backend.get_element_loc("update_check") : 
-                          updatesAvailable ? backend.get_element_loc("update_available_t") : backend.get_element_loc("update_available_f")
-                    font:Typography.subtitle
-                    wrapMode:WrapAnywhere
+                Image {
+                    id:uimg
+                    source: "qrc:/qt/qml/Gallery/res/image/update.png"
+                    width: 90
+                    height: 90
+                    fillMode: Image.PreserveAspectFit
+                    sourceSize.width: width
+                    sourceSize.height: height
+                    Layout.alignment: Qt.AlignHCenter
+                }
+                RowLayout{
+                    Item{
+                        Layout.alignment: Qt.AlignLeft
+                        Layout.preferredHeight:90 
+                    }
+
+                ColumnLayout {
+                    id: contentColumn
+                    Layout.minimumWidth: 100
+                    Layout.maximumWidth: 700
+                    Layout.fillWidth: true
                     Layout.alignment: Qt.AlignLeft
-                    anchors{
-                        rightMargin:20
+                    
+
+                    Label {
+                        id:mainLabel
+                        text: isError ? backend.get_element_loc("update_fail") :
+                              isDownloading ? backend.get_element_loc("update_downloading") :
+                              isUpdating ? backend.get_element_loc("update_check") :
+                              updatesAvailable ? backend.get_element_loc("update_available_t") : backend.get_element_loc("update_available_f")
+                        font: Typography.subtitle
+                        wrapMode: Text.Wrap
+                        Layout.alignment: Qt.AlignLeft
+                        Layout.preferredWidth: Math.min(740, Math.max(timeLabel.width, base_layout.width - uimg.width - 20 - checkBtn.width-40))
+                        anchors.rightMargin: 20
                     }
+
+                    ProgressBar {
+                        id: progressBar
+                        indeterminate: true
+                        Layout.fillWidth: true
+                        anchors {
+                            rightMargin: 15
+                            topMargin: 20
+                            bottomMargin: 20
+                        }
+                        visible: false
+                    }
+                    ProgressBar {
+                        id: progressBarDownload
+                        indeterminate: false
+                        Layout.fillWidth: true
+                        from: 0
+                        to: 100
+                        anchors {
+                            rightMargin: 15
+                            topMargin: 20
+                            bottomMargin: 20
+                        }
+                        visible: false
+                    }
+
+                    CopyableText {
+                        id: timeLabel
+                        text: isError ? errorText :
+                              updatesAvailable ? qsTr(backend.get_element_loc("update_v") + ": %1").arg(availableVersion) : qsTr(backend.get_element_loc("update_t") + ": %1").arg(lastCheckedTime)
+                        font: Typography.body
+                        color: "#666666"
+                        Layout.alignment: Qt.AlignLeft
+                        visible: true
+                    }
+                    HyperlinkButton {
+                        id: whatsNewButton
+                        text: backend.get_element_loc("whats_new")
+                        visible: updatesAvailable
+                        onClicked: {
+                            showWhatsNew()
+                        }
+                    }
+                }
                 }
 
-                ProgressBar{
-                    id: progressBar
-                    indeterminate: true
-                    Layout.fillWidth:true
-                    anchors{
-                        rightMargin:15
-                        topMargin:20
-                        bottomMargin:20
-                    }
-                    visible:false
-                }
-                ProgressBar{
-                    id: progressBarDownload
-                    indeterminate: false
-                    Layout.fillWidth:true
-                    from: 0
-                    to: 100
-                    anchors{
-                        rightMargin:15
-                        topMargin:20
-                        bottomMargin:20
-                    }
-                    visible:false
-                }
+                // Разделитель для выравнивания кнопки вправо
 
-                CopyableText {
-                    id:timeLabel
-                    text: isError ? errorText:
-                          updatesAvailable ? qsTr(backend.get_element_loc("update_v")+": %1").arg(availableVersion) : qsTr(backend.get_element_loc("update_t")+": %1").arg(lastCheckedTime)
-                    font:Typography.body
-                    color: "#666666"
-                    Layout.alignment: Qt.AlignLeft
-                    visible:true
-                }
-                HyperlinkButton {
-                    id: whatsNewButton
-                    text: backend.get_element_loc("whats_new")
-                    visible: updatesAvailable
-                    onClicked: {
-                        showWhatsNew()
+                // Настраиваем выравнивание checkBtn
+                RowLayout{
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.fillWidth: true
+                    Item{
+                        Layout.alignment: Qt.AlignLeft
+                        Layout.preferredHeight:mainLabel.width == timeLabel.width ? checkBtn.height:90 
                     }
-                }
-            }
-
-            Item {
-                Layout.fillWidth: true
-            }
-
-            Button {
-                id:checkBtn
-                text: qsTr("")
-                highlighted: true
-                
-                anchors{
-                    right:parent.right
-                }
-                onClicked: {
-                    if (updatesAvailable) {
-                        enabled:false
-                        download_update()
-                    } else {
-                        checkForUpdates()
+                    Button {
+                        id: checkBtn
+                        text: updatesAvailable ? backend.get_element_loc("update_available_btn_t") : backend.get_element_loc("update_available_btn_f")
+                        highlighted: true
+                        Layout.minimumWidth: 50
+                        Layout.alignment: Qt.AlignRight|Qt.AlignVCenter
+                        
+                        onClicked: {
+                            if (updatesAvailable) {
+                                enabled = false
+                                download_update()
+                            } else {
+                                checkForUpdates()
+                            }
+                        }
                     }
+                    
+                    
                 }
             }
         }
@@ -152,49 +181,37 @@ ScrollablePage {
                 Layout.alignment: Qt.AlignHCenter
                 color: Theme.res.controlFillColorDefault
                 border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
-                radius:6
+                radius: 6
 
-                ColumnLayout {
-                    spacing: 2
-                    anchors {
-                        verticalCenter: parent.verticalCenter
-                        left: parent.left
-                        leftMargin: 20
-                    }
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 20
+                    spacing: 10
 
                     Label {
                         text: backend.get_element_loc("notify")
-                        horizontalAlignment: Qt.AlignHCenter
                         font: Typography.body
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                        wrapMode: Text.Wrap
                     }
-                }
 
-                Item {
-                    Layout.fillHeight: true
-                    anchors {
-                        verticalCenter: parent.verticalCenter
-                        right: parent.right
-                        rightMargin: 15
-                    }
+                    
 
                     Switch {
                         property bool isInitializing: backend.getBool("GLOBAL", "notifyAboutUpdates")
-                        anchors {
-                            verticalCenter: parent.verticalCenter
-                            right: parent.right
-                            rightMargin: 0
-                        }
                         text: checked ? backend.get_element_loc("on_") : backend.get_element_loc("off")
                         checked: backend.getBool("GLOBAL", "notifyAboutUpdates")
                         onCheckedChanged: {
-                            if (!isInitializing){
+                            if (!isInitializing) {
                                 backend.toggleBool("GLOBAL", "notifyAboutUpdates", checked)
                             }
                             isInitializing = false
                         }
+                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                     }
                 }
             }
+
             Rectangle {
                 Layout.preferredHeight: 68
                 Layout.fillWidth: true
@@ -204,50 +221,36 @@ ScrollablePage {
                 Layout.alignment: Qt.AlignHCenter
                 color: Theme.res.controlFillColorDefault
                 border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
-                radius:6
+                radius: 6
 
-                ColumnLayout {
-                    spacing: 2
-                    anchors {
-                        verticalCenter: parent.verticalCenter
-                        left: parent.left
-                        leftMargin: 20
-                    }
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 20
+                    spacing: 10
 
                     Label {
                         text: backend.get_element_loc("update_beta")
-                        horizontalAlignment: Qt.AlignHCenter
                         font: Typography.body
+                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+                        wrapMode: Text.Wrap
                     }
-                }
 
-                Item {
-                    Layout.fillHeight: true
-                    anchors {
-                        verticalCenter: parent.verticalCenter
-                        right: parent.right
-                        rightMargin: 15
-                    }
+                    
 
                     Switch {
-                        property bool isInitializing: backend.getBool('GLOBAL', 'usebetafeatures') 
-                        anchors {
-                            verticalCenter: parent.verticalCenter
-                            right: parent.right
-                            rightMargin: 0
-                        }
+                        property bool isInitializing: backend.getBool('GLOBAL', 'usebetafeatures')
                         text: checked ? backend.get_element_loc("on_") : backend.get_element_loc("off")
                         checked: backend.getBool('GLOBAL', 'usebetafeatures')
                         onCheckedChanged: {
-                            if (!isInitializing){
+                            if (!isInitializing) {
                                 backend.toggleBool('GLOBAL', 'usebetafeatures', checked)
                             }
                             isInitializing = false
                         }
+                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                     }
                 }
             }
-
         }
     }
 
