@@ -206,7 +206,7 @@ class ChkPresetApp(BaseWindow):
                 justify="left",
                 button_color="transparent",
                 hover_color="#404040",
-                alpha=0.89,
+                alpha=1.0,
                 button_height=35,
                 frame_border_width=0,
                 frame_corner_radius=5,
