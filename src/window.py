@@ -710,39 +710,51 @@ class MainWindow(BaseWindow):
         if _type=='normal':
             result = asyncio.run(show_message("GoodbyeDPI_app", title, message))
         else:
-            result = asyncio.run(show_error("GoodbyeDPI_app", title, message, button if button else text.inAppText['retry'], text.inAppText['about_first'].lower() if error else None))
+            result = asyncio.run(
+                show_error("GoodbyeDPI_app", title, message, 
+                           button if button else text.inAppText['retry'], 
+                           text.inAppText['about_first'].lower() if error else None)
+                           )
         if result.dismiss_reason == ToastDismissReason.NOT_DISMISSED:
-            if result.arguments == 'accept':
-                if func:
+            if result.arguments == 'accept' :
+                if func :
                     func()
             elif result.arguments == 'call2':
-                error_info = "Type: " +error[0] + "\n" + \
-                             "From: " +error[3] + "\n" + \
+                error_info = "Type: " + error[0] + "\n" + \
+                             "From: " + error[3] + "\n" + \
                              str(error[1]) + "\n"
                 if self.error_info_app and self.error_info_app.winfo_exists():
-                    self.error_info_app.destroy()
-                
-                self.error_info_app = ErrorWindow(error[0], error[3], error[2], error_info)
+                    self.error_info_app.destroy()                
+                self.error_info_app = ErrorWindow(error[0], error[3], error[2],
+                                                   error_info)
             else:
-                if func: func()
+                if func: 
+                    func()
 
     def connect_terminal(self, error=False):
         if error:
             self.switch_var.set("off")
         if self.proc_terminal is None or not self.proc_terminal.winfo_exists():
             self.show_window()
-            self.proc_terminal = GoodbyedpiApp(self.stop_process, self.start_process)
+            self.proc_terminal = GoodbyedpiApp(self.stop_process, 
+                                               self.start_process)
             self.proc.connect_app(self.proc_terminal)
 
         if self.proc_terminal.winfo_exists():
             self.proc_terminal.lift()
             self.proc_terminal.attributes('-topmost', True)
             self.proc_terminal.focus_force()
-            self.proc_terminal.after(0, lambda: self.proc_terminal.attributes('-topmost', False))
+            self.proc_terminal.after(0, lambda: 
+                                     self.proc_terminal.attributes('-topmost', False))
 
-    def show_notification(self, message, title="GoodbyeDPI UI", func=None, button=None, _type='normal', error=None, icon=True):
-        self.notification_thread = threading.Thread(target=lambda: self.show_notification_tread(title, message, func=func, button=button, _type=_type, error=error, icon=icon))
-        self.notification_thread.start() 
+    def show_notification(self, message, title="GoodbyeDPI UI", func=None,
+                           button=None, _type='normal', error=None, icon=True):
+        self.notification_thread = \
+            threading.Thread(target=lambda: 
+                             self.show_notification_tread(title, message, 
+                                                          func=func, button=button, _type=_type, 
+                                                          error=error, icon=icon))
+        self.notification_thread.start()
 
     def on_notification_click(self):
         self.show_window(None, None)

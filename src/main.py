@@ -21,8 +21,6 @@ from utils import check_mica, install_font, register_app, is_process_running, ch
 from quick_start import kill_update, merge_settings, merge_blacklist, rename_update_exe
 import pywintypes
 import configparser
-from win10toast_click import ToastNotifier
-from plyer import notification
 import pystray
 from pystray import MenuItem as item
 from PIL import Image, ImageTk
