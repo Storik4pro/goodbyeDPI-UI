@@ -1,5 +1,5 @@
 from customtkinter import *
-from _data import FONT, DIRECTORY, text
+from _data import FONT, DIRECTORY, GOODBYE_DPI_EXECUTABLE, ZAPRET_EXECUTABLE, text, settings
 from utils import stop_servise
 from PIL import Image, ImageTk
 from tkinter import messagebox
@@ -20,6 +20,8 @@ class GoodbyedpiApp(CTkToplevel):
         self.stop = False
         self.stop_func = stop_func
         self.start_func = start_func
+
+        self.execut = GOODBYE_DPI_EXECUTABLE if settings.settings["GLOBAL"]["engine"] == 'goodbyeDPI' else ZAPRET_EXECUTABLE
 
         self.gif = Image.open(DIRECTORY+'data/find.gif')
         self.frames = []
@@ -45,7 +47,7 @@ class GoodbyedpiApp(CTkToplevel):
         self.header_text_frame = CTkFrame(self.header_frame, fg_color='transparent')
         
 
-        self.header_text = CTkLabel(self.header_text_frame, text=text.inAppText['pseudoconsole_title'], anchor="w", font=(FONT, 18, "bold"))
+        self.header_text = CTkLabel(self.header_text_frame, text=text.inAppText['pseudoconsole_title'].format(executable=self.execut), anchor="w", font=(FONT, 18, "bold"))
         self.header_text.pack(pady=(10, 0), padx=(5, 10), fill="x", expand=True)
 
         self.status_label = CTkLabel(self.header_text_frame, text=self.status_text, anchor="w", justify='left', font=(FONT, 14))
@@ -103,7 +105,7 @@ class GoodbyedpiApp(CTkToplevel):
                 widget.destroy()
             self.output_textbox = CTkTextbox(self.textbox_frame, wrap="word", width=700, height=250, font=('Cascadia Mono', 15))
             self.output_textbox.pack(pady=10, padx=10, fill="both", expand=True)
-            self.output_textbox.insert("1.0", '[DEBUG] Connecting to goodbyedpi.exe ...\n\n')
+            self.output_textbox.insert("1.0", f'[DEBUG] Connecting to {self.execut} ...\n\n')
             self.output_textbox.configure(state="disabled")
             self.restart_button.configure(state='normal')
             self.copy_button.configure(state='normal')
@@ -116,22 +118,22 @@ class GoodbyedpiApp(CTkToplevel):
         self.output_textbox.configure(state="disabled")
         self.output_textbox.see(END)
         
-        if "Filter activated" in output:
-            self.update_status(text.inAppText['pseudoconsole_success'])
+        if "Filter activated" in output or "[PROXY] created a listener on port" in output:
+            self.update_status(text.inAppText['pseudoconsole_success'].format(executable=self.execut))
             self.logo.configure(light_image=Image.open(DIRECTORY+"data/find.ico"))
 
-        if "Error opening filter" in output or "unknown option" in output:
-            self.update_status(text.inAppText['pseudoconsole_error'])
+        if "Error opening filter" in output or "unknown option" in output or "[PROXY] error creating listener:" in output:
+            self.update_status(text.inAppText['pseudoconsole_error'].format(executable=self.execut))
             self.logo.configure(light_image=Image.open(DIRECTORY+"data/error.ico"))
             if self.stop_func: 
                 self.stop_func(notf=False)
 
-        elif "[DEBUG] The goodbyedpi.exe process has been terminated by user" in output:
-            self.update_status(text.inAppText['pseudoconsole_user_stop'])
+        elif f"[DEBUG] The {self.execut} process has been terminated by user" in output:
+            self.update_status(text.inAppText['pseudoconsole_user_stop'].format(executable=self.execut))
 
-        elif "[DEBUG] The goodbyedpi.exe process has been terminated for unknown reason" in output:
+        elif f"[DEBUG] The {self.execut} process has been terminated for unknown reason" in output:
             self.logo.configure(light_image=Image.open(DIRECTORY+"data/error.ico"))
-            self.update_status(text.inAppText['pseudoconsole_uncn_stop'])
+            self.update_status(text.inAppText['pseudoconsole_uncn_stop'].format(executable=self.execut))
         print(self.logo._light_image)
 
     def update_status(self, status_text):

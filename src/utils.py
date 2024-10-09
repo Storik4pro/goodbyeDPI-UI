@@ -28,8 +28,10 @@ from toasted import Button, Image, Progress, Text, Toast, ToastButtonStyle, Toas
 import winsound
 
 import requests
-try: from _data import GOODBYE_DPI_PATH, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, SETTINGS_FILE_PATH, text, settings
-except: from src._data import GOODBYE_DPI_PATH, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, SETTINGS_FILE_PATH, text, settings
+try: from _data import GOODBYE_DPI_EXECUTABLE, ZAPRET_EXECUTABLE, ZAPRET_PATH, \
+    GOODBYE_DPI_PATH, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, SETTINGS_FILE_PATH, text, settings
+except: from src._data import GOODBYE_DPI_EXECUTABLE, ZAPRET_EXECUTABLE, ZAPRET_PATH, \
+    GOODBYE_DPI_PATH, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, SETTINGS_FILE_PATH, text, settings
 def error_sound():
     winsound.MessageBeep(winsound.MB_ICONHAND)
 
@@ -139,8 +141,14 @@ def install_font(font_path):
     except Exception as e:
         return False
     
-# goodbyedpi.exe
+# engine load'n'read
 
+spoofdpi_logo = \
+"""███████ ██████   ██████   ██████  ███████ ██████  ██████  ██
+██      ██   ██ ██    ██ ██    ██ ██      ██   ██ ██   ██ ██
+███████ ██████  ██    ██ ██    ██ █████   ██   ██ ██████  ██
+     ██ ██      ██    ██ ██    ██ ██      ██   ██ ██      ██
+███████ ██       ██████   ██████  ██      ██████  ██      ██"""
 def remove_ansi_sequences(text):
     stage1 = re.sub(r'\w:\\[^ ]+', '', text)
     print("") # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
@@ -151,11 +159,22 @@ def remove_ansi_sequences(text):
     print("") # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
     print("") # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
     stage2 = stage2.replace("https://github.com/ValdikSS/GoodbyeDPI", "https://github.com/ValdikSS/GoodbyeDPI\n\n")
+
+    if settings.settings['GLOBAL']['engine'] == "spoofDPI":
+        stage2 = stage2.replace("•ADDR", "\n\n•ADDR")
+        stage2 = stage2.replace("to quit", "to quit\n\n")
+        stage2 = stage2.replace("Press", "\nPress")
+        stage2 = re.sub(r'█.*█', '', stage2, flags=re.DOTALL)
+        print(stage2)
+        stage2 = spoofdpi_logo + stage2
+
     return stage2
 
 class GoodbyedpiProcess:
     def __init__(self, app, output_app = None) -> None:
-        self.path = os.path.join(GOODBYE_DPI_PATH, 'x86_64', 'goodbyedpi.exe')
+        self.path = os.path.join(GOODBYE_DPI_PATH, 'x86_64', GOODBYE_DPI_EXECUTABLE) \
+            if settings.settings['GLOBAL']['engine'] == 'goodbyeDPI' \
+            else os.path.join(ZAPRET_PATH, ZAPRET_EXECUTABLE)
         self.app = app
         self.output_app = output_app
         self.args = ''
@@ -170,6 +189,9 @@ class GoodbyedpiProcess:
         self.error = False
 
     def start_goodbyedpi_thread(self, *args):
+        self.path = os.path.join(GOODBYE_DPI_PATH, 'x86_64', GOODBYE_DPI_EXECUTABLE) \
+            if settings.settings['GLOBAL']['engine'] == 'goodbyeDPI' \
+            else os.path.join(ZAPRET_PATH, ZAPRET_EXECUTABLE)
         command = [str(self.path)]
         command.extend(*args)
         print(command)
@@ -179,7 +201,8 @@ class GoodbyedpiProcess:
         if winpty_support:
             self.pty_process = winpty.PtyProcess.spawn(
                 command,
-                cwd=os.path.join(GOODBYE_DPI_PATH, 'x86_64')
+                cwd=os.path.join(GOODBYE_DPI_PATH, 'x86_64') if settings.settings['GLOBAL']['engine'] == 'goodbyeDPI' \
+                    else os.path.join(ZAPRET_PATH)
             )
 
             while not self.stop_event.is_set():
@@ -213,8 +236,8 @@ class GoodbyedpiProcess:
                 self.pty_process.close(True)
             except:pass
         self.pty_process = None
-        
-        term = f'\n[DEBUG] The goodbyedpi.exe process has been terminated {self.reason}\n'
+        execut = GOODBYE_DPI_EXECUTABLE if settings.settings["GLOBAL"]["engine"] == 'goodbyeDPI' else ZAPRET_EXECUTABLE
+        term = f'\n[DEBUG] The {execut} process has been terminated {self.reason}\n'
         self.output.append(term)
         self.queue.put(term)
         self.reason = 'for unknown reason'
@@ -253,19 +276,20 @@ class GoodbyedpiProcess:
             self.pty_process.close(True)
 
     def check_queue(self, notf=True):
+        execut = GOODBYE_DPI_EXECUTABLE if settings.settings["GLOBAL"]["engine"] == 'goodbyeDPI' else ZAPRET_EXECUTABLE
         while not self.queue.empty():
             data = self.queue.get()
             if self.output_app and self.output_app.winfo_exists():
                 self.output_app.add_output(data)
-            if "Filter activated" in data:
-                if notf: self.app.show_notification(text.inAppText['process']+" goodbyedpi.exe " + text.inAppText['run_comlete'])
-            elif "Error opening filter" in data or "unknown option" in data:
+            if "Filter activated" in data or "capture is started." in data:
+                if notf: self.app.show_notification(text.inAppText['process']+f" {execut} " + text.inAppText['run_comlete'])
+            elif "Error opening filter" in data or "unknown option" in data or "[PROXY] error creating listener:" in data:
                 self.reason = 'for unknown reason'
                 self.error = True
                 print("Trying to connect terminal")
                 error_sound()
                 self.app.connect_terminal(error=True)
-                self.app.show_notification(f"Unable to connect goodbyedpi.exe. See pseudo console for more information", title=text.inAppText['error'], button='open pseudo console', func=self.app.connect_terminal, _type='error')
+                self.app.show_notification(f"Unable to connect {execut}. See pseudo console for more information", title=text.inAppText['error'], button='open pseudo console', func=self.app.connect_terminal, _type='error')
         if self.goodbyedpi_thread.is_alive():
             self.app.after(100, lambda: self.check_queue(notf=notf))
 
@@ -280,13 +304,17 @@ class GoodbyedpiProcess:
             self.output_app = None
     
 def start_process(*args):
-    goodbyedpi_path = os.path.join(GOODBYE_DPI_PATH, 'x86_64', 'goodbyedpi.exe')
+    path = os.path.join(GOODBYE_DPI_PATH, 'x86_64', GOODBYE_DPI_EXECUTABLE) \
+        if settings.settings['GLOBAL']['engine'] == 'goodbyeDPI' \
+        else os.path.join(ZAPRET_PATH, ZAPRET_EXECUTABLE)
     
     _args = [
-            goodbyedpi_path,
+            path,
             *args,
     ]
-    process = subprocess.Popen(_args, cwd=os.path.join(GOODBYE_DPI_PATH, 'x86_64'), creationflags=subprocess.CREATE_NO_WINDOW)
+    process = subprocess.Popen(_args, cwd=os.path.join(GOODBYE_DPI_PATH, 'x86_64') \
+                               if settings.settings['GLOBAL']['engine'] == 'goodbyeDPI'\
+                               else os.path.join(ZAPRET_PATH), creationflags=subprocess.CREATE_NO_WINDOW)
     return process
 
 def stop_servise():

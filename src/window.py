@@ -20,7 +20,7 @@ import tkinter
 from concurrent.futures import ThreadPoolExecutor
 from toasted import ToastDismissReason
 from win32material import *
-from _data import VERSION, settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, \
+from _data import GOODBYE_DPI_EXECUTABLE, S_PARAMETER_MAPPING, S_VALUE_PARAMETERS, ZAPRET_EXECUTABLE, VERSION, settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, \
                     BACKUP_SETTINGS_FILE_PATH, PARAMETER_MAPPING, VALUE_PARAMETERS, text
 from chk_preset import ChkPresetApp
 from utils import change_setting, check_mica, check_urls, check_winpty, create_xml, install_font, remove_xml, sni_support, start_process, download_blacklist, move_settings_file, \
@@ -155,8 +155,11 @@ class MainWindow(BaseWindow):
         self.frame1.destroy()
 
         self.frame1 = CTkFrame(self, width=400, fg_color='#0f0f0f' if self.mica else None)
-        switch = CTkSwitch(self.frame1, text=text.inAppText['on'], command=self.toggle_process, font=(FONT, 15), width=400,
-                                variable=self.switch_var, onvalue="on", offvalue="off")
+        switch = CTkSwitch(self.frame1, text=text.inAppText['on'].format(executable="goodbye DPI" \
+                                                                         if settings.settings["GLOBAL"]["engine"] == 'goodbyeDPI' \
+                                                                         else "zapret"), 
+                           command=self.toggle_process, font=(FONT, 15),width=400,
+                           variable=self.switch_var, onvalue="on", offvalue="off")
         switch.pack(padx=10, pady=(15, 10), side=TOP)
 
         icon_image = CTkImage(light_image=Image.open(DIRECTORY+"data/find.ico"), size=(20, 20))
@@ -453,7 +456,8 @@ class MainWindow(BaseWindow):
         self.after(100, check_pipe) 
 
     def check_args(self, preset):
-        if settings.settings['GLOBAL']['use_advanced_mode'] == 'True' and preset == -1:
+        engine = settings.settings['GLOBAL']['engine']
+        if settings.settings['GLOBAL']['use_advanced_mode'] == 'True' and preset == -1 and engine == "goodbyeDPI":
             command = []
 
             params = settings.settings['GOODBYEDPI']
@@ -499,7 +503,7 @@ class MainWindow(BaseWindow):
                     command.extend(custom_params_list)
             print(command)
             return command
-        else:
+        elif engine == "goodbyeDPI":
             command = []
 
             preset = int(settings.settings['GOODBYEDPI']['preset']) if preset == -1 else preset
@@ -517,6 +521,59 @@ class MainWindow(BaseWindow):
             if settings.settings['GOODBYEDPI']['use_blacklist'] == 'True': command.extend(['--blacklist', '..//russia-blacklist.txt'])
             if settings.settings['GOODBYEDPI']['use_blacklist_custom'] == 'True': command.extend(['--blacklist', '..//custom_blacklist.txt'])
 
+            return command
+        
+        elif settings.settings['ZAPRET']['use_advanced_mode'] == 'False':
+            command = []
+
+            preset = int(settings.settings['ZAPRET']['preset'])
+            if preset == 1:
+                preset_settings = settings.settings['ZAPRET'][f'discord_string']
+            elif preset == 2:
+                preset_settings = settings.settings['ZAPRET'][f'youtube_string']
+            elif preset == 3:
+                preset_settings = settings.settings['ZAPRET'][f'youtube_discord']
+            else:
+                preset_settings = settings.settings['ZAPRET'][f'youtube_discord_alt']
+            
+            preset_string = [param.strip() for param in preset_settings.split(' ') if param.strip()]
+            command.extend(preset_string)
+            return command
+
+        else:
+            command = []
+
+            params = settings.settings['ZAPRET']
+
+            """for ini_param, cmd_param in S_PARAMETER_MAPPING.items():
+                if ini_param in params:
+                    value = params.getboolean(ini_param)
+                    if value:
+                        value_key = f"{ini_param}_value"
+                        if ini_param in S_VALUE_PARAMETERS and value_key in params:
+                            param_value = params[value_key].strip()
+                            if param_value:
+                                command.append(cmd_param)
+                                command.append(param_value)
+                        else:
+                            command.append(cmd_param)
+
+            for ini_param, cmd_param in S_VALUE_PARAMETERS.items():
+                if ini_param in params:
+                    value = params.getboolean(ini_param)
+                    value_key = f"{ini_param}_value"
+                    if value and value_key in params:
+                        param_value = params[value_key].strip()
+                        if param_value:
+                            command.append(cmd_param)
+                            command.append(param_value)"""
+
+            if 'custom_parameters' in params:
+                custom_params = params['custom_parameters']
+                if custom_params:
+                    custom_params_list = [param.strip() for param in custom_params.split(' ') if param.strip()]
+                    command.extend(custom_params_list)
+            print(command)
             return command
 
     def toggle_process(self):
@@ -536,22 +593,24 @@ class MainWindow(BaseWindow):
                 print(self.switch_var.get())
                 self.process = True
             else:
-                self.show_notification(f"Cannot run process goodbyedpi.exe while updating is running", title=text.inAppText['error'], func=self.start_process, _type='error')
+                self.show_notification(f"Cannot run process while updating is running", title=text.inAppText['error'], func=self.start_process, _type='error')
         except Exception as ex:
             self.show_notification(f"{ex}", title=text.inAppText['error'], func=self.start_process, _type='error', error=[type(ex).__name__, ex.args, 'CRITICAL_ERROR', 'window:start_process'])           
     
     def stop_process(self, notf=True):
         print("stopping")
+        execut = GOODBYE_DPI_EXECUTABLE if settings.settings["GLOBAL"]["engine"] == 'goodbyeDPI' else ZAPRET_EXECUTABLE
         if not check_winpty():
             for proc in psutil.process_iter(['pid', 'name']):
-                if proc.info['name'] == 'goodbyedpi.exe':
+                if proc.info['name'] == execut:
                     try:
                         proc.terminate()
-                        if notf:self.show_notification(text.inAppText['process'] + " goodbyedpi.exe " + text.inAppText['close_complete'])
+                        if notf:self.show_notification(text.inAppText['process'] + f" {execut} " + text.inAppText['close_complete'])
                         self.process = None
                         
                     except psutil.NoSuchProcess:
-                        self.show_notification((text.inAppText['close_error'] + " goodbyedpi.exe. " + text.inAppText['close_error2']) , title=text.inAppText['error_title'], func=self.stop_process, _type='error')
+                        self.show_notification((text.inAppText['close_error'] + f" {execut}. " + text.inAppText['close_error2']) ,
+                                                title=text.inAppText['error_title'], func=self.stop_process, _type='error')
                         
         if not self.proc.stop_event.is_set():
             try:
@@ -559,16 +618,20 @@ class MainWindow(BaseWindow):
                     self.proc.stop_goodbyedpi()
                 except Exception as ex:
                     if not '[WinError 5]' in str(ex):
-                        self.show_notification(text.inAppText['close_error'] +" goodbyedpi.exe. " + text.inAppText['close_error1'] + str(ex), title=text.inAppText['error_title'], func=self.stop_process, _type='error', error=[type(ex).__name__, ex.args, 'NOT_CRITICAL_ERROR', 'window:stop_process[self.proc.stop_goodbyedpi]'])
+                        self.show_notification(text.inAppText['close_error'] +f" {execut}. " +\
+                                                text.inAppText['close_error1'] + str(ex), title=text.inAppText['error_title'], 
+                                                func=self.stop_process, _type='error', 
+                                                error=[type(ex).__name__, ex.args, 'NOT_CRITICAL_ERROR', 
+                                                       'window:stop_process[self.proc.stop_goodbyedpi]'])
                         return False
-                if notf:self.show_notification(text.inAppText['process'] + " goodbyedpi.exe " + text.inAppText['close_complete'])
+                if notf:self.show_notification(text.inAppText['process'] + f" {execut} " + text.inAppText['close_complete'])
                 self.switch_var.set("off")
                 self.proc_state.set(text.inAppText['work'] if self.switch_var.get() == 'on' else text.inAppText['stop'])
                 print(self.switch_var.get())
                 self.process = False
                 return True
             except Exception as ex:
-                self.show_notification(text.inAppText['close_error'] +" goodbyedpi.exe. " + text.inAppText['close_error1'] + str(ex), title=text.inAppText['error_title'], func=self.stop_process, _type='error', error=[type(ex).__name__, ex.args, 'NOT_CRITICAL_ERROR', 'window:stop_process[internal_error]'])
+                self.show_notification(text.inAppText['close_error'] +f" {execut}. " + text.inAppText['close_error1'] + str(ex), title=text.inAppText['error_title'], func=self.stop_process, _type='error', error=[type(ex).__name__, ex.args, 'NOT_CRITICAL_ERROR', 'window:stop_process[internal_error]'])
                 return False
         return True
     

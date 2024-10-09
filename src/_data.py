@@ -17,6 +17,9 @@ SETTINGS_FILE_PATH = DIRECTORY+'data/settings/settings.ini'
 BACKUP_SETTINGS_FILE_PATH = DIRECTORY+'data/settings/_settings.ini'
 LOCALE_FILE_PATH =  DIRECTORY+'data/loc/loc.ini'
 GOODBYE_DPI_PATH =  DIRECTORY+'data/goodbyeDPI/'
+GOODBYE_DPI_EXECUTABLE = "goodbyedpi.exe" 
+ZAPRET_PATH = DIRECTORY+'data/zapret/'
+ZAPRET_EXECUTABLE = "winws.exe" 
 FONT = 'Nunito SemiBold'
 
 PARAMETER_MAPPING = {
@@ -54,6 +57,16 @@ VALUE_PARAMETERS = {
     'minttl': '--min-ttl',
     'setttl': '--set-ttl',
         
+}
+
+S_PARAMETER_MAPPING = {
+    'enabledoh': '-enable-doh',
+}
+
+S_VALUE_PARAMETERS = {
+    'sdns_port': '-dns-port',
+    "sdns": "-dns-addr",
+    "windowsize": '-window-size',
 }
 
 
