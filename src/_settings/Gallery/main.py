@@ -78,6 +78,10 @@ class Backend(QObject):
     @Slot(str, str, result=str)
     def getValue(self, key, setting):
         return settings.settings[key][setting]
+    
+    @Slot(str, str, result=int)
+    def getInt(self, key, setting):
+        return int(settings.settings[key][setting])
 
     @Slot()  
     def edit_custom_blacklist(self):
@@ -101,6 +105,11 @@ class Backend(QObject):
     def update_preset(self, preset:str):
         value = preset.split(".")[0]
         change_setting('GOODBYEDPI', 'preset', value)
+
+    @Slot(str)
+    def zapret_update_preset(self, preset:str):
+        value = preset.split(".")[0]
+        change_setting('ZAPRET', 'preset', value)
 
     @Slot(result=str)
     def load_logo(self):
