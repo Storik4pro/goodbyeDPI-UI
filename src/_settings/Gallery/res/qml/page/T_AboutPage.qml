@@ -283,6 +283,118 @@ ScrollablePage {
                     color: Qt.rgba(0.0, 0.0, 0.0, 0.3)
                     opacity: 0.3
                 }
+
+                ColumnLayout{
+                    RowLayout {
+                        spacing: 20
+                        anchors {
+                            verticalCenter: parent.verticalCenter
+                            left: parent.left
+                            leftMargin: 15
+                        }
+
+                        Column {
+                            spacing: 10
+                            anchors.verticalCenter: parent.verticalCenter
+                            Label {
+                                    text: "Zapret"
+                                    font: Typography.subtitle
+                                    Layout.preferredWidth: 350
+                                }
+                            RowLayout {
+                                spacing: 10
+                                Label {
+                                    text: backend.get_element_loc('about_about')
+                                    font: Typography.body
+                                    Layout.preferredWidth: 350
+                                }
+                                CopyableText {
+                                    text: backend.get_element_loc('about_GDPI')
+                                    font: Typography.body
+                                    color: "#c0c0c0"
+                                }
+                            }
+                            RowLayout {
+                                spacing: 10
+                                Label {
+                                    text: "Version"
+                                    font: Typography.body
+                                    Layout.preferredWidth: 350
+                                }
+                                CopyableText {
+                                    text: "63"
+                                    font: Typography.body
+                                    color: "#c0c0c0"
+                                }
+                            }
+
+                            RowLayout {
+                                spacing: 10
+                                Label {
+                                    text: "Developer"
+                                    font: Typography.body
+                                    Layout.preferredWidth: 350
+                                }
+                                CopyableText {
+                                    text: 'bol-van'
+                                    font: Typography.body
+                                    color: "#c0c0c0"
+                                }
+                            }
+
+                            RowLayout {
+                                spacing: 10
+                                Label {
+                                    text: "Links:"
+                                    font: Typography.body
+                                    Layout.preferredWidth: 350
+                                }
+                                
+                            }
+                            RowLayout {
+                                spacing: 10
+                                ColumnLayout {
+                                    Layout.preferredWidth: 350
+
+                                    HyperlinkButton{
+                                        anchors {
+                                            leftMargin: 15
+                                            topMargin:0
+                                        }
+                                        text: "https://github.com/bol-van/zapret"
+                                        onClicked: {
+                                            Qt.openUrlExternally(text)
+                                        }
+                                    }
+                                }
+                                ColumnLayout {
+                                    Layout.preferredWidth: 350
+
+                                    HyperlinkButton{
+                                        anchors {
+                                            leftMargin: 15
+                                            topMargin:0
+                                        }
+                                        text: "https://github.com/bol-van"
+                                        onClicked: {
+                                            Qt.openUrlExternally(text)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: -15
+                    Layout.topMargin: 5
+                    Layout.bottomMargin: 5
+                    height: 3
+                    color: Qt.rgba(0.0, 0.0, 0.0, 0.3)
+                    opacity: 0.3
+                }
                 
                 ColumnLayout {
 

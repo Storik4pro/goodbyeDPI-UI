@@ -23,6 +23,11 @@ Item{
                 icon.name: FluentIcons.graph_Tiles
         },
         PaneItem{
+                key: "/zapret"
+                title: "[PREVIEW] " + backend.get_element_loc('settings') + ' Zapret'
+                icon.name: FluentIcons.graph_Tiles
+        },
+        PaneItem{
                 key: "/additional"
                 title: backend.get_element_loc('additional')
                 icon.name: FluentIcons.graph_Package
@@ -50,6 +55,7 @@ Item{
             "/additional": resolvedUrl("res/qml/page/T_AdditionalUtils.qml"),
             "/personalize": resolvedUrl("res/qml/page/T_Personalize.qml"),
             "/goodbyedpi": resolvedUrl("res/qml/page/T_Goodbyedpi.qml"),
+            "/zapret": resolvedUrl("res/qml/page/T_Zapret.qml"),
             "/update": resolvedUrl("res/qml/page/T_Update.qml"),
         }
     }
