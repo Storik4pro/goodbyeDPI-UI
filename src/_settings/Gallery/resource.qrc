@@ -17,6 +17,8 @@
         <file>res/qml/page/T_AdditionalUtilsPage.qml</file>
         <file>res/qml/page/T_GoodbyedpiAdvanced.qml</file>
         <file>res/qml/page/T_GoodbyedpiSettings.qml</file>
+        <file>res/qml/page/T_Zapret.qml</file>
+        <file>res/qml/page/T_ZapretSettings.qml</file>
         <file>res/qml/page/T_Update.qml</file>
         <file>res/qml/page/T_UpdatePage.qml</file>
         <file>res/qml/screen/MainScreen.qml</file>
