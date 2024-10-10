@@ -283,7 +283,7 @@ class GoodbyedpiProcess:
                 self.output_app.add_output(data)
             if "Filter activated" in data or "capture is started." in data:
                 if notf: self.app.show_notification(text.inAppText['process']+f" {execut} " + text.inAppText['run_comlete'])
-            elif "Error opening filter" in data or "unknown option" in data or "[PROXY] error creating listener:" in data:
+            elif "Error opening filter" in data or "unknown option" in data or "hostlists load failed" in data:
                 self.reason = 'for unknown reason'
                 self.error = True
                 print("Trying to connect terminal")
