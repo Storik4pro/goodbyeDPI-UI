@@ -151,8 +151,12 @@ class UpdaterApp(CTk):
                         if relative_path == '':
                             index += 1
                             continue 
-
-                        if relative_path in ["update.exe", "_internal/data/goodbyeDPI/custom_blacklist.txt"]:
+                        
+                        zapret_path = "_internal\data\zapret"
+                        if relative_path in ["update.exe", "_internal/data/goodbyeDPI/custom_blacklist.txt", 
+                                             "_internal/data/goodbyeDPI/WinDivert.dll",
+                                             f"{zapret_path}\WinDivert.dll", f"{zapret_path}\list-discord.txt",
+                                             f"{zapret_path}\list-general.txt", f"{zapret_path}\list-youtube.txt",]:
                             self.create_logs(f"Skipping {relative_path}")
                             index += 1
                             continue
