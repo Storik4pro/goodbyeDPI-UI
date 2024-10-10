@@ -1,6 +1,3 @@
-
-import subprocess
-import sys
 from _settings.Gallery.main import run_qt_app
 from multiprocessing import Pipe, Process
 

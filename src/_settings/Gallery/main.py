@@ -1,7 +1,5 @@
 import os
-from pathlib import Path
 import platform
-import shutil
 import sys
 import time
 
@@ -64,6 +62,12 @@ class Backend(QObject):
     @Slot(str, str, bool)  
     def toggleBool(self, key, setting, value):
         change_setting(key, setting, str(value))
+
+    @Slot()
+    def changeLanguage(self):
+        settings.reload_settings()
+        text.reload_text()
+        self.pipe.send('SETTINGS_UPDATE_NEED')
     
     @Slot(str, str, result=bool)
     def getBool(self, key, setting):
@@ -255,7 +259,7 @@ def run_qt_app(pipe):
     QGuiApplication.setApplicationName('GoodbyeDPI UI')
     QGuiApplication.setApplicationDisplayName('Settings')
     QGuiApplication.setApplicationVersion(GlobalConfig.application_version)
-    Logger.setup("Gallery")
+    if DEBUG: Logger.setup("Gallery")
     app = QGuiApplication([DIRECTORY+'_settings/Gallery/main.py'] if not DEBUG else ['E:/ByeDPI/src/_settings/main.py'])
     engine = QQmlApplicationEngine()
     engine.rootContext().setContextProperty("backend", backend)
