@@ -37,6 +37,62 @@ ScrollablePage {
                 }
 
                 Label {
+                    text: backend.get_element_loc("language")
+                    horizontalAlignment: Qt.AlignHCenter
+                    font: Typography.body
+                }
+            }
+
+            Item {
+                Layout.fillHeight: true
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    right: parent.right
+                    rightMargin: 20
+                }
+
+                ComboBox {
+                    anchors {
+                        verticalCenter: parent.verticalCenter
+                        right: parent.right
+                        rightMargin: 0
+                    }
+                    model: [
+                        "Russian",
+                        "English",
+                    ]
+                    currentIndex: backend.getValue('GLOBAL', 'language') == 'RU' ? 0 : 1
+                    onCurrentIndexChanged: {
+                        let selectedValue = model[currentIndex];
+                        backend.changeValue('GLOBAL', 'language', currentIndex == 0 ? 'RU':'EN');
+                        backend.changeLanguage();
+                    }
+
+                    focus: false
+                    focusPolicy: Qt.NoFocus
+                }
+            }
+        }
+        Rectangle {
+            Layout.preferredHeight: 68
+            Layout.fillWidth: true
+            Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
+            Layout.minimumWidth: 300
+            Layout.maximumWidth: 1000
+            Layout.alignment: Qt.AlignHCenter
+            color: Theme.res.controlFillColorDefault
+            border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
+            radius:6
+
+            ColumnLayout {
+                spacing: 2
+                anchors {
+                    verticalCenter: parent.verticalCenter
+                    left: parent.left
+                    leftMargin: 20
+                }
+
+                Label {
                     text: backend.get_element_loc("mode")
                     horizontalAlignment: Qt.AlignHCenter
                     font: Typography.body

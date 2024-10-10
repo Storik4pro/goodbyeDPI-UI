@@ -55,7 +55,9 @@ class MainWindow(BaseWindow):
         self.notification_thread = None
         self.is_update = False
 
+        self.header_frame = CTkFrame(self)
         self.frame1 = CTkFrame(self, width=400, fg_color='#0f0f0f') 
+        self.reg = CTkButton(self)
 
         self.region = settings.settings['REGION']['region']
         self.process = False
@@ -123,6 +125,8 @@ class MainWindow(BaseWindow):
             self.show_notification(text.inAppText['update_available_info'], func=self.open_settings, button=text.inAppText['open_settings'].lower())
     
     def create_region(self, region=None):
+        self.header_frame.destroy()
+        self.reg.destroy()
         self.header_frame = CTkFrame(self, fg_color='#0f0f0f' if self.mica else None)
         self.logo = CTkImage(light_image=Image.open(DIRECTORY+"data/icon.ico"), size=(50, 50))
         self.logo_label = CTkLabel(self.header_frame, image=self.logo, text="")
@@ -143,13 +147,13 @@ class MainWindow(BaseWindow):
         self.header_text_frame.pack(fill='x', padx=(0,5))
         self.header_frame.pack(fill="x",pady=(10, 0), padx=10)
 
-        reg = CTkButton(self, text=text.inAppText['open_settings'].lower(), font=(FONT, 15), command=self.open_settings, width=200)
+        self.reg = CTkButton(self, text=text.inAppText['open_settings'].lower(), font=(FONT, 15), command=self.open_settings, width=200)
         
         
 
         self.create_other()
 
-        reg.pack(padx=10, pady=15, fill='both')
+        self.reg.pack(padx=10, pady=15, fill='both')
 
     def create_other(self):
         self.frame1.destroy()
@@ -422,12 +426,8 @@ class MainWindow(BaseWindow):
                 print(data)
                 if data == 'SETTINGS_UPDATE_NEED':
                     settings.reload_settings()
-                    self.active_dns = settings.settings['GLOBAL']['change_dns']
-                    self._active_dns.set(self.active_dns)
-                    if self.active_dns == 'True': 
-                        self.active_dns = True
-                    else: self.active_dns = False
-                    print(self._active_dns.get())
+                    text.reload_text()
+                    self.create_region()
                 if data == 'OPEN_PSEUDOCONSOLE':
                     self.connect_terminal()
                 if data == 'UPDATE_TXT':
@@ -532,7 +532,7 @@ class MainWindow(BaseWindow):
             elif preset == 2:
                 preset_settings = settings.settings['ZAPRET'][f'youtube_string']
             elif preset == 3:
-                preset_settings = settings.settings['ZAPRET'][f'youtube_discord']
+                preset_settings = settings.settings['ZAPRET'][f'youtube_discord_alt2']
             else:
                 preset_settings = settings.settings['ZAPRET'][f'youtube_discord_alt']
             
