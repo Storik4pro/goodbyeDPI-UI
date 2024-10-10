@@ -234,17 +234,17 @@ ScrollablePage {
                         property bool isInitializing: false
                         onTextChanged: {
                             if (!isInitializing) {
-                                var allowedCharsRegex = /^[0-9a-zA-Z:"><\/\\.\-\_\s]*$/
-                                if (!allowedCharsRegex.test(text)) {
-                                    var cursorPosition = customParameters.cursorPosition - 1
-                                    text = text.slice(0, cursorPosition) + text.slice(cursorPosition + 1)
-                                    customParameters.cursorPosition = cursorPosition
+                                var cursorPosition = customParameters.cursorPosition
+                                var previousText = text
+                                var newText = text.replace(/[^0-9a-zA-Z:"><\/\\.\-_\s,=]/g, '')
+                                if (newText !== previousText) {
+                                    var diff = previousText.length - newText.length
+                                    text = newText
+                                    customParameters.cursorPosition = cursorPosition - diff
                                     info_manager_bottomright.show(InfoBarType.Warning, backend.get_element_loc("warn_entry"), 3000)
-                                } else {
-                                    saveCustomParameters()
-                                    generateCommandLine()
                                 }
-                                
+                                saveCustomParameters()
+                                generateCommandLine()
                                  
                             }
                             
