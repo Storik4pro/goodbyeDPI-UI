@@ -612,7 +612,7 @@ class MainWindow(BaseWindow):
                         self.show_notification((text.inAppText['close_error'] + f" {execut}. " + text.inAppText['close_error2']) ,
                                                 title=text.inAppText['error_title'], func=self.stop_process, _type='error')
                         
-        if not self.proc.stop_event.is_set():
+        if self.proc.goodbyedpi_thread and self.proc.goodbyedpi_thread.is_alive() and not self.proc.stop_event.is_set():
             try:
                 try:
                     self.proc.stop_goodbyedpi()
