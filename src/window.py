@@ -113,6 +113,9 @@ class MainWindow(BaseWindow):
 
         self.switch_var = StringVar(value="on" if self.process else "off")
         print(self.autorun)
+        if self.updates_availible:
+            self.after(1800000, lambda: 
+                self.show_notification(text.inAppText['update_available_info'], func=self.open_settings, button=text.inAppText['open_settings'].lower()))
         if self.autorun:
             self.perform_autorun_actions()
             self.hide_window()
@@ -120,9 +123,8 @@ class MainWindow(BaseWindow):
         self.create_region()
 
         if not install_font_result:
-            self.show_notification(text.inAppText['font_error_info'], title=text.inAppText['font_error'], func=self.open_folder, button=text.inAppText['fix_manually'], _type='error')
-        if self.updates_availible:
-            self.show_notification(text.inAppText['update_available_info'], func=self.open_settings, button=text.inAppText['open_settings'].lower())
+            #self.show_notification(text.inAppText['font_error_info'], title=text.inAppText['font_error'], func=self.open_folder, button=text.inAppText['fix_manually'], _type='error')
+            pass
     
     def create_region(self, region=None):
         self.header_frame.destroy()
