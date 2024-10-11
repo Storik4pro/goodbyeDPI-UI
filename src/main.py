@@ -55,6 +55,9 @@ def check_first_run():
             settings.reload_settings()
     return install_font_result
 
+def chk_directory():
+    if settings.settings['GLOBAL']["work_directory"] != DIRECTORY and not "System32" in DIRECTORY:
+        change_setting('GLOBAL', 'work_directory', DIRECTORY)
     
 if __name__ == "__main__":
     if not DEBUG: multiprocessing.freeze_support()
@@ -73,7 +76,7 @@ if __name__ == "__main__":
             autorun = 'True'
         if name == '--after-update':
             after_update = 'True'
-            change_setting('GLOBAL', 'update_coplete', "False")
+            change_setting('GLOBAL', 'update_complete', "False")
         pompt+=name+value
         
     if not is_admin():
@@ -85,13 +88,13 @@ if __name__ == "__main__":
             settings.reload_settings()
             change_setting('GLOBAL', 'after_update', 'False')
 
-        if (after_update == 'True' or first_run == 'True' or settings.settings['GLOBAL']['update_coplete'] == 'False') and not DEBUG:
+        if (after_update == 'True' or first_run == 'True' or settings.settings['GLOBAL']['update_complete'] == 'False') and not DEBUG:
             try:
                 kill_update()
                 update_result = rename_update_exe()
-                change_setting('GLOBAL', 'update_coplete', "True")
+                change_setting('GLOBAL', 'update_complete', "True")
             except:
-                change_setting('GLOBAL', 'update_coplete', "False")
+                change_setting('GLOBAL', 'update_complete', "False")
         if first_run == 'True':
             change_setting('GLOBAL', 'work_directory', DIRECTORY)
         
