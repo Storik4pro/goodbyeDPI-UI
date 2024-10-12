@@ -43,7 +43,7 @@ class ErrorWindow(CTkToplevel):
         self.error_category_label = CTkLabel(self.info_frame, text=f"Type : {error_category}", anchor="w", font=(FONT, 14))
         self.error_category_label.pack(anchor="w", pady=(0, 2), padx=0)
 
-        self.error_details_label = CTkLabel(self.info_frame, text=text.inAppText['about_first'], anchor="w", font=(FONT, 14))
+        self.error_details_label = CTkLabel(self.info_frame, text="Details: ", anchor="w", font=(FONT, 14))
         self.error_details_label.pack(anchor="w", pady=(0, 2), padx=0)
 
         self.details_textbox = CTkTextbox(self.info_frame, wrap="word", font=('Cascadia Mono', 12))
@@ -55,7 +55,7 @@ class ErrorWindow(CTkToplevel):
         self.button_frame.pack(fill="x", side='bottom', pady=(0, 0), padx=0)
 
         self.copy_icon = CTkImage(light_image=Image.open(DIRECTORY+"data/copy_icon.png"), size=(20, 20))
-        self.copy_button = CTkButton(self.button_frame, image=self.copy_icon, width=200, text=text.inAppText['pseudoconsole_copy'], fg_color="transparent", border_width=2, font=(FONT, 15), command=self.copy_output)
+        self.copy_button = CTkButton(self.button_frame, image=self.copy_icon, width=200, text="COPY", fg_color="transparent", border_width=2, font=(FONT, 15), command=self.copy_output)
         self.copy_button.pack(side="left", padx=(0, 5), pady=(10, 0))
 
         self.close_button = CTkButton(self.button_frame, width=200, text="OK", font=(FONT, 15), command=self.close_window)

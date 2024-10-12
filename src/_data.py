@@ -1,6 +1,9 @@
 import configparser
+import logging
 import os
 import sys
+import traceback
+from logger import AppLogger
 
 DEBUG = False
 
@@ -73,6 +76,8 @@ S_VALUE_PARAMETERS = {
 REPO_OWNER = "Storik4pro"
 REPO_NAME = "goodbyeDPI-UI"
 
+logger = AppLogger(VERSION, "settings_import")
+
 class Settings:
     def __init__(self) -> None:
         self.settings = self.reload_settings()
@@ -82,8 +87,12 @@ class Settings:
         config.read(SETTINGS_FILE_PATH, encoding='utf-8')
         self.settings = config
         return self.settings
-    
-settings = Settings()
+try:    
+    logger.create_logs(f"Importing application settings from \"{SETTINGS_FILE_PATH}\"")
+    settings = Settings()
+except Exception as ex: 
+    error_message = traceback.format_exc()
+    logger.raise_critical(error_message)
 
 
 class Text:
@@ -97,5 +106,24 @@ class Text:
         config.read(LOCALE_FILE_PATH, encoding='utf-8')
         self.inAppText = config[f'{self.selectLanguage}']
 
-text = Text(settings.settings['GLOBAL']['language'])
+try:    
+    logger.create_logs(f"Importing application localize from \"{LOCALE_FILE_PATH}\"")
+    text = Text(settings.settings['GLOBAL']['language'])
+except Exception as ex: 
+    error_message = traceback.format_exc()
+    logger.raise_critical(error_message)
 
+def get_log_level():
+    log_lvl = settings.settings['GLOBAL']["log_level"]
+    if log_lvl == 'critical': return logging.CRITICAL
+    elif log_lvl == 'error': return logging.ERROR
+    else: return logging.DEBUG
+
+try:
+    LOG_LEVEL = get_log_level()
+except:
+    error_message = traceback.format_exc()
+    logger.raise_critical(error_message)
+
+logger.create_logs(f"Importing complete without errors.")
+logger.cleanup_logs()

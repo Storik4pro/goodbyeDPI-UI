@@ -7,6 +7,7 @@ import subprocess
 import os
 import ctypes
 from ctypes import windll, c_char_p
+import traceback
 import psutil
 import requests
 from toasted import ToastDismissReason
@@ -16,9 +17,10 @@ from tkinter.font import Font
 import ctypes.wintypes
 import darkdetect
 from customtkinter import *
-from _data import settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, BACKUP_SETTINGS_FILE_PATH, text
+from _data import LOG_LEVEL, VERSION, settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, BACKUP_SETTINGS_FILE_PATH, text
 from utils import check_mica, install_font, register_app, is_process_running, change_setting
 from quick_start import kill_update, merge_settings, merge_blacklist, rename_update_exe
+from logger import AppLogger
 import pywintypes
 import configparser
 import pystray
@@ -30,7 +32,7 @@ except:pass
 
 from window import MainWindow
 
-
+logger = AppLogger(VERSION, "goodbyeDPI", LOG_LEVEL)
 def is_admin():
     try:
         return ctypes.windll.shell32.IsUserAnAdmin()
@@ -45,8 +47,11 @@ def check_first_run():
         if existing_app:
             result = messagebox.askyesno(text.inAppText['app_is_running'], text.inAppText['process']+" 'goodbyeDPI.exe' "+text.inAppText['app_is_running_info'])
             if result:
-                existing_app.terminate()
-                existing_app.wait()
+                try:
+                    existing_app.terminate()
+                    existing_app.wait()
+                except:
+                    logger.create_error_log(traceback.format_exc())
             else:
                 sys.exit(0)
         if first_run == 'True':
@@ -78,10 +83,15 @@ if __name__ == "__main__":
             after_update = 'True'
             change_setting('GLOBAL', 'update_complete', "False")
         pompt+=name+value
-        
+    
+    logger.create_debug_log("Getting ready for start application.")
+
     if not is_admin():
+        logger.create_debug_log("Retrying as administrator")
         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__+pompt, None, 1)
+        logger.cleanup_logs()
     else:
+        logger.create_debug_log("Started as administrator")
         if after_update == 'True':
             merge_settings(BACKUP_SETTINGS_FILE_PATH, SETTINGS_FILE_PATH)
             merge_blacklist(GOODBYE_DPI_PATH)
@@ -94,6 +104,7 @@ if __name__ == "__main__":
                 update_result = rename_update_exe()
                 change_setting('GLOBAL', 'update_complete', "True")
             except:
+                logger.create_error_log(traceback.format_exc())
                 change_setting('GLOBAL', 'update_complete', "False")
         if first_run == 'True':
             change_setting('GLOBAL', 'work_directory', DIRECTORY)
@@ -124,4 +135,5 @@ if __name__ == "__main__":
             if mica == "True": ApplyMica(windll.user32.FindWindowW(c_char_p(None), window.title()), True, False)
             window.mainloop()
         except: pass
+        logger.cleanup_logs()
         
