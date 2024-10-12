@@ -7,7 +7,6 @@ import customtkinter
 import sys
 import time
 import difflib
-from win32material import *
 FONT = 'Nunito SemiBold'
 
 class CTkScrollableDropdown(customtkinter.CTkToplevel):

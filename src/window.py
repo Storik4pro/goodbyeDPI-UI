@@ -19,7 +19,8 @@ from tktooltip import ToolTip
 import tkinter
 from concurrent.futures import ThreadPoolExecutor
 from toasted import ToastDismissReason
-from win32material import *
+try: from win32material import *
+except:pass
 from _data import GOODBYE_DPI_EXECUTABLE, S_PARAMETER_MAPPING, S_VALUE_PARAMETERS, ZAPRET_EXECUTABLE, VERSION, settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, \
                     BACKUP_SETTINGS_FILE_PATH, PARAMETER_MAPPING, VALUE_PARAMETERS, text
 from chk_preset import ChkPresetApp
