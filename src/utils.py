@@ -538,7 +538,7 @@ def sni_support():
         return False 
     
 def check_urls():
-    with open(f"{'E:/ByeDPI' if DEBUG else '' + GOODBYE_DPI_PATH}/custom_blacklist.txt", 'r') as file:
+    with open(f"{('E:/ByeDPI/' if DEBUG else '') + GOODBYE_DPI_PATH}/custom_blacklist.txt", 'r') as file:
         urls = file.read().splitlines()
 
     sites = []
