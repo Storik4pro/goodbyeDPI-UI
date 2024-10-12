@@ -93,6 +93,10 @@ class GoodbyedpiApp(CTkToplevel):
             self.after(200, self.update_frame)
         except:pass
 
+    def enable_copy(self, event):
+        self.output_textbox.configure(state="normal")
+        self.output_textbox.after(100, lambda: self.output_textbox.configure(state="disabled"))
+
     def clear_output(self):
         if self.output_textbox:
             self.output_textbox.configure(state="normal")
@@ -106,6 +110,7 @@ class GoodbyedpiApp(CTkToplevel):
             self.output_textbox = CTkTextbox(self.textbox_frame, wrap="word", width=700, height=250, font=('Cascadia Mono', 15))
             self.output_textbox.pack(pady=10, padx=10, fill="both", expand=True)
             self.output_textbox.insert("1.0", f'[DEBUG] Connecting to {self.execut} ...\n\n')
+            self.output_textbox.bind("<Control-c>", self.enable_copy)
             self.output_textbox.configure(state="disabled")
             self.restart_button.configure(state='normal')
             self.copy_button.configure(state='normal')
@@ -116,6 +121,7 @@ class GoodbyedpiApp(CTkToplevel):
         self.output_textbox.configure(state="normal")
         self.output_textbox.insert(END, output)
         self.output_textbox.configure(state="disabled")
+        
         self.output_textbox.see(END)
         
         if "Filter activated" in output or "[PROXY] created a listener on port" in output:

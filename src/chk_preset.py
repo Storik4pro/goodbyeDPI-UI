@@ -8,7 +8,7 @@ from utils import check_mica, open_custom_blacklist, sni_support
 from PIL import Image, ImageTk
 from tkinter import messagebox
 import tkinter
-from win32material import *
+if check_mica(): from win32material import *
 from Elements import CTkScrollableDropdown, LoadingIndicator, EntryElement, ValidateValue
 
 mica = (settings.settings.getboolean('APPEARANCE_MODE', 'use_mica') and check_mica())
@@ -121,6 +121,11 @@ class ChkPresetApp(BaseWindow):
 
     def close(self):
         self.destroy()
+
+    def enable_copy(self, event):
+        if self.changelog_textbox and self.changelog_textbox.winfo_exists():
+            self.changelog_textbox.configure(state="normal")
+            self.changelog_textbox.after(100, lambda: self.changelog_textbox.configure(state="disabled"))
 
     def load_content(self, page=0):
         for widget in self.textbox_frame.winfo_children():
@@ -323,6 +328,7 @@ class ChkPresetApp(BaseWindow):
                 font=('Cascadia Mono', 15)
             )
             self.changelog_textbox.pack(pady=5, padx=(5, 10), fill="both", expand=True)
+            self.changelog_textbox.bind("<Control-c>", self.enable_copy) 
             self.changelog_textbox.configure(state="disabled")
 
             self.add_log(text.inAppText["preparing_tool_log"])
@@ -357,6 +363,7 @@ class ChkPresetApp(BaseWindow):
 
             print(self.output)
             self.changelog_textbox.insert("0.0", self.output)
+            self.changelog_textbox.bind("<Control-c>", self.enable_copy) 
             self.changelog_textbox.configure(state="disabled")
             self.next_button.destroy()
 
