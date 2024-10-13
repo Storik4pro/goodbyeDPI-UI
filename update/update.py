@@ -152,11 +152,11 @@ class UpdaterApp(CTk):
                             index += 1
                             continue 
                         
-                        zapret_path = "_internal\data\zapret"
+                        zapret_path = "_internal/data/zapret"
                         if relative_path in ["update.exe", "_internal/data/goodbyeDPI/custom_blacklist.txt", 
-                                             "_internal/data/goodbyeDPI/WinDivert.dll",
-                                             f"{zapret_path}\WinDivert.dll", f"{zapret_path}\list-discord.txt",
-                                             f"{zapret_path}\list-general.txt", f"{zapret_path}\list-youtube.txt",]:
+                                             "_internal/data/goodbyeDPI/WinDivert64.sys",
+                                             f"{zapret_path}/WinDivert64.sys", f"{zapret_path}/list-discord.txt",
+                                             f"{zapret_path}/list-general.txt", f"{zapret_path}/list-youtube.txt",]:
                             self.create_logs(f"Skipping {relative_path}")
                             index += 1
                             continue
@@ -276,15 +276,21 @@ class UpdaterApp(CTk):
 
         button_width = dialog_width - 40  
 
-        skip_button = CTkButton(bottom_frame, text=text.inAppText['skip'], width=button_width, height=40, corner_radius=0, image=skip_icon_photo, fg_color='transparent', border_width=1, anchor='w', command=on_skip, compound='left')
+        skip_button = CTkButton(bottom_frame, text=text.inAppText['skip'], width=button_width, height=40,
+            corner_radius=0, image=skip_icon_photo, fg_color='transparent', text_color=['black', 'white'], border_width=1,
+             anchor='w', command=on_skip, compound='left')
         skip_button.configure(font=(FONT, 14))
         skip_button.pack(fill=X, pady=1)
 
-        retry_button = CTkButton(bottom_frame, text=text.inAppText['retry'], width=button_width, height=40, corner_radius=0, image=retry_icon_photo, fg_color='transparent', border_width=1, anchor='w', command=on_retry, compound='left')
+        retry_button = CTkButton(bottom_frame, text=text.inAppText['retry'], width=button_width, height=40,
+             corner_radius=0, image=retry_icon_photo, fg_color='transparent', text_color=['black', 'white'], border_width=1, 
+             anchor='w', command=on_retry, compound='left')
         retry_button.configure(font=(FONT, 14))
         retry_button.pack(fill=X, pady=1)
 
-        cancel_button = CTkButton(bottom_frame, text=text.inAppText['exit'], width=button_width, height=40, corner_radius=0, image=cancel_icon_photo, fg_color='transparent', border_width=1, anchor='w', command=on_cancel, compound='left')
+        cancel_button = CTkButton(bottom_frame, text=text.inAppText['exit'], width=button_width, height=40, 
+             corner_radius=0, image=cancel_icon_photo, fg_color='transparent', text_color=['black', 'white'], border_width=1, 
+             anchor='w', command=on_cancel, compound='left')
         cancel_button.configure(font=(FONT, 14))
         cancel_button.pack(fill=X, pady=1)
 
@@ -296,7 +302,7 @@ class UpdaterApp(CTk):
             goodbye_dpi_exe = os.path.join(self.unpack_directory, "goodbyeDPI.exe")
             if os.path.exists(goodbye_dpi_exe):
                 self.create_logs("Launching goodbyeDPI.exe with --after-update parameter")
-                subprocess.Popen([goodbye_dpi_exe, "--after-update"], creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+                subprocess.Popen([goodbye_dpi_exe, "--after-update"], creationflags=subprocess.DETACHED_PROCESS)
 
                 self.end = True
                 self.safe_exit()
