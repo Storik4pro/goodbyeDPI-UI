@@ -204,7 +204,10 @@ class MainWindow(BaseWindow):
         if was_running:
             self.start_process(notf=False)
         
-        if return_code == 0:self.show_notification(text.inAppText['update_complete'])
+        if return_code == 0:
+            notf = settings.settings.getboolean('NOTIFICATIONS', 'enable')
+            if notf: 
+                self.show_notification(text.inAppText['update_complete'])
 
     def update_txt(self):
         update_thread = threading.Thread(target=self.update_blacklist_thread)
@@ -429,8 +432,9 @@ class MainWindow(BaseWindow):
                 print(data)
                 if data == 'SETTINGS_UPDATE_NEED':
                     settings.reload_settings()
-                    text.reload_text()
-                    self.create_region()
+                    if text.selectLanguage != settings.settings['GLOBAL']['language']:
+                        text.reload_text()
+                        self.create_region()
                 if data == 'OPEN_PSEUDOCONSOLE':
                     self.connect_terminal()
                 if data == 'UPDATE_TXT':
@@ -585,8 +589,10 @@ class MainWindow(BaseWindow):
         else:
             self.stop_process()
     
-    def start_process(self, notf=True, preset=-1, args:list=None):
+    def start_process(self, notf=True , preset=-1, args:list=None):
         settings.reload_settings()
+        notf = notf if settings.settings.getboolean('NOTIFICATIONS', 'enable') and\
+                       settings.settings.getboolean('NOTIFICATIONS', 'proc_on')  else False
         _args = self.check_args(preset) if args is None else args
         try:
             if not self.is_update:
@@ -601,7 +607,8 @@ class MainWindow(BaseWindow):
             self.show_notification(f"{ex}", title=text.inAppText['error'], func=self.start_process, _type='error', error=[type(ex).__name__, ex.args, 'CRITICAL_ERROR', 'window:start_process'])           
     
     def stop_process(self, notf=True):
-        print("stopping")
+        notf = notf if settings.settings.getboolean('NOTIFICATIONS', 'enable') and\
+                       settings.settings.getboolean('NOTIFICATIONS', 'proc_on')  else False
         execut = GOODBYE_DPI_EXECUTABLE if settings.settings["GLOBAL"]["engine"] == 'goodbyeDPI' else ZAPRET_EXECUTABLE
         if not check_winpty():
             for proc in psutil.process_iter(['pid', 'name']):
@@ -659,7 +666,10 @@ class MainWindow(BaseWindow):
             self.hide_window()
 
     def hide_window(self):
-        self.show_notification(text.inAppText['tray_icon'], func=self.show_window)
+        settings.reload_settings()
+        notf = True if settings.settings.getboolean('NOTIFICATIONS', 'enable') and\
+                       settings.settings.getboolean('NOTIFICATIONS', 'hide_in_tray')  else False
+        if notf:self.show_notification(text.inAppText['tray_icon'], func=self.show_window)
         self.withdraw()
         if self.tray_icon:
             self.tray_icon.visible = True
@@ -668,7 +678,7 @@ class MainWindow(BaseWindow):
 
     def create_tray_icon(self):
         image = Image.open(DIRECTORY+"data/icon.png") 
-        menu = (item(text.inAppText['maximize'] , self.show_window), item(text.inAppText['quit'] , self.exit_app))
+        menu = (item(text.inAppText['maximize'] , self.show_window, default=True), item(text.inAppText['quit'] , self.exit_app))
         self.tray_icon = pystray.Icon("name", image, "GoodbyeDPI UI", menu)
         threading.Thread(target=self.tray_icon.run, daemon=True).start()
 
@@ -724,7 +734,9 @@ class MainWindow(BaseWindow):
                 config.write(configfile)
             settings.reload_settings()
             self.autorun = True
-            self.show_notification(text.inAppText['autorun_complete'])
+            notf = True if settings.settings.getboolean('NOTIFICATIONS', 'enable') and\
+                       settings.settings.getboolean('NOTIFICATIONS', 'proc_on')  else False
+            if notf: self.show_notification(text.inAppText['autorun_complete'])
         except subprocess.CalledProcessError as ex:
             error_output = str(ex.stdout.decode('cp866', errors='replace'))
             self.show_notification(
@@ -735,7 +747,8 @@ class MainWindow(BaseWindow):
                 error=["SYSTEM ERROR", error_output, 'NOT_CRITICAL_ERROR', 'window:install_service']
             )
         except Exception as ex:
-            self.show_notification(f"{ex}", title=text.inAppText['autorun_error'], func=self.install_service, _type='error', error=[type(ex).__name__, ex.args, 'NOT_CRITICAL_ERROR', 'window:install_service'])
+            self.show_notification(f"{ex}", title=text.inAppText['autorun_error'], func=self.install_service, _type='error', 
+                                   error=[type(ex).__name__, ex.args, 'NOT_CRITICAL_ERROR', 'window:install_service'])
 
     def remove_service(self):
         if settings.settings['GLOBAL']['autorun'] == 'False':return
@@ -759,7 +772,9 @@ class MainWindow(BaseWindow):
                 config.write(configfile)
             settings.reload_settings()
             self.autorun = False
-            self.show_notification(text.inAppText['autorun_complete1'])
+            notf = True if settings.settings.getboolean('NOTIFICATIONS', 'enable') and\
+                       settings.settings.getboolean('NOTIFICATIONS', 'proc_on')  else False
+            if notf: self.show_notification(text.inAppText['autorun_complete1'])
         except subprocess.CalledProcessError as ex:
             error_output = str(ex.stdout.decode('cp866', errors='replace'))
             self.show_notification(
