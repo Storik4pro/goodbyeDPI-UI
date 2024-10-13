@@ -538,6 +538,23 @@ ScrollablePage {
                 context.router.go("/goodbyedpiAdvanced")
             }
         }
+        Label {
+            text: backend.get_element_loc("linked_settings")
+            font: Typography.bodyStrong
+            Layout.topMargin: 15
+        }
+        IconButton{
+            text: backend.get_element_loc("linked_autohostlist_site")
+            icon.name: FluentIcons.graph_OpenInNewWindow
+            icon.width: 18
+            icon.height: 18
+            spacing: 5
+            LayoutMirroring.enabled: true
+            onClicked: {
+                Qt.openUrlExternally("https://p.thenewone.lol/domains-export.txt")
+            }
+        }
+
     }
     
     
