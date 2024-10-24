@@ -18,16 +18,6 @@ Item{
                 icon.name: FluentIcons.graph_System
         },
         PaneItem{
-                key: "/goodbyedpi"
-                title: backend.get_element_loc('settings') + ' goodbyeDPI'
-                icon.name: FluentIcons.graph_Tiles
-        },
-        PaneItem{
-                key: "/zapret"
-                title: "[PREVIEW] " + backend.get_element_loc('settings') + ' Zapret'
-                icon.name: FluentIcons.graph_Tiles
-        },
-        PaneItem{
                 key: "/additional"
                 title: backend.get_element_loc('additional')
                 icon.name: FluentIcons.graph_Package
@@ -36,7 +26,11 @@ Item{
                 key: "/update"
                 title: backend.get_element_loc('_update')
                 icon.name: FluentIcons.graph_Sync
+        },
+        PaneItemHeader{
+            title: backend.get_element_loc('components')
         }
+
     ]
     property list<QtObject> originalFooterItems : [
         PaneItem{
@@ -56,6 +50,8 @@ Item{
             "/personalize": resolvedUrl("res/qml/page/T_Personalize.qml"),
             "/goodbyedpi": resolvedUrl("res/qml/page/T_Goodbyedpi.qml"),
             "/zapret": resolvedUrl("res/qml/page/T_Zapret.qml"),
+            "/spoofdpi": resolvedUrl("res/qml/page/T_Spoofdpi.qml"),
+            "/byedpi": resolvedUrl("res/qml/page/T_Byedpi.qml"),
             "/update": resolvedUrl("res/qml/page/T_Update.qml"),
         }
     }
@@ -116,7 +112,32 @@ Item{
                 }
             }
     }
+    Component {
+        id: paneItemComponent
+        PaneItem {
+            property var data 
+            property var key: componentKey
+            property var title: componentTitle
+            property var _icon
+        }
+    }
+
     Component.onCompleted:{
+        var components = backend.getComponentsList();
+        for (var i = 0; i < components.length; i++) {
+            var component = components[i];
+
+            var paneItem = paneItemComponent.createObject(navigation_view, {
+                "key": component.key,
+                "title": component.title,
+                "icon.name": component._icon === "" ? FluentIcons.graph_Ethernet : component._icon,
+            });
+            if (paneItem !== null) {
+                originalItems.push(paneItem);
+            } else {
+                console.error("Error PaneItem");
+            }
+        }
         page_router.go("/")
     }
 }
