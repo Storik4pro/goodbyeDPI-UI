@@ -1,0 +1,3 @@
+{
+    "custom_parameters": "--hosts youtube.txt --fake -2 --tls-sni 'www.google.com' --ip-opt --tlsrec=6+s --tlsrec 27+s"
+}

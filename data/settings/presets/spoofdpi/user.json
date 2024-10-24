@@ -1,0 +1,22 @@
+{
+    "custom_parameters": "",
+    "enabledoh": false,
+    "ipv4only": false,
+    "silent": false,
+    "systemproxy": false,
+    "addr": true,
+    "addr_value": "127.0.0.1",
+    "dns": true,
+    "enabledebug": false,
+    "dns_value": "1.1.1.1",
+    "dnsport": true,
+    "dnsport_value": 53,
+    "port": false,
+    "port_value": 8080,
+    "pattern": false,
+    "pattern_value": "",
+    "timeout": false,
+    "timeout_value": 10,
+    "windowsize": false,
+    "windowsize_value": 0
+}
