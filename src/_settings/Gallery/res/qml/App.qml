@@ -21,6 +21,12 @@ Starter {
     Component.onCompleted: {
         Global.starter = starter
         Theme.darkMode = SettingsHelper.getDarkMode()
+        if (!backend.getBool('APPEARANCE_MODE', 'animations')){
+            Theme.fasterAnimationDuration = 0
+            Theme.fastAnimationDuration = 0
+            Theme.mediumAnimationDuration = 0
+            Theme.slowAnimationDuration = 0
+        }
         WindowRouter.routes = {
             "/": resolvedUrl("res/qml/window/MainWindow.qml"),
         }
