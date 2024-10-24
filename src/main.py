@@ -144,7 +144,7 @@ if __name__ == "__main__":
                     after_update_actions()
 
                 # merge settings  
-                if after_update == 'True':
+                if after_update:
                     merge_settings(BACKUP_SETTINGS_FILE_PATH, SETTINGS_FILE_PATH)
                     merge_blacklist(GOODBYE_DPI_PATH)
                     merge_settings_to_json()
