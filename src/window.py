@@ -9,6 +9,7 @@ import subprocess
 import threading
 import time
 from tkinter import messagebox
+import traceback
 from PIL import Image, ImageTk
 from customtkinter import *
 import psutil
@@ -21,10 +22,10 @@ from concurrent.futures import ThreadPoolExecutor
 from toasted import ToastDismissReason
 try: from win32material import *
 except:pass
-from _data import GOODBYE_DPI_EXECUTABLE, S_PARAMETER_MAPPING, S_VALUE_PARAMETERS, ZAPRET_EXECUTABLE, VERSION, settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, \
-                    BACKUP_SETTINGS_FILE_PATH, PARAMETER_MAPPING, VALUE_PARAMETERS, text
+from _data import CONFIG_PATH, EXECUTABLES, GOODBYE_DPI_EXECUTABLE, S_PARAMETER_MAPPING, S_VALUE_PARAMETERS, ZAPRET_EXECUTABLE, VERSION, settings, SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, \
+                    BACKUP_SETTINGS_FILE_PATH, PARAMETER_MAPPING, VALUE_PARAMETERS, text, configs
 from chk_preset import ChkPresetApp
-from utils import change_setting, check_mica, check_urls, check_winpty, create_xml, install_font, remove_xml, sni_support, start_process, download_blacklist, move_settings_file, \
+from utils import change_setting, check_mica, check_urls, check_winpty, create_xml, get_preset_parameters, install_font, remove_xml, sni_support, start_process, download_blacklist, move_settings_file, \
                     ProgressToast, register_app, show_message, show_error, get_latest_release,\
                     is_process_running, GoodbyedpiProcess, stop_servise
 from settings import start_qt_settings
@@ -33,17 +34,12 @@ from error_view import ErrorWindow
 
 version = VERSION
 
-regions = {
-        text.inAppText['ru']:'RU',
-        text.inAppText['other']:'OTHER'
-    }
-
 def func():pass
 
 BaseWindow = tkinter.Tk if settings.settings.getboolean('APPEARANCE_MODE', 'use_mica') and check_mica() else CTk
 
 class MainWindow(BaseWindow):
-    def __init__(self, install_font_result, autorun, first_run) -> None:
+    def __init__(self, autorun, first_run) -> None:
         super().__init__()
         self.geometry('300x400')
         self.title(f'goodbyeDPI UI - v {version}')
@@ -123,9 +119,6 @@ class MainWindow(BaseWindow):
             return
         self.create_region()
 
-        if not install_font_result:
-            #self.show_notification(text.inAppText['font_error_info'], title=text.inAppText['font_error'], func=self.open_folder, button=text.inAppText['fix_manually'], _type='error')
-            pass
     
     def create_region(self, region=None):
         self.header_frame.destroy()
@@ -450,6 +443,8 @@ class MainWindow(BaseWindow):
                     move_settings_file(SETTINGS_FILE_PATH, BACKUP_SETTINGS_FILE_PATH)
                     subprocess.Popen(f'update.exe -directory-to-unpack "'+ DIRECTORY.replace("_internal/", "") + '" -directory-to-zip "' + DIRECTORY + "_portable.zip" + '" -localize ' + settings.settings['GLOBAL']['language'])
                     self.on_closing()
+                if data == 'STOP_PROCESS':
+                    self.stop_process()
                 if data == "SET_MODE":
                     settings.reload_settings()
                     if settings.settings['APPEARANCE_MODE']['mode'] != get_appearance_mode():
@@ -464,18 +459,27 @@ class MainWindow(BaseWindow):
 
     def check_args(self, preset):
         engine = settings.settings['GLOBAL']['engine']
+        cfg = settings.settings['CONFIG'][f'{engine.lower()}_config_path']
+        if cfg != "" and os.path.exists(cfg) and configs[engine.lower()].configfile != cfg:
+            configs[engine.lower()].configfile = cfg
+        else:
+            configs[engine.lower()].configfile = CONFIG_PATH+f"/{engine.lower()}/user.json"
+        configs[engine.lower()].reload_config()
+        
         if settings.settings['GLOBAL']['use_advanced_mode'] == 'True' and preset == -1 and engine == "goodbyeDPI":
             command = []
-
-            params = settings.settings['GOODBYEDPI']
+            configs['goodbyedpi'].reload_config()
+            params = configs['goodbyedpi'].data
 
             for ini_param, cmd_param in PARAMETER_MAPPING.items():
                 if ini_param in params:
-                    value = params.getboolean(ini_param)
+                    value = configs['goodbyedpi'].get_value(ini_param)
                     if value:
                         value_key = f"{ini_param}_value"
                         if ini_param in VALUE_PARAMETERS and value_key in params:
-                            param_value = params[value_key].strip()
+                            param_value = params[value_key]
+                            if isinstance(param_value, str):
+                                param_value = param_value.strip()
                             if param_value:
                                 command.append(cmd_param)
                                 command.append(param_value)
@@ -484,43 +488,42 @@ class MainWindow(BaseWindow):
 
             for ini_param, cmd_param in VALUE_PARAMETERS.items():
                 if ini_param in params:
-                    value = params.getboolean(ini_param)
+                    value = configs['goodbyedpi'].get_value(ini_param)
                     value_key = f"{ini_param}_value"
                     if value and value_key in params:
-                        param_value = params[value_key].strip()
+                        param_value = params[value_key]
+                        if isinstance(param_value, str):
+                            param_value = param_value.strip()
                         if param_value:
                             command.append(cmd_param)
-                            command.append(param_value)
+                            command.append(str(param_value))
 
             if 'blacklist_value' in params:
-                blacklist_value = params['blacklist_value'].strip()
+                blacklist_value = params['blacklist_value']
+                if isinstance(blacklist_value, str):
+                    blacklist_value = blacklist_value.strip()
                 if blacklist_value:
                     print(blacklist_value)
                     blacklist_files = blacklist_value.split(",")
                     print(blacklist_files)
                     for filePath in blacklist_files:
                         command.append('--blacklist')
-                        print(filePath, filePath.strip("\'"))
-                        command.append(str(filePath).strip("\""))
+                        print(filePath, filePath.strip("'"))
+                        command.append(str(filePath).strip('"'))
 
             if 'custom_parameters' in params:
                 custom_params = params['custom_parameters']
                 if custom_params:
                     custom_params_list = [param.strip() for param in custom_params.split(' ') if param.strip()]
                     command.extend(custom_params_list)
+
             print(command)
             return command
         elif engine == "goodbyeDPI":
             command = []
 
             preset = int(settings.settings['GOODBYEDPI']['preset']) if preset == -1 else preset
-            if preset <= 9:
-                command.append("-"+str(preset))
-            elif preset == 10:
-                command.extend(["-9", "--fake-gen", "5", "--fake-from-hex", "160301FFFF01FFFFFF0303594F5552204144564552544953454D454E542048455245202D202431302F6D6F000000000009000000050003000000"])
-            elif preset == 11:
-                command.extend(["-5", "-e1", "-q", "--fake-gen", "5", "--fake-from-hex", "160301FFFF01FFFFFF0303594F5552204144564552544953454D454E542048455245202D202431302F6D6F000000000009000000050003000000"])
-
+            command.extend(get_preset_parameters(preset, engine))
             if settings.settings['GLOBAL']['change_dns'] == 'True':
                 dns_pompt = [VALUE_PARAMETERS['dns'], settings.settings['GOODBYEDPI']['dns_value'], VALUE_PARAMETERS['dns_port'], settings.settings['GOODBYEDPI']['dns_port_value'],
                              VALUE_PARAMETERS['dnsv6'], settings.settings['GOODBYEDPI']['dnsv6_value'], VALUE_PARAMETERS['dnsv6_port'], settings.settings['GOODBYEDPI']['dnsv6_port_value']]
@@ -530,35 +533,62 @@ class MainWindow(BaseWindow):
 
             return command
         
-        elif settings.settings['ZAPRET']['use_advanced_mode'] == 'False':
+        elif engine == 'zapret' and settings.settings['ZAPRET']['use_advanced_mode'] == 'False':
             command = []
 
             preset = int(settings.settings['ZAPRET']['preset'])
-            if preset == 1:
-                preset_settings = settings.settings['ZAPRET'][f'discord_string']
-            elif preset == 2:
-                preset_settings = settings.settings['ZAPRET'][f'youtube_string']
-            elif preset == 3:
-                preset_settings = settings.settings['ZAPRET'][f'youtube_discord_alt2']
-            else:
-                preset_settings = settings.settings['ZAPRET'][f'youtube_discord_alt']
-            
-            preset_string = [param.strip() for param in preset_settings.split(' ') if param.strip()]
-            command.extend(preset_string)
+            command.extend(get_preset_parameters(preset, engine))
+
             return command
 
+        elif engine == 'zapret':
+            command = []
+
+            params = configs['zapret'].data
+
+            if 'custom_parameters' in params:
+                custom_params = params['custom_parameters']
+                if custom_params:
+                    custom_params_list = [param.strip() for param in custom_params.split(' ') if param.strip()]
+                    command.extend(custom_params_list)
+            print(command)
+            return command
+        
+        elif engine == 'byedpi' and settings.settings['BYEDPI']['use_advanced_mode'] == 'False':
+            command = []
+
+            preset = int(settings.settings['BYEDPI']['preset'])
+            command.extend(get_preset_parameters(preset, engine))
+
+            return command
+
+        elif engine == 'byedpi':
+            command = []
+
+            params = configs['byedpi'].data
+
+            if 'custom_parameters' in params:
+                custom_params = params['custom_parameters']
+                if custom_params:
+                    custom_params_list = [param.strip() for param in custom_params.split(' ') if param.strip()]
+                    command.extend(custom_params_list)
+            print(command)
+            return command
+        
         else:
             command = []
 
-            params = settings.settings['ZAPRET']
+            params = configs['spoofdpi'].data
 
-            """for ini_param, cmd_param in S_PARAMETER_MAPPING.items():
+            for ini_param, cmd_param in S_PARAMETER_MAPPING.items():
                 if ini_param in params:
-                    value = params.getboolean(ini_param)
+                    value = configs['spoofdpi'].get_value(ini_param)
                     if value:
                         value_key = f"{ini_param}_value"
                         if ini_param in S_VALUE_PARAMETERS and value_key in params:
-                            param_value = params[value_key].strip()
+                            param_value = params[value_key]
+                            if isinstance(param_value, str):
+                                param_value = param_value.strip()
                             if param_value:
                                 command.append(cmd_param)
                                 command.append(param_value)
@@ -567,13 +597,15 @@ class MainWindow(BaseWindow):
 
             for ini_param, cmd_param in S_VALUE_PARAMETERS.items():
                 if ini_param in params:
-                    value = params.getboolean(ini_param)
+                    value = configs['spoofdpi'].get_value(ini_param)
                     value_key = f"{ini_param}_value"
                     if value and value_key in params:
-                        param_value = params[value_key].strip()
-                        if param_value:
+                        param_value = params[value_key]
+                        if isinstance(param_value, str):
+                            param_value = param_value.strip()
+                        if param_value or param_value == 0:
                             command.append(cmd_param)
-                            command.append(param_value)"""
+                            command.append(str(param_value))
 
             if 'custom_parameters' in params:
                 custom_params = params['custom_parameters']
@@ -593,8 +625,8 @@ class MainWindow(BaseWindow):
         settings.reload_settings()
         notf = notf if settings.settings.getboolean('NOTIFICATIONS', 'enable') and\
                        settings.settings.getboolean('NOTIFICATIONS', 'proc_on')  else False
-        _args = self.check_args(preset) if args is None else args
         try:
+            _args = self.check_args(preset) if args is None else args
             if not self.is_update:
                 _q = self.proc.start_goodbyedpi(notf, _args)
                 self.switch_var.set("on")
@@ -604,12 +636,13 @@ class MainWindow(BaseWindow):
             else:
                 self.show_notification(f"Cannot run process while updating is running", title=text.inAppText['error'], func=self.start_process, _type='error')
         except Exception as ex:
-            self.show_notification(f"{ex}", title=text.inAppText['error'], func=self.start_process, _type='error', error=[type(ex).__name__, ex.args, 'CRITICAL_ERROR', 'window:start_process'])           
+            self.switch_var.set("off")
+            self.show_notification(f"{ex}", title=text.inAppText['error'], func=self.start_process, _type='error', error=[type(ex).__name__, traceback.format_exc(), 'CRITICAL_ERROR', 'window:start_process'])           
     
     def stop_process(self, notf=True):
         notf = notf if settings.settings.getboolean('NOTIFICATIONS', 'enable') and\
                        settings.settings.getboolean('NOTIFICATIONS', 'proc_on')  else False
-        execut = GOODBYE_DPI_EXECUTABLE if settings.settings["GLOBAL"]["engine"] == 'goodbyeDPI' else ZAPRET_EXECUTABLE
+        execut = EXECUTABLES[settings.settings["GLOBAL"]["engine"]]
         if not check_winpty():
             for proc in psutil.process_iter(['pid', 'name']):
                 if proc.info['name'] == execut:
@@ -728,9 +761,9 @@ class MainWindow(BaseWindow):
             remove_xml(temp_xml_path)
             
             config = configparser.ConfigParser()
-            config.read(SETTINGS_FILE_PATH)
+            config.read(SETTINGS_FILE_PATH, encoding='utf-8')
             config['GLOBAL']['autorun'] = 'True'
-            with open(SETTINGS_FILE_PATH, 'w') as configfile:
+            with open(SETTINGS_FILE_PATH, 'w', encoding='utf-8') as configfile:
                 config.write(configfile)
             settings.reload_settings()
             self.autorun = True
@@ -766,9 +799,9 @@ class MainWindow(BaseWindow):
             )
             
             config = configparser.ConfigParser()
-            config.read(SETTINGS_FILE_PATH)
+            config.read(SETTINGS_FILE_PATH, encoding='utf-8')
             config['GLOBAL']['autorun'] = 'False'
-            with open(SETTINGS_FILE_PATH, 'w') as configfile:
+            with open(SETTINGS_FILE_PATH, 'w', encoding='utf-8') as configfile:
                 config.write(configfile)
             settings.reload_settings()
             self.autorun = False
