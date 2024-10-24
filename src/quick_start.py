@@ -1,15 +1,18 @@
 import os
 import configparser
 import psutil
+import json
 
-from _data import FONT, DIRECTORY, text
+from _data import DIRECTORY, CONFIG_PATH, SETTINGS_FILE_PATH, settings
 
 def kill_update():
     path = DIRECTORY.replace("_internal/", "")
     for proc in psutil.process_iter(['pid', 'name', 'exe']):
         try:
-            if proc.info['name'].lower() == 'update.exe' and proc.info['exe'] and proc.info['exe'].lower() == path.lower():
-                proc.kill()
+            if proc.info['name'].lower() == 'update.exe' and proc.info['exe']:
+                exe_dir = os.path.abspath(os.path.dirname(proc.info['exe']))
+                if exe_dir.lower() == path.lower():
+                    proc.kill()
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
 
@@ -44,18 +47,15 @@ def merge_settings(backup_settings_file, settings_file):
     for section in settings_config.sections():
         if not backup_config.has_section(section):
             backup_config.add_section(section)
-            print(f"Added new section [{section}]")
+
         for key, value in settings_config.items(section):
             if not backup_config.has_option(section, key):
                 backup_config.set(section, key, value)
-                print(f"Added new option '{key}' in section [{section}] with value '{value}'")
 
     with open(settings_file, 'w', encoding='utf-8') as configfile:
         backup_config.write(configfile)
-    print(f"Merged settings written to {settings_file}")
 
     os.remove(backup_settings_file)
-    print(f"Deleted backup settings file {backup_settings_file}")
 
 def rename_update_exe():
     update_path = DIRECTORY.replace("_internal/", "")+'update.exe'
@@ -72,3 +72,34 @@ def rename_update_exe():
         return True
     else:
         return False
+
+def merge_settings_to_json():
+    if 'GOODBYEDPI' in settings.settings:
+        save_data = ['preset', 'use_blacklist', 'use_blacklist_custom'] 
+        copy_data = ['dns', 'dns_value', 'dns_port_value', 'dnsv6_value', 'dnsv6_port_value']
+        goodbyedpi_data = {}
+        keys_to_delete = []
+
+        for key in settings.settings['GOODBYEDPI']:
+            if key not in save_data:
+                data = settings.settings['GOODBYEDPI'][key]
+                if data in ['False', 'True']:
+                    data = settings.settings.getboolean('GOODBYEDPI', key)
+                elif data.isdigit():
+                    data = int(data)
+                goodbyedpi_data[key] = data
+                keys_to_delete.append(key)
+
+        for key in keys_to_delete:
+            if not key in copy_data:
+                del settings.settings['GOODBYEDPI'][key]
+
+        json_file = f'{CONFIG_PATH}/goodbyedpi/user.json'
+        with open(json_file, 'w', encoding='utf-8') as f:
+            json.dump(goodbyedpi_data, f, ensure_ascii=False, indent=4)
+            
+        with open(SETTINGS_FILE_PATH, 'w', encoding='utf-8') as configfile:
+                settings.settings.write(configfile)
+        settings.reload_settings()
+    else:
+        pass
