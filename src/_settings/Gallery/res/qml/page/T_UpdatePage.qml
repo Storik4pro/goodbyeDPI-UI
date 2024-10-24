@@ -38,10 +38,6 @@ ScrollablePage {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter
 
-            // Изображение вверху по центру
-            
-
-            // Используем Flow для адаптации макета
             Flow {
                 id: mainFlow
                 Layout.fillWidth: true
@@ -130,9 +126,6 @@ ScrollablePage {
                 }
                 }
 
-                // Разделитель для выравнивания кнопки вправо
-
-                // Настраиваем выравнивание checkBtn
                 RowLayout{
                     Layout.alignment: Qt.AlignVCenter
                     Layout.fillWidth: true
@@ -299,6 +292,7 @@ ScrollablePage {
                 whatsNewButton.visible = true
                 backend.changeValue('GLOBAL', 'version_to_update', availableVersion)
                 backend.toggleBool("GLOBAL", "updatesavailable", updatesAvailable)
+                checkBtn.text = backend.get_element_loc("update_available_btn_t")
             } else {
                 updatesAvailable = false
             }
