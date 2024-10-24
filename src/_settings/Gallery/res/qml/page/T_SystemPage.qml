@@ -18,6 +18,64 @@ ScrollablePage {
             text: backend.get_element_loc("base")
             font: Typography.bodyStrong
         }
+        Button {
+            Layout.minimumHeight: 68
+            Layout.fillWidth: true
+            Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
+            Layout.minimumWidth: 300
+            Layout.maximumWidth: 1000
+            Layout.alignment: Qt.AlignHCenter
+
+            RowLayout {
+                anchors.fill: parent
+                anchors{
+                    leftMargin: 20
+                    rightMargin: 20
+                }
+                spacing: 10
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 2
+
+                    Label {
+                        Layout.fillWidth: true
+                        text: backend.get_element_loc("components")
+                        horizontalAlignment: Text.AlignLeft
+                        font: Typography.body
+                        wrapMode: Text.Wrap
+                    }
+                    Label {
+                        Layout.fillWidth: true
+                        text: backend.get_element_loc("components_tip")
+                        horizontalAlignment: Text.AlignLeft
+                        font: Typography.caption
+                        color: "#c0c0c0"
+                        wrapMode: Text.Wrap
+                    }
+                }
+
+                IconButton {
+                    id: btn_icon
+                    width: 30
+                    height: 30
+                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                    Icon {
+                        anchors.centerIn: parent
+                        source: FluentIcons.graph_ChevronRight
+                        width: 15
+                        height: 15
+                    }
+                    onClicked: {
+                        context.router.go("/components")
+                    }
+                }
+            }
+
+            onClicked: {
+                context.router.go("/components")
+            }
+        }
         Expander {
             id:exp
             expanded:true 
@@ -226,78 +284,6 @@ ScrollablePage {
                 }
             }
         }
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
-            Layout.minimumWidth: 300
-            Layout.maximumWidth: 1000
-            Layout.alignment: Qt.AlignHCenter
-            color: Theme.res.controlFillColorDefault
-            border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
-            radius: 6
-            Layout.minimumHeight: 68
-            Layout.preferredHeight:lbl1.height+lbl2.height+20
-
-            RowLayout {
-                id:rwlay
-                anchors.fill: parent
-                anchors{
-                    leftMargin: 20
-                    rightMargin: 20
-                    topMargin: 10
-                    bottomMargin: 10
-                }
-                spacing: 10
-
-                ColumnLayout {
-                    id:clmn
-                    Layout.fillWidth: true
-                    spacing: 2
-
-                    Label {
-                        id:lbl1
-                        Layout.fillWidth: true
-                        text: backend.get_element_loc("engine")
-                        horizontalAlignment: Text.AlignLeft
-                        font: Typography.body
-                        wrapMode: Text.Wrap
-                    }
-
-                    Label {
-                        id:lbl2
-                        Layout.fillWidth: true
-                        text: backend.get_element_loc("engine_tip")
-                        horizontalAlignment: Text.AlignLeft
-                        font: Typography.caption
-                        color: "#c0c0c0"
-                        wrapMode: Text.Wrap
-                    }
-                }
-
-                ComboBox {
-                    anchors {
-                        verticalCenter: parent.verticalCenter
-                        right: parent.right
-                        rightMargin: 0
-                    }
-                    Layout.preferredWidth: 300
-                    Layout.fillWidth: false
-                    model: [
-                        backend.get_element_loc("engine_goodbyeDPI"),
-                        backend.get_element_loc("engine_zapret")+ " (" + backend.get_element_loc("recommended") + ")",
-                    ]
-                    currentIndex: backend.getValue('GLOBAL', 'engine') == 'goodbyeDPI' ? 0 : 1
-                    onCurrentIndexChanged: {
-                        let selectedValue = model[currentIndex];
-                        backend.changeValue('GLOBAL', 'engine', currentIndex == 0 ? 'goodbyeDPI':'zapret');
-                    }
-
-                    focus: false
-                    focusPolicy: Qt.NoFocus
-                }
-            }
-        }
-
     }
     
 }
