@@ -3,7 +3,7 @@ import ctypes
 from datetime import datetime
 import threading
 from customtkinter import *
-from _data import FONT, DIRECTORY, text, settings
+from _data import FONT, DIRECTORY, MONO_FONT, text, settings
 from utils import check_mica, open_custom_blacklist, sni_support
 from PIL import Image, ImageTk
 from tkinter import messagebox
@@ -325,7 +325,7 @@ class ChkPresetApp(BaseWindow):
                 wrap="word",
                 height=self.textbox_frame_height - 50,
                 corner_radius=0,
-                font=('Cascadia Mono', 15)
+                font=(MONO_FONT, 15)
             )
             self.changelog_textbox.pack(pady=5, padx=(5, 10), fill="both", expand=True)
             self.changelog_textbox.bind("<Control-c>", self.enable_copy) 
@@ -357,7 +357,7 @@ class ChkPresetApp(BaseWindow):
                 wrap="word",
                 height=self.textbox_frame.winfo_height(),
                 corner_radius=0,
-                font=('Cascadia Mono', 15)
+                font=(MONO_FONT, 15)
             )
             self.changelog_textbox.pack(pady=5, padx=(5, 10), fill="both", expand=True)
 

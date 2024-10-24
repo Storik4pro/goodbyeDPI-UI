@@ -1,5 +1,5 @@
 from customtkinter import *
-from _data import FONT, DIRECTORY, GOODBYE_DPI_EXECUTABLE, ZAPRET_EXECUTABLE, text, settings
+from _data import EXECUTABLES, FONT, DIRECTORY, GOODBYE_DPI_EXECUTABLE, MONO_FONT, ZAPRET_EXECUTABLE, text, settings
 from utils import stop_servise
 from PIL import Image, ImageTk
 from tkinter import messagebox
@@ -21,7 +21,7 @@ class GoodbyedpiApp(CTkToplevel):
         self.stop_func = stop_func
         self.start_func = start_func
 
-        self.execut = GOODBYE_DPI_EXECUTABLE if settings.settings["GLOBAL"]["engine"] == 'goodbyeDPI' else ZAPRET_EXECUTABLE
+        self.execut = EXECUTABLES[settings.settings["GLOBAL"]["engine"]] 
 
         self.gif = Image.open(DIRECTORY+'data/find.gif')
         self.frames = []
@@ -107,7 +107,7 @@ class GoodbyedpiApp(CTkToplevel):
         if self.output_textbox is None and output != '':
             for widget in self.textbox_frame.winfo_children():
                 widget.destroy()
-            self.output_textbox = CTkTextbox(self.textbox_frame, wrap="word", width=700, height=250, font=('Cascadia Mono', 15))
+            self.output_textbox = CTkTextbox(self.textbox_frame, wrap="word", width=700, height=250, font=(MONO_FONT, 15))
             self.output_textbox.pack(pady=10, padx=10, fill="both", expand=True)
             self.output_textbox.insert("1.0", f'[DEBUG] Connecting to {self.execut} ...\n\n')
             self.output_textbox.bind("<Control-c>", self.enable_copy)
