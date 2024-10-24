@@ -117,6 +117,15 @@ if __name__ == "__main__":
             autorun = 'True'
         try:
             if not DEBUG:
+                # merge settings  
+                if after_update:
+                    merge_settings(BACKUP_SETTINGS_FILE_PATH, SETTINGS_FILE_PATH)
+                    merge_blacklist(GOODBYE_DPI_PATH)
+                    merge_settings_to_json()
+                    settings.reload_settings()
+
+                    settings.change_setting('GLOBAL', 'after_update', 'False')
+
                 # first run actions
                 first_run_actions()
 
@@ -143,14 +152,7 @@ if __name__ == "__main__":
                 if not settings.settings.getboolean('GLOBAL', 'update_complete'):
                     after_update_actions()
 
-                # merge settings  
-                if after_update:
-                    merge_settings(BACKUP_SETTINGS_FILE_PATH, SETTINGS_FILE_PATH)
-                    merge_blacklist(GOODBYE_DPI_PATH)
-                    merge_settings_to_json()
-
-                    settings.change_setting('GLOBAL', 'after_update', 'False')
-            
+                
             settings.save_settings()
         except:
             logger.raise_critical(traceback.format_exc())
