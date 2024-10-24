@@ -19,6 +19,15 @@ DIRECTORY = f'{os.path.dirname(os.path.abspath(__file__))}/'
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='update.log', level=logging.INFO)
 
+zapret_path = "_internal/data/zapret"
+config_path = "_internal/data/settings/"
+skip_files = [
+    "update.exe", "custom_blacklist.txt", 
+    f"WinDivert64.sys", f"list-discord.txt",
+    f"list-general.txt", f"list-youtube.txt", 
+    "user.json", "youtube.txt"
+]
+
 def close_procces():
     for proc in psutil.process_iter(['pid', 'name']):
         if proc.info['name'] == 'goodbyedpi.exe':
@@ -152,11 +161,8 @@ class UpdaterApp(CTk):
                             index += 1
                             continue 
                         
-                        zapret_path = "_internal/data/zapret"
-                        if relative_path in ["update.exe", "_internal/data/goodbyeDPI/custom_blacklist.txt", 
-                                             "_internal/data/goodbyeDPI/WinDivert64.sys",
-                                             f"{zapret_path}/WinDivert64.sys", f"{zapret_path}/list-discord.txt",
-                                             f"{zapret_path}/list-general.txt", f"{zapret_path}/list-youtube.txt",]:
+                        
+                        if relative_path.split("/")[-1] in skip_files:
                             self.create_logs(f"Skipping {relative_path}")
                             index += 1
                             continue
