@@ -9,7 +9,7 @@ import QtQuick.Dialogs
 Page{
     id:page
     header: Item{}
-    title: backend.get_element_loc("settings")+" zapret"
+    title: backend.get_element_loc("settings")+" byeDPI"
     padding: 0
     topPadding: 24
     InfoBarManager{
@@ -30,7 +30,7 @@ Loader {
         currentFolder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
         onAccepted: {
             var filePath = selectedFile.toString().replace("file:///", "")
-            backend.save_preset('zapret', filePath)
+            backend.save_preset('byedpi', filePath)
         }
     }
 
@@ -41,7 +41,7 @@ Loader {
         nameFilters: ["JSON Files (*.json)"]
         onAccepted: {
             var filePath = selectedFile.toString().replace("file:///", "")
-            var result = backend.load_preset('zapret', filePath)
+            var result = backend.load_preset('byedpi', filePath)
 
             if (result === true) {
                 pageLoader.sourceComponent = null
@@ -76,7 +76,7 @@ ScrollablePage {
         Layout.minimumWidth: 300
         Layout.maximumWidth: 1000
         Layout.alignment: Qt.AlignHCenter
-        visible:!backend.getBool('COMPONENTS', 'zapret')
+        visible:!backend.getBool('COMPONENTS', 'byedpi')
         ColumnLayout {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter
@@ -109,6 +109,7 @@ ScrollablePage {
                         Layout.alignment: Qt.AlignLeft
                         Layout.preferredWidth: Math.min(960, Math.max(300, base_layout.width - 20))
                         anchors.rightMargin: 20
+                        anchors.leftMargin: 20
                     }
 
                     
@@ -128,11 +129,12 @@ ScrollablePage {
 
                     Label {
                         id: timeLabel
-                        wrapMode: Text.Wrap
                         text: backend.get_element_loc("component_not_installed_tip")
                         font: Typography.body
+                        wrapMode: Text.Wrap
                         Layout.preferredWidth: Math.min(960, Math.max(300, base_layout.width - 20))
                         Layout.alignment: Qt.AlignLeft
+                        anchors.leftMargin: 20
                         visible: true
                     }
                     CopyableText {
@@ -189,6 +191,7 @@ ScrollablePage {
         }
     }
 
+
     ColumnLayout {
         id: mainLayoutt
         Layout.leftMargin:24
@@ -199,7 +202,7 @@ ScrollablePage {
         Layout.minimumWidth: 300
         Layout.maximumWidth: 1000
         Layout.alignment: Qt.AlignHCenter
-        visible:backend.getBool('COMPONENTS', 'zapret')
+        visible:backend.getBool('COMPONENTS', 'byedpi')
         Rectangle {
             id:rest1
             Layout.preferredHeight: Math.max(100, infoColumnLayout.implicitHeight + 20)
@@ -211,7 +214,7 @@ ScrollablePage {
             color: Theme.res.controlFillColorDefault
             border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
             radius: 6
-            visible: backend.getValue('GLOBAL', 'engine') === "zapret" ? false : true 
+            visible: backend.getValue('GLOBAL', 'engine') === "byedpi" ? false : true 
             ColumnLayout{
                 id:infoColumnLayout
                 anchors.verticalCenter: parent.verticalCenter  
@@ -240,7 +243,7 @@ ScrollablePage {
                         Button{
                             text: backend.get_element_loc('fixnow')
                             onClicked:{
-                                backend.changeValue('GLOBAL', 'engine', "zapret")
+                                backend.changeValue('GLOBAL', 'engine', "byedpi")
                                 rest1.visible = false
                             }
                         }
@@ -303,15 +306,12 @@ ScrollablePage {
                     Layout.fillWidth: false
                     model: [
                         "<separator>" + backend.get_element_loc("standart"),
-                        "1. " + backend.get_element_loc("qpreset_1"),
-                        "2. " + backend.get_element_loc("qpreset_2"),
-                        "3. " + backend.get_element_loc("qpreset_3")+ " (" + backend.get_element_loc("recommended") + ")",
-                        "4. " + backend.get_element_loc("qpreset_4")+ " (" + backend.get_element_loc("alt") + ")",
+                        "1. " + " (" + backend.get_element_loc("default") + ")",
                     ]
-                    currentIndex: backend.getInt("ZAPRET", "preset")
+                    currentIndex: backend.getInt("BYEDPI", "preset")
                     onCurrentIndexChanged: {
                         let selectedValue = model[currentIndex];
-                        backend.zapret_update_preset(selectedValue);
+                        backend.update_preset(selectedValue, "BYEDPI");
                     }
 
                     focus: false
@@ -320,11 +320,10 @@ ScrollablePage {
             }
         }
         ColumnLayout {
-            id: mainLayout
+            id: lay1
             anchors.margins: 20
             spacing: 3
             width: parent.width
-
             Label {
                 text: backend.get_element_loc("zapret_advansed")
                 font: Typography.bodyStrong
@@ -366,17 +365,17 @@ ScrollablePage {
 
                     Switch {
                         id:advancedSwitch
-                        property bool isInitializing: backend.getBool('ZAPRET', 'use_advanced_mode') 
+                        property bool isInitializing: backend.getBool('BYEDPI', 'use_advanced_mode') 
                         anchors {
                             verticalCenter: parent.verticalCenter
                             right: parent.right
                             rightMargin: 0
                         }
                         text: checked ? backend.get_element_loc("on_") : backend.get_element_loc("off")
-                        checked: backend.getBool('ZAPRET', 'use_advanced_mode')
+                        checked: backend.getBool('BYEDPI', 'use_advanced_mode')
                         onCheckedChanged: {
                             if (!isInitializing){
-                                backend.toggleBool('ZAPRET', 'use_advanced_mode', checked)
+                                backend.toggleBool('BYEDPI', 'use_advanced_mode', checked)
                             }
                             isInitializing = false
                         }
@@ -384,193 +383,197 @@ ScrollablePage {
                 }
             }
 
-            Label {
-                text: backend.get_element_loc("config_settings")
-                font: Typography.bodyStrong
-                Layout.topMargin: 15
-            }
-            Expander {
-                property bool isInitializing: true
-                enabled:advancedSwitch.checked
-                expanded: true 
-                Layout.fillWidth: true 
-                Layout.preferredWidth: Math.min(1000, parent.width * 0.9) 
-                Layout.minimumWidth: 300 
-                Layout.maximumWidth: 1000
-                Layout.alignment: Qt.AlignHCenter 
-                
-                _radius:0
-                _height:40
-
-                header: Label {
-                    text: backend.get_element_loc("config_settings_tip")
-                    font: Typography.body
-                    horizontalAlignment: Qt.AlignHCenter
-                    Layout.fillWidth: true
-                }
-                content: ColumnLayout {
-                    spacing: 5
-                    Layout.fillWidth: true
-                    anchors {
-                        verticalCenter: parent.verticalCenter
-                        left: parent.left
-                        leftMargin: 15
-                    }
-
-                    Rectangle {
-                        width: parent.width
-                        height: 10
-                        Layout.bottomMargin: 5
-                        opacity: 0.0
-                    }
-                    RowLayout{
-                        Button {
-                            text: backend.get_element_loc("load_config_file")
-                            icon.name: FluentIcons.graph_OpenFile 
-                            height:30
-                            onClicked: {
-                                fileDialogOpen.open()
-                            }
-                            FluentUI.radius:0
-                        }
-                        Button {
-                            text: backend.get_element_loc("export_config_file")
-                            icon.name: FluentIcons.graph_SaveAs
-                            height:30
-                            onClicked: {
-                                fileDialogSave.open()
-                            }
-                            FluentUI.radius:0
-                        }
-                        Button {
-                            text: backend.get_element_loc("reset_config")
-                            icon.name: FluentIcons.graph_Refresh
-                            height:30
-                            onClicked: {
-                                backend.return_to_default('zapret')
-                                pageLoader.sourceComponent = null
-                                pageLoader.sourceComponent = pageComponent
-                            }
-                            FluentUI.radius:0
-                        }
-                    }
-                    Rectangle {
-                        width: parent.width
-                        height: 10
-                        Layout.topMargin: 5
-                        opacity: 0.0
-                    }
-                }
-
-            }
-
-            Label {
-                text: backend.get_element_loc("custom_params")
-                font: Typography.bodyStrong
-                Layout.topMargin: 15
-            }
-            Rectangle {
-                Layout.preferredHeight: customParameters.implicitHeight + 20
-                Layout.fillWidth: true
-                Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
-                Layout.minimumWidth: 300
-                Layout.maximumWidth: 1000
-                Layout.alignment: Qt.AlignHCenter
-                color: Theme.res.controlFillColorDefault
-                border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
-                radius: 6
-
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 10
-                    spacing: 5
-
-                    
-
-                    TextArea  {
-                        id: customParameters
-                        placeholderText: backend.get_element_loc("custom_params_placeholder")
-                        wrapMode: TextEdit.Wrap
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        FluentUI.radius:6
-                        enabled:advancedSwitch.checked
-                        property bool isInitializing: false
-                        onTextChanged: {
-                            if (!isInitializing) {
-                                var cursorPosition = customParameters.cursorPosition
-                                var previousText = text
-                                var newText = text.replace(/[^0-9a-zA-Z:"><\/\\.\-_\s,=]/g, '')
-                                if (newText !== previousText) {
-                                    var diff = previousText.length - newText.length
-                                    text = newText
-                                    customParameters.cursorPosition = cursorPosition - diff
-                                    info_manager_bottomright.show(InfoBarType.Warning, backend.get_element_loc("warn_entry"), 3000)
-                                }
-                                saveCustomParameters()
-                                generateCommandLine()
-                            }
-                            isInitializing = false
-                        }
-                        
-                        Component.onCompleted: {
-                            text = backend.get_from_config("ZAPRET", "custom_parameters")
-                            generateCommandLine()
-                        }
-                        function saveCustomParameters() {
-                            var params = customParameters.text.trim()
-                            var processedParams = params.replace(/=/g, ' ').replace(/"/g, '')
-                            backend.set_to_config("ZAPRET", "custom_parameters", processedParams)
-                        }
-                    }
-
-
-                }
-            }
-
-            Label {
-                text: backend.get_element_loc("output_prompt")
-                font: Typography.bodyStrong
-                Layout.topMargin: 15
-            }
             ColumnLayout {
-                id: contentLayout
-                Layout.minimumHeight:100
-                Layout.preferredHeight:commandLineOutput.implicitHeight + 20
-                
+                id: mainLayout
+                anchors.margins: 20
+                spacing: 3
+                width: parent.width
+                Label {
+                    text: backend.get_element_loc("config_settings")
+                    font: Typography.bodyStrong
+                    Layout.topMargin: 15
+                }
+                Expander {
+                    enabled:advancedSwitch.checked
+                    property bool isInitializing: true
+                    expanded: true 
+                    Layout.fillWidth: true 
+                    Layout.preferredWidth: Math.min(1000, parent.width * 0.9) 
+                    Layout.minimumWidth: 300 
+                    Layout.maximumWidth: 1000
+                    Layout.alignment: Qt.AlignHCenter 
+                    
+                    _radius:0
+                    _height:40
+
+                    header: Label {
+                        text: backend.get_element_loc("config_settings_tip")
+                        font: Typography.body
+                        horizontalAlignment: Qt.AlignHCenter
+                        Layout.fillWidth: true
+                    }
+                    content: ColumnLayout {
+                        spacing: 5
+                        Layout.fillWidth: true
+                        anchors {
+                            verticalCenter: parent.verticalCenter
+                            left: parent.left
+                            leftMargin: 15
+                        }
+
+                        Rectangle {
+                            width: parent.width
+                            height: 10
+                            Layout.bottomMargin: 5
+                            opacity: 0.0
+                        }
+                        RowLayout{
+                            Button {
+                                text: backend.get_element_loc("load_config_file")
+                                icon.name: FluentIcons.graph_OpenFile 
+                                height:30
+                                onClicked: {
+                                    fileDialogOpen.open()
+                                }
+                                FluentUI.radius:0
+                            }
+                            Button {
+                                text: backend.get_element_loc("export_config_file")
+                                icon.name: FluentIcons.graph_SaveAs
+                                height:30
+                                onClicked: {
+                                    fileDialogSave.open()
+                                }
+                                FluentUI.radius:0
+                            }
+                            Button {
+                                text: backend.get_element_loc("reset_config")
+                                icon.name: FluentIcons.graph_Refresh
+                                height:30
+                                onClicked: {
+                                    backend.return_to_default('byedpi')
+                                    pageLoader.sourceComponent = null
+                                    pageLoader.sourceComponent = pageComponent
+                                }
+                                FluentUI.radius:0
+                            }
+                        }
+                        Rectangle {
+                            width: parent.width
+                            height: 10
+                            Layout.topMargin: 5
+                            opacity: 0.0
+                        }
+                    }
+
+                }
+
+                Label {
+                    text: backend.get_element_loc("custom_params")
+                    font: Typography.bodyStrong
+                    Layout.topMargin: 15
+                }
                 Rectangle {
-                    id: rest
+                    Layout.preferredHeight: customParameters.implicitHeight + 20
                     Layout.fillWidth: true
                     Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
                     Layout.minimumWidth: 300
                     Layout.maximumWidth: 1000
                     Layout.alignment: Qt.AlignHCenter
-                    color: "#1E1E1E"
+                    color: Theme.res.controlFillColorDefault
                     border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
                     radius: 6
-                    visible: true
-                    Layout.preferredHeight:parent.height
 
-                    CopyableText {
-                        id: commandLineOutput
+                    ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: 10
-                        width: parent.width - 20
-                        text: command
-                        wrapMode: Text.Wrap
-                        font.pixelSize: 14
-                        font.family: "Cascadia Code"
-                        color: "#D4D4D4"
-                        height: implicitHeight
+                        spacing: 5
+
+                        
+
+                        TextArea  {
+                            enabled:advancedSwitch.checked
+                            id: customParameters
+                            placeholderText: backend.get_element_loc("custom_params_placeholder")
+                            wrapMode: TextEdit.Wrap
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            FluentUI.radius:6
+                            property bool isInitializing: false
+                            onTextChanged: {
+                                if (!isInitializing) {
+                                    var cursorPosition = customParameters.cursorPosition
+                                    var previousText = text
+                                    var newText = text.replace(/[^0-9a-zA-Z:"><\/\\.\-_\s,=+]/g, '')
+                                    if (newText !== previousText) {
+                                        var diff = previousText.length - newText.length
+                                        text = newText
+                                        customParameters.cursorPosition = cursorPosition - diff
+                                        info_manager_bottomright.show(InfoBarType.Warning, backend.get_element_loc("warn_entry"), 3000)
+                                    }
+                                    saveCustomParameters()
+                                    generateCommandLine()
+                                }
+                                isInitializing = false
+                            }
+                            
+                            Component.onCompleted: {
+                                text = backend.get_from_config("BYEDPI", "custom_parameters")
+                                generateCommandLine()
+                            }
+                            function saveCustomParameters() {
+                                var params = customParameters.text.trim()
+                                var processedParams = params.replace(/=/g, ' ').replace(/"/g, '')
+                                backend.set_to_config("BYEDPI", "custom_parameters", processedParams)
+                            }
+                        }
+
+
                     }
                 }
-            }
 
+                Label {
+                    text: backend.get_element_loc("output_prompt")
+                    font: Typography.bodyStrong
+                    Layout.topMargin: 15
+                }
+                ColumnLayout {
+                    id: contentLayout
+                    Layout.minimumHeight:100
+                    Layout.preferredHeight:commandLineOutput.implicitHeight + 20
+                    
+                    Rectangle {
+                        id: rest
+                        Layout.fillWidth: true
+                        Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
+                        Layout.minimumWidth: 300
+                        Layout.maximumWidth: 1000
+                        Layout.alignment: Qt.AlignHCenter
+                        color: "#1E1E1E"
+                        border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
+                        radius: 6
+                        visible: true
+                        Layout.preferredHeight:parent.height
+
+                        CopyableText {
+                            id: commandLineOutput
+                            anchors.fill: parent
+                            anchors.margins: 10
+                            width: parent.width - 20
+                            text: command
+                            wrapMode: Text.Wrap
+                            font.pixelSize: 14
+                            font.family: "Cascadia Code"
+                            color: "#D4D4D4"
+                            height: implicitHeight
+                        }
+                    }
+                }
+
+            }
         }
     
     }
-    
-    
 
     Component {
         id: defaultItemComponent
@@ -616,12 +619,12 @@ ScrollablePage {
                                     if (modelData.type === "input") {
                                         inputField.enabled = checked
                                     }
-                                    backend.set_to_config("ZAPRET", modelData.optionId, checked)
+                                    backend.set_to_config("BYEDPI", modelData.optionId, checked)
                                     generateCommandLine()
                                 }
                             }
                             Component.onCompleted: {
-                                checked = backend.get_bool_from_config("ZAPRET", modelData.optionId)
+                                checked = backend.get_bool_from_config("BYEDPI", modelData.optionId)
                                 settingsModel.setProperty(modelData.index, "checked", checked)
                                 if (modelData.type === "input") {
                                     inputField.enabled = checked
@@ -653,7 +656,7 @@ ScrollablePage {
                                             info_manager_bottomright.show(InfoBarType.Warning, backend.get_element_loc("warn_entry"), 3000)
                                         } else {
                                             settingsModel.setProperty(modelData.index, "value", text)
-                                            backend.set_to_config("ZAPRET", modelData.optionId + "_value", text)
+                                            backend.set_to_config("BYEDPI", modelData.optionId + "_value", text)
                                             generateCommandLine()
                                         }
                                     }    
@@ -664,7 +667,7 @@ ScrollablePage {
                             
                             Component.onCompleted: {
                                 if (modelData.type === "input") {
-                                    text = backend.get_from_config("ZAPRET", modelData.optionId + "_value")
+                                    text = backend.get_from_config("BYEDPI", modelData.optionId + "_value")
                                 }
                                 settingsModel.setProperty(modelData.index, "value", text)
                                 isInitializing = false
@@ -681,14 +684,14 @@ ScrollablePage {
                             onCheckedChanged: {
                                 if (!isInitializing) {
                                     settingsModel.setProperty(modelData.index, "checked", checked)
-                                    backend.set_to_config("ZAPRET", modelData.optionId, checked)
+                                    backend.set_to_config("BYEDPI", modelData.optionId, checked)
                                     generateCommandLine()
                                 }
                                 isInitializing = false
                                 console.log(isInitializing)
                             }
                             Component.onCompleted: {
-                                checked = backend.get_bool_from_config("ZAPRET", modelData.optionId)
+                                checked = backend.get_bool_from_config("BYEDPI", modelData.optionId)
                                 settingsModel.setProperty(modelData.index, "checked", checked)
                                 isInitializing = false
                                 generateCommandLine()
@@ -722,7 +725,7 @@ ScrollablePage {
             spacing: 5
             LayoutMirroring.enabled: true
             onClicked: {
-                Qt.openUrlExternally("https://github.com/bol-van/zapret")
+                Qt.openUrlExternally("https://github.com/hufrea/byedpi")
             }
         }
         IconButton{
@@ -738,8 +741,9 @@ ScrollablePage {
         }
     }
 
+
     Component.onCompleted: {
-        text = backend.get_from_config("ZAPRET", modelData.optionId + "_value")
+        text = backend.get_from_config("BYEDPI", modelData.optionId + "_value")
         settingsModel.setProperty(itemIndex, "value", text)
 
         generateCommandLine()
@@ -747,7 +751,7 @@ ScrollablePage {
     }
 
     function generateCommandLine(blacklist_values=blacklistFilesModel) {
-        var command = "winws.exe"
+        var command = "ciadpi.exe"
 
         if (customParameters.text.trim() !== "") {
             command += " " + customParameters.text.trim()
@@ -762,9 +766,8 @@ ScrollablePage {
         mainLabel.text = backend.get_element_loc('component_not_installed_p');
         errorLabel.visible = true;
         errorLabel.text = "";
-        backend.download_component("zapret");
+        backend.download_component("byedpi");
     }
-
     Connections {
         target: backend
         onComponent_installing_finished: {
@@ -785,7 +788,11 @@ ScrollablePage {
         }
     }
 
+
+
 }
+    }
 }
+
 }
-}
+

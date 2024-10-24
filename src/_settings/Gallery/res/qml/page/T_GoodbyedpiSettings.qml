@@ -4,6 +4,7 @@ import QtQuick.Controls
 import FluentUI.Controls
 import FluentUI.impl
 import Gallery
+import QtQuick.Dialogs 
 
 ScrollablePage {
     id: page
@@ -22,7 +23,7 @@ ScrollablePage {
 
         Rectangle {
             id:rest1
-            Layout.preferredHeight: 100
+            Layout.preferredHeight: Math.max(100, infoColumnLayout.implicitHeight + 20)
             Layout.fillWidth: true
             Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
             Layout.minimumWidth: 300
@@ -30,18 +31,16 @@ ScrollablePage {
             Layout.alignment: Qt.AlignHCenter
             color: Theme.res.controlFillColorDefault
             border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
-            radius: 0
+            radius: 6
             visible: backend.getValue('GLOBAL', 'engine') === "goodbyeDPI" ? false : true 
             ColumnLayout{
+                id:infoColumnLayout
                 anchors.verticalCenter: parent.verticalCenter  
                 RowLayout{
                     
                     spacing:10
                     height:20
-                    anchors{
-                        left: parent.left
-                        leftMargin:10
-                    }
+                    Layout.leftMargin:10
                     Icon{
                         id: icon_info
                         Layout.preferredHeight:20
@@ -54,13 +53,13 @@ ScrollablePage {
                             font: Typography.bodyStrong
                         }
                         Label{
+                            Layout.preferredWidth:rest1.width - 100
                             text:backend.get_element_loc('warn1')
                             font: Typography.body
-                            wrapMode:WrapAnywhere
+                            wrapMode:Text.Wrap
                         }
                         Button{
                             text: backend.get_element_loc('fixnow')
-                            FluentUI.radius:0
                             onClicked:{
                                 backend.changeValue('GLOBAL', 'engine', "goodbyeDPI")
                                 rest1.visible = false
@@ -142,7 +141,7 @@ ScrollablePage {
                     currentIndex: backend.getPreset()
                     onCurrentIndexChanged: {
                         let selectedValue = model[currentIndex];
-                        backend.update_preset(selectedValue);
+                        backend.update_preset(selectedValue, 'GOODBYEDPI');
                     }
 
                     focus: false
@@ -554,8 +553,19 @@ ScrollablePage {
                 Qt.openUrlExternally("https://p.thenewone.lol/domains-export.txt")
             }
         }
-
+        IconButton{
+            text: backend.get_element_loc("linked_manage_components")
+            icon.name: FluentIcons.graph_ChevronRight
+            icon.width: 18
+            icon.height: 18
+            spacing: 5
+            LayoutMirroring.enabled: true
+            onClicked: {
+                page_router.go("/system",{info:"Component"})
+            }
+        }
     }
+
     
     
 }
