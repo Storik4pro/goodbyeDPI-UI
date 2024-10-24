@@ -2,6 +2,8 @@
     <qresource prefix="/qt/qml/Gallery">
         <file>res/image/logo.png</file>
         <file>res/image/update.png</file>
+        <file>res/image/zapret.png</file>
+        <file>res/image/ByeDPI.png</file>
         <file>res/qml/App.qml</file>
         <file>res/qml/Global.qml</file>
         <file>res/qml/component/CardHighlight.qml</file>
@@ -10,6 +12,7 @@
         <file>res/qml/page/T_AboutPage.qml</file>
         <file>res/qml/page/T_System.qml</file>
         <file>res/qml/page/T_SystemPage.qml</file>
+        <file>res/qml/page/T_SystemComponentsPage.qml</file>
         <file>res/qml/page/T_Goodbyedpi.qml</file>
         <file>res/qml/page/T_Personalize.qml</file>
         <file>res/qml/page/T_PersonalizePage.qml</file>
@@ -18,6 +21,10 @@
         <file>res/qml/page/T_GoodbyedpiAdvanced.qml</file>
         <file>res/qml/page/T_GoodbyedpiSettings.qml</file>
         <file>res/qml/page/T_Zapret.qml</file>
+        <file>res/qml/page/T_Spoofdpi.qml</file>
+        <file>res/qml/page/T_SpoofdpiPage.qml</file>
+        <file>res/qml/page/T_Byedpi.qml</file>
+        <file>res/qml/page/T_ByedpiPage.qml</file>
         <file>res/qml/page/T_ZapretSettings.qml</file>
         <file>res/qml/page/T_Update.qml</file>
         <file>res/qml/page/T_UpdatePage.qml</file>
