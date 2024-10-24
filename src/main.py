@@ -69,7 +69,6 @@ def first_run_actions():
             settings.change_setting('APPEARANCE_MODE', 'animations', 'False')
 
 def after_update_actions():
-    merge_settings_to_json()
     try:
         kill_update()
         update_result = rename_update_exe()
@@ -148,6 +147,7 @@ if __name__ == "__main__":
                 if after_update == 'True':
                     merge_settings(BACKUP_SETTINGS_FILE_PATH, SETTINGS_FILE_PATH)
                     merge_blacklist(GOODBYE_DPI_PATH)
+                    merge_settings_to_json()
 
                     settings.change_setting('GLOBAL', 'after_update', 'False')
             

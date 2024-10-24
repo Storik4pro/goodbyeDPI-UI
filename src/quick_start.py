@@ -74,7 +74,7 @@ def rename_update_exe():
         return False
 
 def merge_settings_to_json():
-    if 'GOODBYEDPI' in settings.settings:
+    if 'GOODBYEDPI' in settings.settings and 'httpfragmentation' in settings.settings['GOODBYEDPI']:
         save_data = ['preset', 'use_blacklist', 'use_blacklist_custom'] 
         copy_data = ['dns', 'dns_value', 'dns_port_value', 'dnsv6_value', 'dnsv6_port_value']
         goodbyedpi_data = {}
