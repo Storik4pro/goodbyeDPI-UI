@@ -1,6 +1,8 @@
 import hashlib
+import json
 import platform
 import sys
+import zipfile
 
 def check_winpty():
     version = platform.version()
@@ -29,12 +31,31 @@ import winsound
 
 import requests
 try: from _data import GOODBYE_DPI_EXECUTABLE, ZAPRET_EXECUTABLE, ZAPRET_PATH, \
-    GOODBYE_DPI_PATH, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, SETTINGS_FILE_PATH, text, settings
+    GOODBYE_DPI_PATH, DEBUG, DIRECTORY, DEBUG_PATH, REPO_NAME, REPO_OWNER, CONFIGS_REPO_NAME, SETTINGS_FILE_PATH,\
+    CONFIG_PATH, SPOOFDPI_EXECUTABLE, BYEDPI_EXECUTABLE, EXECUTABLES, COMPONENTS_URLS, text, settings
 except: from src._data import GOODBYE_DPI_EXECUTABLE, ZAPRET_EXECUTABLE, ZAPRET_PATH, \
-    GOODBYE_DPI_PATH, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, SETTINGS_FILE_PATH, text, settings
+    GOODBYE_DPI_PATH, DEBUG, DIRECTORY, DEBUG_PATH, REPO_NAME, REPO_OWNER, CONFIGS_REPO_NAME, SETTINGS_FILE_PATH,\
+    CONFIG_PATH, SPOOFDPI_EXECUTABLE, BYEDPI_EXECUTABLE, EXECUTABLES, COMPONENTS_URLS, text, settings
 def error_sound():
     winsound.MessageBeep(winsound.MB_ICONHAND)
 
+# PC test
+def is_weak_pc():
+    cpu_freq = psutil.cpu_freq().max
+    cpu_cores = psutil.cpu_count(logical=False)
+    total_memory_gb = psutil.virtual_memory().total / (1024 ** 3)
+
+    LOW_CPU_FREQ = 2000 
+    LOW_CPU_CORES = 2
+    LOW_MEMORY_GB = 4 
+
+    weak_cpu = cpu_freq < LOW_CPU_FREQ or cpu_cores <= LOW_CPU_CORES
+    weak_memory = total_memory_gb <= LOW_MEMORY_GB
+
+    if weak_cpu or weak_memory:
+        return True
+    else:
+        return False
 
 # Toast
 
@@ -93,7 +114,7 @@ async def show_error(app_id : str, title, description, btnText, btnText2):
         app_id = app_id
     )
     elements = [
-        Image(f"file:///{(DIRECTORY if not DEBUG else 'E:/ByeDPI')+'/data/warning.png'}?foreground=#FFFFFF&background=#F7630C&padding=40",
+        Image(f"file:///{(DIRECTORY if not DEBUG else DEBUG_PATH)+'/data/warning.png'}?foreground=#FFFFFF&background=#F7630C&padding=40",
             placement = ToastImagePlacement.LOGO
         ),
         Text(title),
@@ -160,7 +181,7 @@ def remove_ansi_sequences(text):
     print("") # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
     stage2 = stage2.replace("https://github.com/ValdikSS/GoodbyeDPI", "https://github.com/ValdikSS/GoodbyeDPI\n\n")
 
-    if settings.settings['GLOBAL']['engine'] == "spoofDPI":
+    if settings.settings['GLOBAL']['engine'] == "spoofdpi":
         stage2 = stage2.replace("•ADDR", "\n\n•ADDR")
         stage2 = stage2.replace("to quit", "to quit\n\n")
         stage2 = stage2.replace("Press", "\nPress")
@@ -189,9 +210,12 @@ class GoodbyedpiProcess:
         self.error = False
 
     def start_goodbyedpi_thread(self, *args):
+        engine = settings.settings['GLOBAL']['engine']
+        execut = EXECUTABLES[engine]
+
         self.path = os.path.join(GOODBYE_DPI_PATH, 'x86_64', GOODBYE_DPI_EXECUTABLE) \
-            if settings.settings['GLOBAL']['engine'] == 'goodbyeDPI' \
-            else os.path.join(ZAPRET_PATH, ZAPRET_EXECUTABLE)
+            if engine == 'goodbyeDPI' \
+            else os.path.join(DIRECTORY+f'data/{engine}', execut)
         command = [str(self.path)]
         command.extend(*args)
         print(command)
@@ -199,11 +223,17 @@ class GoodbyedpiProcess:
         self.output = []
 
         if winpty_support:
-            self.pty_process = winpty.PtyProcess.spawn(
-                command,
-                cwd=os.path.join(GOODBYE_DPI_PATH, 'x86_64') if settings.settings['GLOBAL']['engine'] == 'goodbyeDPI' \
-                    else os.path.join(ZAPRET_PATH)
-            )
+            try:
+                self.pty_process = winpty.PtyProcess.spawn(
+                    command,
+                    cwd=os.path.join(GOODBYE_DPI_PATH, 'x86_64') if settings.settings['GLOBAL']['engine'] == 'goodbyeDPI' \
+                        else os.path.join(DIRECTORY+f'data/{engine}')
+                )
+            except Exception as ex:
+                data = f"Component not installed correctly. ({ex})"
+                self.queue.put(data)
+                self.output.append(data)
+                return
 
             while not self.stop_event.is_set():
                 if self.pty_process.isalive():
@@ -236,7 +266,7 @@ class GoodbyedpiProcess:
                 self.pty_process.close(True)
             except:pass
         self.pty_process = None
-        execut = GOODBYE_DPI_EXECUTABLE if settings.settings["GLOBAL"]["engine"] == 'goodbyeDPI' else ZAPRET_EXECUTABLE
+        execut = EXECUTABLES[settings.settings["GLOBAL"]["engine"]]
         term = f'\n[DEBUG] The {execut} process has been terminated {self.reason}\n'
         self.output.append(term)
         self.queue.put(term)
@@ -276,15 +306,15 @@ class GoodbyedpiProcess:
             self.pty_process.close(True)
 
     def check_queue(self, notf=True):
-        execut = GOODBYE_DPI_EXECUTABLE if settings.settings["GLOBAL"]["engine"] == 'goodbyeDPI' else ZAPRET_EXECUTABLE
+        execut = EXECUTABLES[settings.settings["GLOBAL"]["engine"]]
         while not self.queue.empty():
             data = self.queue.get()
             if self.output_app and self.output_app.winfo_exists():
                 self.output_app.add_output(data)
-            if "Filter activated" in data or "capture is started." in data:
+            if "Filter activated" in data or "capture is started." in data or 'created a listener' in data:
                 if notf: self.app.show_notification(text.inAppText['process']+f" {execut} " + text.inAppText['run_comlete'])
             elif "Error opening filter" in data or "unknown option" in data or "hostlists load failed" in data or\
-                "must specify port filter" in data:
+                "must specify port filter" in data or "ERROR:" in data or "Component not installed correctly" in data :
                 self.reason = 'for unknown reason'
                 self.error = True
                 print("Trying to connect terminal")
@@ -305,9 +335,12 @@ class GoodbyedpiProcess:
             self.output_app = None
     
 def start_process(*args):
+    engine = settings.settings["GLOBAL"]["engine"]
+    execut = EXECUTABLES[engine]
+
     path = os.path.join(GOODBYE_DPI_PATH, 'x86_64', GOODBYE_DPI_EXECUTABLE) \
-        if settings.settings['GLOBAL']['engine'] == 'goodbyeDPI' \
-        else os.path.join(ZAPRET_PATH, ZAPRET_EXECUTABLE)
+        if engine == 'goodbyeDPI' \
+        else os.path.join(DIRECTORY+f'data/{engine}', execut)
     
     _args = [
             path,
@@ -315,7 +348,7 @@ def start_process(*args):
     ]
     process = subprocess.Popen(_args, cwd=os.path.join(GOODBYE_DPI_PATH, 'x86_64') \
                                if settings.settings['GLOBAL']['engine'] == 'goodbyeDPI'\
-                               else os.path.join(ZAPRET_PATH), creationflags=subprocess.CREATE_NO_WINDOW)
+                               else os.path.join(DIRECTORY+f'data/{engine}'), creationflags=subprocess.CREATE_NO_WINDOW)
     return process
 
 def stop_servise():
@@ -355,6 +388,40 @@ def download_blacklist(url, progress_toast:ProgressToast, local_filename=GOODBYE
 def move_settings_file(settings_file_path, backup_settings_file_path):
     shutil.copy(settings_file_path, backup_settings_file_path)
 
+# settings change
+
+
+def change_setting(setting_group, setting, value):
+    config = configparser.ConfigParser()
+    config.read(SETTINGS_FILE_PATH, encoding='utf-8')
+    config[setting_group][setting] = value
+
+    with open(SETTINGS_FILE_PATH, 'w', encoding='utf-8') as configfile:
+        config.write(configfile)
+    
+    settings.reload_settings()
+
+def change_settings(setting_group, settings_list):
+    config = configparser.ConfigParser()
+    config.read(SETTINGS_FILE_PATH, encoding='utf-8')
+    for i, setting in enumerate(settings_list):
+        config[setting_group][setting[0]] = setting[1]
+
+    with open(SETTINGS_FILE_PATH, 'w', encoding='utf-8') as configfile:
+        config.write(configfile)
+    
+    settings.reload_settings()
+
+def open_custom_blacklist():
+    os.startfile(f"{GOODBYE_DPI_PATH}/custom_blacklist.txt")
+
+def check_mica():
+    version = platform.version()
+    major, minor, build = map(int, version.split('.'))
+    return build >= 22000
+
+# update
+
 def get_latest_release():
     url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/releases/latest"
     response = requests.get(url)
@@ -389,8 +456,8 @@ def get_download_url(version):
     except Exception as ex:
         return 'ERR_UNKNOWN'
     
-def download_update(url, directory, signal):
-    if not DEBUG:
+def download_update(url, directory, signal=None):
+    if not DEBUG or signal is None:
         with requests.get(url, stream=True) as r:
             total_length = r.headers.get('content-length')
             if total_length is None:
@@ -401,15 +468,194 @@ def download_update(url, directory, signal):
                 total_length = int(total_length)
                 with open(directory, 'wb') as f:
                     for data in r.iter_content(chunk_size=4096):
-                        signal.emit(float((dl / total_length)*100))
+                        if signal:signal.emit(float((dl / total_length)*100))
                         dl += len(data)
                         f.write(data)
     else:
         i=0
         while i < 100:
             i+=1
-            signal.emit(i)
+            if signal:signal.emit(i)
             time.sleep(0.05)
+
+def get_component_download_url(component_name:str):
+    if component_name == 'zapret':
+        return "https://github.com/bol-van/zapret-win-bundle/archive/refs/heads/master.zip"
+    component_addres = COMPONENTS_URLS[component_name]
+    component_url = f"https://api.github.com/repos/{component_addres}/releases"
+    try:
+        response = requests.get(component_url)
+        if response.status_code == 200:
+            releases = response.json()
+            if releases:
+                latest_release = releases[0]
+                version = latest_release.get("tag_name")
+                if component_name == 'goodbyeDPI' and version == '0.2.3rc3':
+                    return 'ERR_LATEST_VERSION_ALREADY_INSTALLED'
+                pre_download_url = f"https://api.github.com/repos/{component_addres}/releases/tags/{version}"
+
+                download_url = None
+
+                _response = requests.get(pre_download_url)
+                data = _response.json()
+
+                for asset in data["assets"]:
+                    if asset["name"].endswith(".zip"):
+                        if component_name == 'byedpi': 
+                            if "x86_64-w64" in asset["name"]:
+                                download_url = asset["browser_download_url"]
+                                break
+                            continue
+                        else:
+                            download_url = asset["browser_download_url"]
+                        break
+                    elif asset["name"].endswith(".exe"):
+                        download_url = asset["browser_download_url"]
+                        break
+
+                if download_url is None:
+                    return 'ERR_INVALID_URL'
+
+                return download_url
+                
+            else:
+                return 'ERR_CANNOT_FIND_RELEASE'
+        else:
+            return f'ERR_SERVER_STATUS_CODE_{response.status_code}'
+    except Exception as ex:
+        return 'ERR_UNKNOWN'
+    
+def extract_zip(zip_file, zip_folder_to_unpack, extract_to, files_to_skip=[]):
+    try:
+        if not os.path.exists(extract_to):
+            os.makedirs(extract_to)
+
+        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+            members = zip_ref.infolist()
+            total_files = len(members)
+            extracted_files = 0
+
+            index = 0  
+            while index < len(members):
+                member = members[index]
+                member_path = member.filename
+                if member_path.count("/") == 1 and member_path.split("/")[1] == '' and\
+                    zip_folder_to_unpack == "/":
+                    zip_folder_to_unpack = member_path
+
+                if member_path.startswith(zip_folder_to_unpack):
+                    relative_path = member_path[len(zip_folder_to_unpack):]
+                    if relative_path == '':
+                        index += 1
+                        continue 
+                    
+                    if any(skip_item in relative_path for skip_item in files_to_skip):
+                        index += 1
+                        continue
+
+
+                    destination_path = os.path.join(extract_to, relative_path)
+                    destination_dir = os.path.dirname(destination_path)
+                    if not os.path.exists(destination_dir):
+                        os.makedirs(destination_dir)
+
+                    if member.is_dir():
+                        if not os.path.exists(destination_path):
+                            os.makedirs(destination_path)
+                    else:
+                        try:
+                            with zip_ref.open(member) as source, open(destination_path, "wb") as target:
+                                shutil.copyfileobj(source, target)
+                        except OSError as pe:
+                            print(pe.errno)
+                            if '13' in str(pe.errno):
+                                return 'ERR_PERMISSION_DENIED'
+                            else:
+                                return 'ERR_FILE_UNPACKING'
+                        except Exception as ex:
+                            return "ERR_FILE_UNPACKING"
+
+                    extracted_files += 1
+                    progress = extracted_files / total_files
+                index += 1  
+
+    except Exception as ex:
+        print(ex)
+        return "ERR_FILE_UNPACKING"
+
+def download_files_from_github(remote_dir, local_dir):
+    base_url = f"https://api.github.com/repos/{REPO_OWNER}/{CONFIGS_REPO_NAME}/contents/{remote_dir}?ref=main"
+    headers = {'Accept': 'application/vnd.github.v3.raw'}
+
+    try:
+        response = requests.get(base_url)
+        if response.status_code != 200:
+            return f"ERR_SERVER_STATUS_CODE_{response.status_code}"
+
+        files = response.json()
+
+        if not os.path.exists(local_dir):
+            os.makedirs(local_dir)
+
+        for file_info in files:
+            if file_info['type'] == 'file':
+                filename = file_info['name']
+                if filename in ('.', '..'):
+                    continue
+
+                local_filepath = os.path.join(local_dir, filename)
+                if filename == 'user.json' and os.path.exists(local_filepath):
+                    print(local_filepath)
+                    continue
+
+                download_url = file_info['download_url']
+                file_response = requests.get(download_url, headers=headers)
+                if file_response.status_code == 200:
+                    with open(local_filepath, 'wb') as f:
+                        f.write(file_response.content)
+                else:
+                    continue
+
+        return 
+    except Exception as ex:
+        return "ERR_CONFIG_DOWNLOAD_UNKNOWN"
+
+def delete_file(file_path):
+    try:
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+        elif os.path.isdir(file_path):
+            shutil.rmtree(file_path)
+        else:
+            return 'ERR_FILE_NOT_FOUND'
+        return
+    except FileNotFoundError:
+        return 'ERR_FILE_NOT_FOUND'
+    except PermissionError:
+        return 'ERR_PERMISSION_DENIED'
+    except Exception as e:
+        return 'ERR_CLEANUP_FILES'
+    
+def open_folder(folder_path):
+    os.startfile(folder_path)
+
+def register_component(component_name:str):
+    component_directory = DIRECTORY+f"data/{component_name}" if not DEBUG else f"E:/_component/{component_name}"
+    result = download_files_from_github(remote_dir=f"{component_name.lower()}/", local_dir=component_directory)
+    if result: return result
+
+    config_component_path = CONFIG_PATH+f"/{component_name.lower()}" if not DEBUG else f"E:/_component/{component_name}/config"
+    result = download_files_from_github(remote_dir=f"{component_name.lower()}/configs", local_dir=config_component_path)
+    if result: return result
+
+    change_setting('COMPONENTS', f'{component_name.lower()}', 'True')
+
+def unregister_component(component_name:str):
+    if component_name == 'goodbyeDPI':
+        return 'ERR_CANNOT_REMOVE_COMPONENT'
+    if settings.settings['GLOBAL']['engine'] == component_name: change_setting('GLOBAL', f'engine', 'goodbyeDPI')
+    change_setting('COMPONENTS', f'{component_name.lower()}', 'False')
+    return 'True'
 
 def is_process_running(process_name):
     for proc in psutil.process_iter(['pid', 'name']):
@@ -419,37 +665,6 @@ def is_process_running(process_name):
                 return proc
     return None
 
-# settings change
-
-
-def change_setting(setting_group, setting, value):
-    config = configparser.ConfigParser()
-    config.read(SETTINGS_FILE_PATH)
-    config[setting_group][setting] = value
-
-    with open(SETTINGS_FILE_PATH, 'w') as configfile:
-        config.write(configfile)
-    
-    settings.reload_settings()
-
-def change_settings(setting_group, settings_list):
-    config = configparser.ConfigParser()
-    config.read(SETTINGS_FILE_PATH)
-    for i, setting in enumerate(settings_list):
-        config[setting_group][setting[0]] = setting[1]
-
-    with open(SETTINGS_FILE_PATH, 'w') as configfile:
-        config.write(configfile)
-    
-    settings.reload_settings()
-
-def open_custom_blacklist():
-    os.startfile(f"{GOODBYE_DPI_PATH}/custom_blacklist.txt")
-
-def check_mica():
-    version = platform.version()
-    major, minor, build = map(int, version.split('.'))
-    return build >= 22000
 
 # autorun
 
@@ -539,7 +754,7 @@ def sni_support():
         return False 
     
 def check_urls():
-    with open(f"{('E:/ByeDPI/' if DEBUG else '') + GOODBYE_DPI_PATH}/custom_blacklist.txt", 'r') as file:
+    with open(f"{(DEBUG_PATH if DEBUG else '') + GOODBYE_DPI_PATH}/custom_blacklist.txt", 'r') as file:
         urls = file.read().splitlines()
 
     sites = []
@@ -561,3 +776,21 @@ def check_urls():
             continue
     
     return sites
+
+# JSON
+def get_preset_parameters(index:int|str, engine:str):
+    filename = f"{index}.json"
+    path = os.path.join((DEBUG_PATH if DEBUG else "") + CONFIG_PATH + "/" + engine.lower(), filename)
+    try:
+        with open(path, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+            custom_parameters = data.get('custom_parameters')
+            if custom_parameters is not None:
+                return str(custom_parameters).split()
+            else:
+                raise KeyError(f"Unable to load {filename}. JSON file not setup right")
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Unable to found config file {filename}. File is not exist in current location {path}")
+    except json.JSONDecodeError:
+        raise json.JSONDecodeError(f"Unable to found config file {filename}. File encoding is incorrect")
+
