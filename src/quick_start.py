@@ -101,5 +101,16 @@ def merge_settings_to_json():
         with open(SETTINGS_FILE_PATH, 'w', encoding='utf-8') as configfile:
                 settings.settings.write(configfile)
         settings.reload_settings()
-    else:
-        pass
+    if 'custom_parameters' in settings.settings['ZAPRET']:
+        zapret_data = {}
+        zapret_data['custom_parameters'] = settings.settings['ZAPRET']['custom_parameters']
+
+        del settings.settings['ZAPRET']['custom_parameters']
+
+        json_file = f'{CONFIG_PATH}/zapret/user.json'
+        with open(json_file, 'w', encoding='utf-8') as f:
+            json.dump(zapret_data, f, ensure_ascii=False, indent=4)
+
+        with open(SETTINGS_FILE_PATH, 'w', encoding='utf-8') as configfile:
+                settings.settings.write(configfile)
+        settings.reload_settings()
