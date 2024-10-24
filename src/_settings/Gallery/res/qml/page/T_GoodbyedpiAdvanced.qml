@@ -6,10 +6,59 @@ import FluentUI.impl
 import Gallery
 import QtQuick.Dialogs 
 
-ScrollablePage {
-    id: page
+Page{
+    id:page
     header: Item{}
     title: backend.get_element_loc('advanced')
+    padding: 0
+    topPadding: 24
+    InfoBarManager{
+        id: info_manager_bottomright
+        target: page
+        edge: Qt.BottomEdge | Qt.RightEdge
+    }
+Loader {
+    id: pageLoader
+    anchors.fill: parent
+    sourceComponent: pageComponent
+
+    FileDialog {
+        id: fileDialogSave
+        title: qsTr("Save File As")
+        nameFilters: ["JSON Files (*.json)"]
+        fileMode: FileDialog.SaveFile
+        currentFolder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
+        onAccepted: {
+            var filePath = selectedFile.toString().replace("file:///", "")
+            backend.save_preset('goodbyedpi', filePath)
+        }
+    }
+
+
+    FileDialog {
+        id: fileDialogOpen
+        title: "Choose JSON file..."
+        nameFilters: ["JSON Files (*.json)"]
+        onAccepted: {
+            var filePath = selectedFile.toString().replace("file:///", "")
+            var result = backend.load_preset('goodbyedpi', filePath)
+
+            if (result === true) {
+                pageLoader.sourceComponent = null
+                pageLoader.sourceComponent = pageComponent
+            } else {
+                info_manager_bottomright.show(InfoBarType.Error, "Error: Unknown error", 3000)
+            }
+        }
+    }
+
+    Component {
+    id: pageComponent
+
+ScrollablePage {
+    topPadding: 0
+    leftPadding: 0
+    rightPadding: 0
 
     ListModel {
         id: blacklistFilesModel
@@ -18,15 +67,12 @@ ScrollablePage {
         }
     }
 
-    InfoBarManager{
-        id: info_manager_bottomright
-        target: page
-        edge: Qt.BottomEdge | Qt.RightEdge
-    }
+    
 
     ColumnLayout {
         id: mainLayoutt
-        anchors.margins: 20
+        Layout.leftMargin:24
+        Layout.rightMargin:24
         spacing: 15
         Layout.fillWidth: true
         Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
@@ -35,7 +81,7 @@ ScrollablePage {
         Layout.alignment: Qt.AlignHCenter
         Rectangle {
             id:rest11
-            Layout.preferredHeight: 100
+            Layout.preferredHeight: Math.max(100, infoColumnLayout.implicitHeight + 20)
             Layout.fillWidth: true
             Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
             Layout.minimumWidth: 300
@@ -46,15 +92,13 @@ ScrollablePage {
             radius: 0
             visible: backend.getValue('GLOBAL', 'engine') === "goodbyeDPI" ? false : true 
             ColumnLayout{
+                id:infoColumnLayout
                 anchors.verticalCenter: parent.verticalCenter  
                 RowLayout{
                     
                     spacing:10
                     height:20
-                    anchors{
-                        left: parent.left
-                        leftMargin:10
-                    }
+                    Layout.leftMargin:10
                     Icon{
                         id: icon_info
                         Layout.preferredHeight:20
@@ -67,16 +111,17 @@ ScrollablePage {
                             font: Typography.bodyStrong
                         }
                         Label{
+                            Layout.preferredWidth:rest1.width - 100
                             text:backend.get_element_loc('warn1')
                             font: Typography.body
-                            wrapMode:WrapAnywhere
+                            wrapMode:Text.Wrap
                         }
                         Button{
                             text: backend.get_element_loc('fixnow')
                             FluentUI.radius:0
                             onClicked:{
                                 backend.changeValue('GLOBAL', 'engine', "goodbyeDPI")
-                                rest1.visible = false
+                                rest11.visible = false
                             }
                         }
                     }
@@ -200,6 +245,84 @@ ScrollablePage {
                     }
                 }
             }
+            Label {
+                text: backend.get_element_loc("config_settings")
+                font: Typography.bodyStrong
+                Layout.topMargin: 15
+            }
+            Expander {
+                property bool isInitializing: true
+                expanded: true 
+                Layout.fillWidth: true 
+                Layout.preferredWidth: Math.min(1000, parent.width * 0.9) 
+                Layout.minimumWidth: 300 
+                Layout.maximumWidth: 1000
+                Layout.alignment: Qt.AlignHCenter 
+                
+                _radius:0
+                _height:40
+
+                header: Label {
+                    text: backend.get_element_loc("config_settings_tip")
+                    font: Typography.body
+                    horizontalAlignment: Qt.AlignHCenter
+                    Layout.fillWidth: true
+                }
+                content: ColumnLayout {
+                    spacing: 5
+                    Layout.fillWidth: true
+                    anchors {
+                        verticalCenter: parent.verticalCenter
+                        left: parent.left
+                        leftMargin: 15
+                    }
+
+                    Rectangle {
+                        width: parent.width
+                        height: 10
+                        Layout.bottomMargin: 5
+                        opacity: 0.0
+                    }
+                    RowLayout{
+                        Button {
+                            text: backend.get_element_loc("load_config_file")
+                            icon.name: FluentIcons.graph_OpenFile 
+                            height:30
+                            onClicked: {
+                                fileDialogOpen.open()
+                            }
+                            FluentUI.radius:0
+                        }
+                        Button {
+                            text: backend.get_element_loc("export_config_file")
+                            icon.name: FluentIcons.graph_SaveAs
+                            height:30
+                            onClicked: {
+                                fileDialogSave.open()
+                            }
+                            FluentUI.radius:0
+                        }
+                        Button {
+                            text: backend.get_element_loc("reset_config")
+                            icon.name: FluentIcons.graph_Refresh
+                            height:30
+                            onClicked: {
+                                backend.return_to_default('goodbyedpi')
+                                pageLoader.sourceComponent = null
+                                pageLoader.sourceComponent = pageComponent
+                            }
+                            FluentUI.radius:0
+                        }
+                    }
+                    Rectangle {
+                        width: parent.width
+                        height: 10
+                        Layout.topMargin: 5
+                        opacity: 0.0
+                    }
+                }
+
+            }
 
             Label {
                 text: backend.get_element_loc("custom_params")
@@ -245,7 +368,7 @@ ScrollablePage {
                                 }
                                 saveCustomParameters()
                                 generateCommandLine()
-                                 
+                                
                             }
                             
                             isInitializing = false
@@ -253,12 +376,12 @@ ScrollablePage {
                         }
                         
                         Component.onCompleted: {
-                            text = backend.getValue("GOODBYEDPI", "custom_parameters")
+                            text = backend.get_from_config("GOODBYEDPI", "custom_parameters")
                             generateCommandLine()
                         }
                         function saveCustomParameters() {
                             var params = customParameters.text.trim()
-                            backend.changeValue("GOODBYEDPI", "custom_parameters", params)
+                            backend.set_to_config("GOODBYEDPI", "custom_parameters", params)
                         }
                         
                     }
@@ -355,12 +478,12 @@ ScrollablePage {
                                     if (modelData.type === "input") {
                                         inputField.enabled = checked
                                     }
-                                    backend.toggleBool("GOODBYEDPI", modelData.optionId, checked)
+                                    backend.set_to_config("GOODBYEDPI", modelData.optionId, checked)
                                     generateCommandLine()
                                 }
                             }
                             Component.onCompleted: {
-                                checked = backend.getBool("GOODBYEDPI", modelData.optionId)
+                                checked = backend.get_bool_from_config("GOODBYEDPI", modelData.optionId)
                                 settingsModel.setProperty(modelData.index, "checked", checked)
                                 if (modelData.type === "input") {
                                     inputField.enabled = checked
@@ -392,7 +515,7 @@ ScrollablePage {
                                             info_manager_bottomright.show(InfoBarType.Warning, backend.get_element_loc("warn_entry"), 3000)
                                         } else {
                                             settingsModel.setProperty(modelData.index, "value", text)
-                                            backend.changeValue("GOODBYEDPI", modelData.optionId + "_value", text)
+                                            backend.set_to_config("GOODBYEDPI", modelData.optionId + "_value", text)
                                             generateCommandLine()
                                         }
                                     }    
@@ -403,7 +526,7 @@ ScrollablePage {
                             
                             Component.onCompleted: {
                                 if (modelData.type === "input") {
-                                    text = backend.getValue("GOODBYEDPI", modelData.optionId + "_value")
+                                    text = backend.get_from_config("GOODBYEDPI", modelData.optionId + "_value")
                                 }
                                 settingsModel.setProperty(modelData.index, "value", text)
                                 isInitializing = false
@@ -420,14 +543,14 @@ ScrollablePage {
                             onCheckedChanged: {
                                 if (!isInitializing) {
                                     settingsModel.setProperty(modelData.index, "checked", checked)
-                                    backend.toggleBool("GOODBYEDPI", modelData.optionId, checked)
+                                    backend.set_to_config("GOODBYEDPI", modelData.optionId, checked)
                                     generateCommandLine()
                                 }
                                 isInitializing = false
                                 console.log(isInitializing)
                             }
                             Component.onCompleted: {
-                                checked = backend.getBool("GOODBYEDPI", modelData.optionId)
+                                checked = backend.get_bool_from_config("GOODBYEDPI", modelData.optionId)
                                 settingsModel.setProperty(modelData.index, "checked", checked)
                                 isInitializing = false
                                 generateCommandLine()
@@ -495,7 +618,7 @@ ScrollablePage {
 
                 Component.onCompleted: {
                     if (isInitializing) {
-                        var filesString = backend.getValue("GOODBYEDPI", "blacklist_value")
+                        var filesString = backend.get_from_config("GOODBYEDPI", "blacklist_value")
                         if (filesString !== "") {
                             var filesArray = filesString.split(",")
                             for (var i = 0; i < filesArray.length; i++) {
@@ -611,7 +734,7 @@ ScrollablePage {
         }
         var pathsString = paths.join(",")
         console.log(pathsString)
-        backend.changeValue("GOODBYEDPI", "blacklist_value", pathsString)
+        backend.set_to_config("GOODBYEDPI", "blacklist_value", pathsString)
         return filesModel;
     }
 
@@ -632,13 +755,10 @@ ScrollablePage {
     }
 
     Component.onCompleted: {
-        if (!Qt.fontFamilies().contains("Cascadia Code")) {
-            font.family = Qt.fontFamilies().filter(f => f.toLowerCase().indexOf("mono") !== -1)[0] || "Courier New"
-        }
-        text = backend.getValue("GOODBYEDPI", modelData.optionId + "_value")
+        text = backend.get_from_config("GOODBYEDPI", modelData.optionId + "_value")
         settingsModel.setProperty(itemIndex, "value", text)
 
-        var filesString = backend.getValue("GOODBYEDPI", "blacklist_value")
+        var filesString = backend.get_from_config("GOODBYEDPI", "blacklist_value")
         if (filesString !== "") {
             var filesArray = filesString.split(",")
             for (var i = 0; i < filesArray.length; i++) {
@@ -763,7 +883,7 @@ ScrollablePage {
             } else if (item.type === "blacklist") {
                 
                 if (blacklist_values.count > 0) {
-                    backend.getValue("GOODBYEDPI", "blacklist_value")
+                    backend.get_from_config("GOODBYEDPI", "blacklist_value")
                     for (var j = 0; j < blacklist_values.count; j++) {
                         var filePath = blacklist_values.get(j).path
                         command += ' --blacklist ' + filePath
@@ -781,3 +901,6 @@ ScrollablePage {
 
 }
 
+}
+}
+}
