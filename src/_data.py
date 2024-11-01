@@ -31,15 +31,16 @@ def is_font_installed(font_name):
     except Exception:
         return False
 
-DIRECTORY = f'{application_path}/_internal/' if not DEBUG else ''
+DIRECTORY = f'{application_path}/' if not DEBUG else ''
 
-VERSION = "1.2.0"
+VERSION = "1.2.1"
 
 SETTINGS_FILE_PATH = DIRECTORY+'data/settings/settings.ini'
 BACKUP_SETTINGS_FILE_PATH = DIRECTORY+'data/settings/_settings.ini'
 CONFIG_PATH = DIRECTORY+'data/settings/presets'
 LOCALE_FILE_PATH =  DIRECTORY+'data/loc/loc.ini'
 GOODBYE_DPI_PATH =  DIRECTORY+'data/goodbyeDPI/'
+GOODCHECK_PATH = DIRECTORY+'data/GoodCheck/'
 GOODBYE_DPI_EXECUTABLE = "goodbyedpi.exe" 
 ZAPRET_PATH = DIRECTORY+'data/zapret/'
 ZAPRET_EXECUTABLE = "winws.exe" 
@@ -58,7 +59,7 @@ COMPONENTS_URLS = {
     'byedpi':'hufrea/byedpi'
 }
 
-FONT = 'Nunito SemiBold' if is_font_installed('Nunito SemiBold') else 'Segoe UI'
+FONT = 'Segoe UI'
 MONO_FONT = 'Cascadia Mono' if is_font_installed('Cascadia Mono') else 'Consolas'
 
 PARAMETER_MAPPING = {
@@ -116,7 +117,14 @@ S_VALUE_PARAMETERS = {
     'windowsize': '-window-size',
 }
 
-
+PRESETS = {
+    'goodbyedpi' : "preset_{i}",
+    'zapret' : "qpreset_{i}",
+}
+PRESETS_DEFAULT = {
+    'goodbyedpi' : 9,
+    'zapret' : 3,
+}
 
 REPO_OWNER = "Storik4pro"
 REPO_NAME = "goodbyeDPI-UI"
@@ -125,21 +133,28 @@ CONFIGS_REPO_NAME = "goodbyeDPI-UI-configs"
 logger = AppLogger(VERSION, "settings_import")
 
 class Settings:
-    def __init__(self) -> None:
+    def __init__(self, settingsfile=SETTINGS_FILE_PATH, encoding='utf-8', space_around_delimiters=True) -> None:
+        self.encoding = encoding
+        self.space_around_delimiters = space_around_delimiters
+        self.settingsfile = settingsfile
         self.settings = self.reload_settings()
 
     def change_setting(self, group, key, value):
         self.settings[group][key] = value
 
+    def get_value(self, group, key) -> str|bool|int:
+        return self.settings[group][key]
+
     def save_settings(self):
-        with open(SETTINGS_FILE_PATH, 'w', encoding='utf-8') as configfile:
-            self.settings.write(configfile)
+        with open(self.settingsfile, 'w', encoding=self.encoding) as configfile:
+            self.settings.write(configfile, space_around_delimiters=self.space_around_delimiters)
 
         self.reload_settings()
     
     def reload_settings(self):
         config = configparser.ConfigParser()
-        config.read(SETTINGS_FILE_PATH, encoding='utf-8')
+        config.optionxform = str
+        config.read(self.settingsfile, encoding=self.encoding)
         self.settings = config
         return self.settings
 try:    
@@ -191,7 +206,6 @@ class UserConfig:
         return self.data.get(key)
     
     def set_value(self, key, value):
-        print(value, key)
         self.data[key] = value
         self.write_config()
 
@@ -213,7 +227,8 @@ try:
                             byedpi_config_path),
         'spoofdpi':UserConfig(CONFIG_PATH+"/spoofdpi/user.json" if\
                             spoofdpi_config_path == "" or not os.path.exists(spoofdpi_config_path) else\
-                            spoofdpi_config_path)
+                            spoofdpi_config_path),
+        'goodcheck':UserConfig(CONFIG_PATH+"/goodbyedpi/goodcheck.json")
     }
 except:
     error_message = traceback.format_exc()
