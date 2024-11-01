@@ -143,3 +143,4 @@ __settings.py
 src/_settings/Gallery/res/qml/page/DraggableWidget.qml
 pyinstaller.txt
 DLLcheck.py
+src/GlobalConfig.py
