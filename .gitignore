@@ -3,6 +3,11 @@
 data/settings/settings.ini
 output/
 goodbyeDPI UI/
+FluentUI/*.qml
+FluentUI/Controls/*.qml
+FluentUI/*.qm
+FluentUI/*.ts
+config.properties
 # Vagrant
 .vagrant/
 
