@@ -25,17 +25,17 @@ import time
 import webbrowser
 import winreg
 import psutil
+from PySide6.QtCore import QObject, Slot
+from PySide6.QtCore import QProcess, Signal, QThread
 if winpty_support: import winpty
 from toasted import Button, Image, Progress, Text, Toast, ToastButtonStyle, ToastImagePlacement
 import winsound
 
 import requests
-try: from _data import GOODBYE_DPI_EXECUTABLE, ZAPRET_EXECUTABLE, ZAPRET_PATH, \
+from _data import GOODBYE_DPI_EXECUTABLE, ZAPRET_EXECUTABLE, ZAPRET_PATH, \
     GOODBYE_DPI_PATH, DEBUG, DIRECTORY, DEBUG_PATH, REPO_NAME, REPO_OWNER, CONFIGS_REPO_NAME, SETTINGS_FILE_PATH,\
     CONFIG_PATH, SPOOFDPI_EXECUTABLE, BYEDPI_EXECUTABLE, EXECUTABLES, COMPONENTS_URLS, text, settings
-except: from src._data import GOODBYE_DPI_EXECUTABLE, ZAPRET_EXECUTABLE, ZAPRET_PATH, \
-    GOODBYE_DPI_PATH, DEBUG, DIRECTORY, DEBUG_PATH, REPO_NAME, REPO_OWNER, CONFIGS_REPO_NAME, SETTINGS_FILE_PATH,\
-    CONFIG_PATH, SPOOFDPI_EXECUTABLE, BYEDPI_EXECUTABLE, EXECUTABLES, COMPONENTS_URLS, text, settings
+
 def error_sound():
     winsound.MessageBeep(winsound.MB_ICONHAND)
 
@@ -56,6 +56,12 @@ def is_weak_pc():
         return True
     else:
         return False
+    
+def get_locale(element):
+    try:
+        return text.inAppText[element]
+    except:
+        return f"locale:{element}"
 
 # Toast
 
@@ -191,8 +197,16 @@ def remove_ansi_sequences(text):
 
     return stage2
 
-class GoodbyedpiProcess:
+"""class GoodbyedpiProcess(QObject):
+    # Define signals
+    output_signal = Signal(str)
+    process_started = Signal()
+    process_stopped = Signal()
+    error_occurred = Signal(str)
+
     def __init__(self, app, output_app = None) -> None:
+        super().__init__()
+
         self.path = os.path.join(GOODBYE_DPI_PATH, 'x86_64', GOODBYE_DPI_EXECUTABLE) \
             if settings.settings['GLOBAL']['engine'] == 'goodbyeDPI' \
             else os.path.join(ZAPRET_PATH, ZAPRET_EXECUTABLE)
@@ -332,23 +346,203 @@ class GoodbyedpiProcess:
         if self.output_app:
             try:self.output_app.destroy()
             except:pass
-            self.output_app = None
-    
-def start_process(*args):
-    engine = settings.settings["GLOBAL"]["engine"]
-    execut = EXECUTABLES[engine]
+            self.output_app = None"""
 
-    path = os.path.join(GOODBYE_DPI_PATH, 'x86_64', GOODBYE_DPI_EXECUTABLE) \
-        if engine == 'goodbyeDPI' \
-        else os.path.join(DIRECTORY+f'data/{engine}', execut)
-    
+class GoodbyedpiWorker(QThread):
+    output_signal = Signal(str)
+    process_finished = Signal(str)
+    error_occurred = Signal(str)
+
+    def __init__(self, args, engine, parent=None):
+        super().__init__(parent)
+        self.args = args
+        self.engine = engine
+        self.stop_event = threading.Event()
+        self.queue = queue.Queue()
+        self.output = []
+        self.reason = 'for unknown reason'
+        self.error = False
+        self.proc = None
+        self.pty_process = None
+
+    def run(self):
+        engine = self.engine
+        execut = EXECUTABLES[engine]
+
+        if engine == 'goodbyeDPI':
+            self.path = os.path.join(GOODBYE_DPI_PATH, 'x86_64', GOODBYE_DPI_EXECUTABLE)
+            cwd = os.path.join(GOODBYE_DPI_PATH, 'x86_64')
+        else:
+            self.path = os.path.join(DIRECTORY, f'data/{engine}', execut)
+            cwd = os.path.join(DIRECTORY, f'data/{engine}')
+
+        command = [str(self.path)]
+        command.extend(self.args)
+        print(command)
+
+        self.output = []
+
+        if winpty_support:
+            try:
+                self.pty_process = winpty.PtyProcess.spawn(
+                    command,
+                    cwd=cwd
+                )
+            except Exception as ex:
+                data = f"Component not installed correctly. ({ex})"
+                self.queue.put(data)
+                self.output.append(data)
+                self.output_signal.emit(data)
+                self.error_occurred.emit(data)
+                return
+
+            while not self.stop_event.is_set():
+                if self.pty_process.isalive():
+                    try:
+                        data = self.pty_process.read(10000)
+                        if data:
+                            data = remove_ansi_sequences(data)
+                            print("data received")
+                            self.queue.put(data)
+                            self.output.append(data)
+                            self.output_signal.emit(data)
+                    except OSError as e:
+                        print(e)
+                        break
+                else:
+                    break
+
+            self.cleanup()
+
+        else:
+            self.proc = start_process(*command)
+            data = "Filter activated"
+            self.queue.put(data)
+            self.output_signal.emit(data)
+            self.cleanup()
+
+    def cleanup(self):
+        if self.pty_process:
+            try:
+                self.pty_process.close(True)
+            except:
+                pass
+            self.pty_process = None
+        execut = EXECUTABLES[self.engine]
+        term = f'\n[DEBUG] The {execut} process has been terminated {self.reason}\n'
+        self.output.append(term)
+        self.queue.put(term)
+        self.output_signal.emit(term)
+        
+        self.process_finished.emit(self.reason)
+
+    def stop(self):
+        self.reason = 'by user'
+        print('Stopping process...')
+        self.stop_event.set()
+        if self.pty_process:
+            try:
+                self.pty_process.close(True)
+            except:
+                pass
+        if self.proc:
+            try:
+                self.proc.terminate()
+            except:
+                pass
+        self.wait()
+
+stop_flags = [
+    "Error opening filter",
+    "unknown option",
+    "hostlists load failed",
+    "must specify port filter",
+    "ERROR:",
+    "Component not installed correctly",
+    "--debug=0|1|syslog|@<filename>"
+]
+
+class GoodbyedpiProcess(QObject):
+    output_signal = Signal(str)
+    process_started = Signal()
+    process_stopped = Signal(str)
+    error_occurred = Signal(str)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.worker = None
+        self.error = False
+        self.stop = False
+        self.engine = settings.settings['GLOBAL']['engine']
+        self.reason = 'by user'
+
+    @Slot()
+    def start_goodbyedpi(self, *args):
+        self.engine = settings.settings['GLOBAL']['engine']
+        if self.worker is None or not self.worker.isRunning():
+            self.worker = GoodbyedpiWorker(args=args, engine=self.engine)
+            self.worker.output_signal.connect(self.handle_output)
+            self.worker.process_finished.connect(self.handle_process_finished)
+            self.worker.error_occurred.connect(self.handle_error)
+            self.worker.start()
+            self.process_started.emit()
+            self.error = False
+            self.stop = False
+            return True
+        else:
+            return False
+
+    @Slot()
+    def stop_goodbyedpi(self):
+        if self.worker and self.worker.isRunning():
+            self.worker.stop()
+            self.process_stopped.emit(self.reason)
+            self.error = False
+            self.stop = True
+
+    def handle_output(self, data):
+        execut = EXECUTABLES[settings.settings["GLOBAL"]["engine"]]
+        if not self.error and not self.stop: self.output_signal.emit(data)
+        if "Filter activated" in data or "capture is started." in data or 'created a listener' in data:
+            self.error = False
+        elif any(error_msg in data for error_msg in stop_flags):
+            self.reason = 'for unknown reason'
+            self.error = True
+            print("Trying to connect terminal")
+            error_sound()
+            self.error_occurred.emit("Unknown error occurred while process running")
+            
+        
+
+    def handle_process_finished(self, reason):
+        self.reason = reason
+        self.process_stopped.emit(self.reason)
+
+    def handle_error(self, error_message):
+        self.error_occurred.emit(error_message)
+
+def start_process(*args, **kwargs):
+    '''
+    :param *args: startup args: turple
+    :param engine: Setting custom engine. Default -> `settings.settings["GLOBAL"]["engine"]`
+    :param execut: Executable file. Default -> `EXECUTABLES[engine]`
+    :param path: Path to execut. Default -> `DIRECTORY+f'data/{engine}/{execut}'`
+    :param cwd: Process work directory. Default -> `DIRECTORY+f'data/{engine}'`
+    '''
+    engine = kwargs.get('engine', settings.settings["GLOBAL"]["engine"]) 
+    execut = kwargs.get('execut', EXECUTABLES[engine])
+    path = kwargs.get('path', os.path.join(GOODBYE_DPI_PATH, 'x86_64', GOODBYE_DPI_EXECUTABLE) \
+                                           if engine == 'goodbyeDPI' \
+                                           else os.path.join(DIRECTORY+f'data/{engine}', execut))
+    cwd = kwargs.get('cwd', os.path.join(GOODBYE_DPI_PATH, 'x86_64') \
+                                         if settings.settings['GLOBAL']['engine'] == 'goodbyeDPI'\
+                                         else os.path.join(DIRECTORY+f'data/{engine}'))
+
     _args = [
             path,
             *args,
     ]
-    process = subprocess.Popen(_args, cwd=os.path.join(GOODBYE_DPI_PATH, 'x86_64') \
-                               if settings.settings['GLOBAL']['engine'] == 'goodbyeDPI'\
-                               else os.path.join(DIRECTORY+f'data/{engine}'), creationflags=subprocess.CREATE_NO_WINDOW)
+    process = subprocess.Popen(_args, cwd=cwd, creationflags=subprocess.CREATE_NO_WINDOW)
     return process
 
 def stop_servise():
@@ -479,8 +673,6 @@ def download_update(url, directory, signal=None):
             time.sleep(0.05)
 
 def get_component_download_url(component_name:str):
-    if component_name == 'zapret':
-        return "https://github.com/bol-van/zapret-win-bundle/archive/refs/heads/master.zip"
     component_addres = COMPONENTS_URLS[component_name]
     component_url = f"https://api.github.com/repos/{component_addres}/releases"
     try:
@@ -490,8 +682,11 @@ def get_component_download_url(component_name:str):
             if releases:
                 latest_release = releases[0]
                 version = latest_release.get("tag_name")
+                if component_name == 'zapret':
+                    return f"https://github.com/bol-van/zapret-win-bundle/archive/refs/heads/master.zip|{version}"
+                
                 if component_name == 'goodbyeDPI' and version == '0.2.3rc3':
-                    return 'ERR_LATEST_VERSION_ALREADY_INSTALLED'
+                    return f'ERR_LATEST_VERSION_ALREADY_INSTALLED|{version}'
                 pre_download_url = f"https://api.github.com/repos/{component_addres}/releases/tags/{version}"
 
                 download_url = None
@@ -516,7 +711,9 @@ def get_component_download_url(component_name:str):
                 if download_url is None:
                     return 'ERR_INVALID_URL'
 
-                return download_url
+                
+                return download_url+"|"+version
+                
                 
             else:
                 return 'ERR_CANNOT_FIND_RELEASE'
@@ -558,6 +755,10 @@ def extract_zip(zip_file, zip_folder_to_unpack, extract_to, files_to_skip=[]):
                     destination_dir = os.path.dirname(destination_path)
                     if not os.path.exists(destination_dir):
                         os.makedirs(destination_dir)
+
+                    if relative_path.endswith(".txt") and os.path.exists(destination_path):
+                        index += 1
+                        continue
 
                     if member.is_dir():
                         if not os.path.exists(destination_path):
@@ -639,7 +840,7 @@ def delete_file(file_path):
 def open_folder(folder_path):
     os.startfile(folder_path)
 
-def register_component(component_name:str):
+def register_component(component_name:str, version):
     component_directory = DIRECTORY+f"data/{component_name}" if not DEBUG else f"E:/_component/{component_name}"
     result = download_files_from_github(remote_dir=f"{component_name.lower()}/", local_dir=component_directory)
     if result: return result
@@ -648,7 +849,11 @@ def register_component(component_name:str):
     result = download_files_from_github(remote_dir=f"{component_name.lower()}/configs", local_dir=config_component_path)
     if result: return result
 
-    change_setting('COMPONENTS', f'{component_name.lower()}', 'True')
+    change_settings('COMPONENTS', [
+        [f'{component_name.lower()}', 'True'],
+        [f'{component_name.lower()}_version', version],
+        [f'{component_name.lower()}_server_version', version]
+        ])
 
 def unregister_component(component_name:str):
     if component_name == 'goodbyeDPI':
@@ -745,7 +950,7 @@ def check_version(gdpi_exe_fullpath=GOODBYE_DPI_PATH+"\\x86_64\\goodbyedpi.exe")
     elif hash_value == hash_gdpi_64_023rc32:
         return "0.2.3-rc3-2"
     
-    return "UNKNOWN VERSION"
+    return "UNKNOWN VERSION (FWSNI support enabled)"
 
 def sni_support():
     if "FWSNI support" in check_version():
@@ -794,3 +999,25 @@ def get_preset_parameters(index:int|str, engine:str):
     except json.JSONDecodeError:
         raise json.JSONDecodeError(f"Unable to found config file {filename}. File encoding is incorrect")
 
+def replace_system_folders_with_short_names(path):
+    system_folders = {
+        'Program Files': 'Progra~1',
+        'Program Files (x86)': 'Progra~2',
+        'ProgramData': 'Progra~3',
+        'Users': 'Users',
+        'Documents and Settings': 'Docume~1',
+        'Application Data': 'Applic~1',
+        'Local Settings': 'LocalS~1',
+    }
+
+    path_parts = path.split(os.sep)
+
+    new_path_parts = []
+    for part in path_parts:
+        if part in system_folders:
+            new_path_parts.append(system_folders[part])
+        else:
+            new_path_parts.append(part)
+    
+    new_path = os.sep.join(new_path_parts)
+    return new_path
