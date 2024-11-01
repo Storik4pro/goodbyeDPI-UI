@@ -1,0 +1,11 @@
+/Put websites to test in this list
+/Don't worry about the exact url format, script will clean it
+/
+/Twitter
+/
+abs-0.twimg.com
+abs.twimg.com
+pbs.twimg.com
+api.x.com
+x.com
+video.twimg.com

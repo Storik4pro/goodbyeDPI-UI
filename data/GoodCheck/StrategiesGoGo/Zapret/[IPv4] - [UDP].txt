@@ -1,0 +1,49 @@
+/Use symbol '/' to comment a line
+
+
+/Protocol; can be either TCP or UDP; it's required or error will be shown when parsing list
+#PROTO=UDP
+/IP version; can be 4 or 6
+#IPV=4
+/Proxy settings; should be in the form of protocol://ip:port; leave empty to disable
+#PROXY=
+
+
+/Strategy keys; program will use them to form a list of all possible combinations
+/One line - one key set; must begin with '#KEY#'
+/Use symbol ';' for keys separation
+/Use symbol '&' for keys merging
+/'empty' will be substituted with nothingness; 'FAKESNI', 'FAKEHEXSTREAMTCP', 'FAKEHEXSTREAMUDP', 'FAKEHEXBYTESTCP', 'FAKEHEXBYTESUDP', 'PAYLOADTCP' and 'PAYLOADUDP' will be substituted with values from config.ini
+/You can also put values directly, if you don't want substitution
+/Group of keys must always end with #ENDGROUP#
+
+
+#KEY#--wf-l3=ipv4
+#KEY#--wf-udp=443
+#KEY#--dpi-desync=fake
+#KEY#empty;--dpi-desync-fake-quic=0x00;--dpi-desync-fake-quic=PAYLOADUDP
+#KEY#empty;--dpi-desync-repeats=2;--dpi-desync-repeats=5;--dpi-desync-repeats=10;--dpi-desync-repeats=20
+#ENDGROUP#
+
+#KEY#--wf-l3=ipv4
+#KEY#--wf-udp=443
+#KEY#--dpi-desync=ipfrag2
+#KEY#--dpi-desync-ipfrag-pos-udp=8;--dpi-desync-ipfrag-pos-udp=16;--dpi-desync-ipfrag-pos-udp=24;--dpi-desync-ipfrag-pos-udp=32;--dpi-desync-ipfrag-pos-udp=40;--dpi-desync-ipfrag-pos-udp=64
+#ENDGROUP#
+
+#KEY#--wf-l3=ipv4
+#KEY#--wf-udp=443
+#KEY#--dpi-desync=fake,ipfrag2
+#KEY#empty;--dpi-desync-fake-quic=0x00;--dpi-desync-fake-quic=PAYLOADUDP
+#KEY#empty;--dpi-desync-repeats=2;--dpi-desync-repeats=5;--dpi-desync-repeats=10;--dpi-desync-repeats=20
+#KEY#--dpi-desync-ipfrag-pos-udp=8;--dpi-desync-ipfrag-pos-udp=16;--dpi-desync-ipfrag-pos-udp=24;--dpi-desync-ipfrag-pos-udp=32;--dpi-desync-ipfrag-pos-udp=40;--dpi-desync-ipfrag-pos-udp=64
+#ENDGROUP#
+
+#KEY#--wf-l3=ipv4
+#KEY#--wf-udp=443
+#KEY#--dpi-desync=fake,udplen
+#KEY#empty;--dpi-desync-fake-quic=0x00;--dpi-desync-fake-quic=PAYLOADUDP
+#KEY#empty;--dpi-desync-repeats=2;--dpi-desync-repeats=5;--dpi-desync-repeats=10;--dpi-desync-repeats=20
+#KEY#--dpi-desync-udplen-increment=8;--dpi-desync-udplen-increment=16;--dpi-desync-udplen-increment=24
+#KEY#empty;--dpi-desync-udplen-pattern=0xB00BEDBABEFACADE
+#ENDGROUP#

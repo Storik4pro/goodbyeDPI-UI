@@ -1,0 +1,59 @@
+/Use symbol '/' to comment a line
+
+
+/Protocol; can be either TCP or UDP; it's required or error will be shown when parsing list
+#PROTO=TCP
+/IP version; can be 4 or 6
+#IPV=6
+/Proxy settings; should be in the form of protocol://ip:port; leave empty to disable
+#PROXY=
+
+
+/Strategy keys; program will use them to form a list of all possible combinations
+/One line - one key set; must begin with '#KEY#'
+/Use symbol ';' for keys separation
+/Use symbol '&' for keys merging
+/'empty' will be substituted with nothingness; 'FAKESNI', 'FAKEHEXSTREAMTCP', 'FAKEHEXSTREAMUDP', 'FAKEHEXBYTESTCP', 'FAKEHEXBYTESUDP', 'PAYLOADTCP' and 'PAYLOADUDP' will be substituted with values from config.ini
+/You can also put values directly, if you don't want substitution
+/Group of keys must always end with #ENDGROUP#
+
+
+#KEY#-q
+#KEY#-e 2
+#KEY#--native-frag;--reverse-frag
+#KEY#empty;--frag-by-sni
+#ENDGROUP#
+
+#KEY#-q
+#KEY#-e 2
+#KEY#--native-frag;--reverse-frag
+#KEY#empty;--frag-by-sni
+#KEY#--wrong-seq;--wrong-chksum;--wrong-seq&--wrong-chksum
+#KEY#empty;--fake-with-sni FAKESNI
+#KEY#empty;--fake-from-hex FAKEHEXSTREAMTCP;--fake-from-hex 160303;--fake-from-hex 000000
+#KEY#empty;--fake-gen 5;--fake-gen 15
+#KEY#empty;--fake-resend 10
+#ENDGROUP#
+
+#KEY#-q
+#KEY#-e 2
+#KEY#--native-frag;--reverse-frag
+#KEY#empty;--frag-by-sni
+#KEY#--set-ttl 4;--set-ttl 6;--set-ttl 8
+#KEY#empty;--fake-with-sni FAKESNI
+#KEY#empty;--fake-from-hex FAKEHEXSTREAMTCP;--fake-from-hex 160303;--fake-from-hex 000000
+#KEY#empty;--fake-gen 5;--fake-gen 15
+#KEY#empty;--fake-resend 10
+#ENDGROUP#
+
+#KEY#-q
+#KEY#-e 2
+#KEY#--native-frag;--reverse-frag
+#KEY#empty;--frag-by-sni
+#KEY#--wrong-seq;--wrong-chksum;--wrong-seq&--wrong-chksum
+#KEY#--set-ttl 4;--set-ttl 6;--set-ttl 8
+#KEY#empty;--fake-with-sni FAKESNI
+#KEY#empty;--fake-from-hex FAKEHEXSTREAMTCP;--fake-from-hex 160303;--fake-from-hex 000000
+#KEY#empty;--fake-gen 5;--fake-gen 15
+#KEY#empty;--fake-resend 10
+#ENDGROUP#
