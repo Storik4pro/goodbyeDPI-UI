@@ -1,9 +1,53 @@
 import os
 import configparser
+import sys
+from tkinter import messagebox
+import traceback
 import psutil
 import json
 
-from _data import DIRECTORY, CONFIG_PATH, SETTINGS_FILE_PATH, settings
+from utils import install_font, is_process_running, is_weak_pc, register_app
+from logger import AppLogger
+from _data import DEBUG, DIRECTORY, CONFIG_PATH, SETTINGS_FILE_PATH, settings, text
+
+def check_app_is_runned(logger:AppLogger):
+    if not DEBUG:
+        existing_app = is_process_running('goodbyeDPI.exe')
+        if existing_app:
+            result = messagebox.askyesno(text.inAppText['app_is_running'], 
+                                         text.inAppText['process']+" 'goodbyeDPI.exe' "+text.inAppText['app_is_running_info'])
+            if result:
+                try:
+                    existing_app.terminate()
+                    existing_app.wait()
+                except psutil.NoSuchProcess:
+                    logger.create_debug_log(traceback.format_exc())
+                except:
+                    logger.create_error_log(traceback.format_exc())
+            else:
+                sys.exit(0)
+
+def first_run_actions():
+    first_run = settings.settings.getboolean('GLOBAL', 'is_first_run')
+    if first_run:
+        register_app()
+        settings.change_setting('GLOBAL', 'is_first_run', 'False')
+
+        if is_weak_pc():
+            settings.change_setting('APPEARANCE_MODE', 'animations', 'False')
+
+def after_update_actions(logger:AppLogger):
+    try:
+        kill_update()
+        update_result = rename_update_exe()
+        settings.change_setting('GLOBAL', 'update_complete', "True")
+    except:
+        logger.create_error_log(traceback.format_exc())
+        settings.change_setting('GLOBAL', 'update_complete', "False")
+
+def chk_directory():
+    if settings.settings['GLOBAL']["work_directory"] != DIRECTORY and not "System32" in DIRECTORY:
+        settings.change_setting('GLOBAL', 'work_directory', DIRECTORY)
 
 def kill_update():
     path = DIRECTORY.replace("_internal/", "")
@@ -36,7 +80,7 @@ def merge_blacklist(goodbye_dpi_path):
 def merge_settings(backup_settings_file, settings_file):
     if not os.path.exists(backup_settings_file):
         print(f"Backup settings file {backup_settings_file} does not exist.")
-        return
+        return False
 
     backup_config = configparser.ConfigParser()
     backup_config.read(backup_settings_file, encoding='utf-8')
@@ -56,6 +100,7 @@ def merge_settings(backup_settings_file, settings_file):
         backup_config.write(configfile)
 
     os.remove(backup_settings_file)
+    return True
 
 def rename_update_exe():
     update_path = DIRECTORY.replace("_internal/", "")+'update.exe'
