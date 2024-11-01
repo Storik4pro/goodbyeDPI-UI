@@ -8,7 +8,7 @@ import winreg
 from logger import AppLogger
 
 DEBUG = False
-DEBUG_PATH = os.path.dirname(os.path.abspath(__file__)).replace("\src", "/")
+DEBUG_PATH = os.path.dirname(os.path.abspath(__file__)).replace("\src", "/") if DEBUG else ""
 
 if getattr(sys, 'frozen', False):
     application_path = os.path.dirname(sys.executable)
@@ -238,6 +238,7 @@ def get_log_level():
     log_lvl = settings.settings['GLOBAL']["log_level"]
     if log_lvl == 'critical': return logging.CRITICAL
     elif log_lvl == 'error': return logging.ERROR
+    elif log_lvl == 'warnings': return logging.WARNING
     else: return logging.DEBUG
 
 try:
