@@ -1,131 +1,124 @@
-import asyncio
-import getopt
-import multiprocessing
-from tkinter import messagebox
-import sys
-import subprocess
-import os
-import ctypes
-from ctypes import windll, c_char_p
-import traceback
-import psutil
-import requests
-from toasted import ToastDismissReason
-import tkinter.ttk 
-from tkinter import filedialog
-from tkinter.font import Font
-import ctypes.wintypes
-import darkdetect
-from customtkinter import *
-from _data import BYEDPI_EXECUTABLE, LOG_LEVEL, SPOOFDPI_EXECUTABLE, VERSION, ZAPRET_EXECUTABLE, settings,\
-      SETTINGS_FILE_PATH, GOODBYE_DPI_PATH, FONT, DEBUG, DIRECTORY, REPO_NAME, REPO_OWNER, BACKUP_SETTINGS_FILE_PATH, text
-from utils import check_mica, install_font, is_weak_pc, register_app, is_process_running, change_setting
-from quick_start import kill_update, merge_settings, merge_blacklist, rename_update_exe, merge_settings_to_json
 from logger import AppLogger
-import pywintypes
-import configparser
-import pystray
-from pystray import MenuItem as item
-from PIL import Image, ImageTk
-import threading
-try: from win32material import *
-except:pass
 
-from window import MainWindow
+try:
+    import asyncio
+    import ctypes
+    import getopt
+    import logging
+    import multiprocessing
+    import os
+    import sys
+    import traceback
 
-logger = AppLogger(VERSION, "goodbyeDPI", LOG_LEVEL)
-def is_admin():
-    try:
-        return ctypes.windll.shell32.IsUserAnAdmin()
-    except:
-        return False
-    
-def check_app_is_runned():
-    if not DEBUG:
-        existing_app = is_process_running('goodbyeDPI.exe')
-        if existing_app:
-            result = messagebox.askyesno(text.inAppText['app_is_running'], 
-                                         text.inAppText['process']+" 'goodbyeDPI.exe' "+text.inAppText['app_is_running_info'])
-            if result:
-                try:
-                    existing_app.terminate()
-                    existing_app.wait()
-                except psutil.NoSuchProcess:
-                    logger.create_debug_log(traceback.format_exc())
-                except:
-                    logger.create_error_log(traceback.format_exc())
-            else:
-                sys.exit(0)
+    from qasync import QEventLoop
+    from _data import BACKUP_SETTINGS_FILE_PATH, BYEDPI_EXECUTABLE, DEBUG, DIRECTORY, \
+            GOODBYE_DPI_PATH, LOG_LEVEL, SETTINGS_FILE_PATH, SPOOFDPI_EXECUTABLE, VERSION, \
+            ZAPRET_EXECUTABLE, settings, text
+    import resource_rc
+    from PySide6.QtCore import QProcess
+    from PySide6.QtGui import QGuiApplication, QIcon
+    from PySide6.QtQml import QQmlApplicationEngine
 
-def first_run_actions():
-    first_run = settings.settings.getboolean('GLOBAL', 'is_first_run')
-    if first_run:
-        register_app()
-        install_font('data/font/Nunito-SemiBold.ttf')
+    from FluentUI import FluentUIPlugin
+    import Logger
+    import GlobalConfig
+    from Components import CircularReveal
+    from AppInfo import AppInfo
+    from Backend import Backend, Process, Toast, MultiWindow, GoodCheckHelper, AfterUpdateHelper
 
-        settings.change_setting('GLOBAL', 'is_first_run', 'False')
+    from quick_start import after_update_actions, check_app_is_runned, chk_directory, first_run_actions, kill_update, merge_settings, merge_blacklist, rename_update_exe, merge_settings_to_json
+    logger = AppLogger(VERSION, "goodbyeDPI", LOG_LEVEL)
+except:
+    import traceback
+    logger = AppLogger("-x-", "goodbyeDPI", logging.CRITICAL)
+    logger.raise_critical(traceback.format_exc())
 
-        if is_weak_pc():
-            settings.change_setting('APPEARANCE_MODE', 'animations', 'False')
+try:
+    def is_admin():
+        try:
+            return ctypes.windll.shell32.IsUserAnAdmin()
+        except:
+            return False
+        
+    def run_app(first_run):
+        backend = Backend(first_run)
+        process = Process()
+        toast = Toast()
+        multiWindow = MultiWindow()
+        goodCheck = GoodCheckHelper()
+        afterUpdate = AfterUpdateHelper()
+        print(sys.argv)
+        os.environ["QT_QUICK_CONTROLS_STYLE"] = "FluentUI"
+        QGuiApplication.setOrganizationName(GlobalConfig.application_company)
+        QGuiApplication.setOrganizationDomain(GlobalConfig.application_domain)
+        QGuiApplication.setApplicationName(GlobalConfig.application_name)
+        QGuiApplication.setApplicationDisplayName(GlobalConfig.application_name)
+        QGuiApplication.setApplicationVersion(GlobalConfig.application_version)
+        Logger.setup("GoodbyeDPI_UI", level=LOG_LEVEL)
+        app = QGuiApplication(sys.argv)
+        engine = QQmlApplicationEngine()
+        
+        engine.rootContext().setContextProperty("backend", backend)
+        engine.rootContext().setContextProperty("process", process)
+        engine.rootContext().setContextProperty("toast", toast)
+        engine.rootContext().setContextProperty("appArguments", sys.argv)
+        engine.rootContext().setContextProperty("multiWindow", multiWindow)
+        engine.rootContext().setContextProperty("goodCheck", goodCheck)
+        engine.rootContext().setContextProperty("updateHelper", afterUpdate)
 
-def after_update_actions():
-    try:
-        kill_update()
-        update_result = rename_update_exe()
-        settings.change_setting('GLOBAL', 'update_complete', "True")
-    except:
-        logger.create_error_log(traceback.format_exc())
-        settings.change_setting('GLOBAL', 'update_complete', "False")
+        engine.addImportPath(":/qt/qml")
+        
+        icon = QIcon(DIRECTORY+"data/icon.ico")
+        QGuiApplication.setWindowIcon(icon)
 
-def chk_directory():
-    if settings.settings['GLOBAL']["work_directory"] != DIRECTORY and not "System32" in DIRECTORY:
-        settings.change_setting('GLOBAL', 'work_directory', DIRECTORY)
-    
-if __name__ == "__main__":
-    if not DEBUG: multiprocessing.freeze_support()
-    argv = sys.argv[1:]
-    try:
-        options, args = getopt.getopt(argv, "", ["autorun", "after-update"])
-    except getopt.GetoptError as err:
-        pass
+        AppInfo().init(engine)
+        FluentUIPlugin.registerTypes()
+        qml_file = "qrc:/qt/qml/GoodbyeDPI_UI/res/qml/App.qml"
+        engine.load(qml_file)
 
-    autorun = 'False'
-    after_update = False
-    first_run = settings.settings['GLOBAL']['is_first_run'] if not DEBUG else 'False'
-    pompt = ' '
+        loop = QEventLoop(app)
+        asyncio.set_event_loop(loop)
 
-    for name, value in options:
-        if name == '--autorun':
-            autorun = 'True'
-        if name == '--after-update':
-            after_update = True
-            settings.change_setting('GLOBAL', 'update_complete', "False")
-        pompt+=name+value
-    
-    logger.create_debug_log("Getting ready for start application.")
+        if not engine.rootObjects():
+            sys.exit(-1)
 
-    if not is_admin():
-        logger.create_debug_log("Retrying as administrator")
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__+pompt, None, 1)
-        logger.cleanup_logs()
-    else:
-        logger.create_debug_log("Started as administrator")
+        with loop:
+            sys.exit(loop.run_forever())
 
-        check_app_is_runned()
+    if __name__ == "__main__":
+        if not DEBUG: multiprocessing.freeze_support()
+        argv = sys.argv[1:]
+        try:
+            options, args = getopt.getopt(argv, "", ["after-update"])
+        except getopt.GetoptError as err:
+            pass
+
+        autorun = 'False'
+        after_update = False
+        first_run = settings.settings.getboolean('GLOBAL', 'is_first_run') if not DEBUG else False
+        pompt = ' '
+
+        for name, value in options:
+            if name == '--after-update':
+                after_update = True
+                settings.change_setting('GLOBAL', 'update_complete', "False")
+            pompt+=name+value
+
+        if not is_admin():
+            logger.raise_warning(text.inAppText['run_as_admin'])
+            sys.exit(-1)
+            
+        
+        logger.create_debug_log("Getting ready for start application.")
+
+        # ==> Getting ready
+
+        check_app_is_runned(logger)
 
         if settings.settings['GLOBAL']['hide_to_tray'] == "True":
             autorun = 'True'
         try:
             if not DEBUG:
-                # merge settings  
-                if after_update:
-                    merge_settings(BACKUP_SETTINGS_FILE_PATH, SETTINGS_FILE_PATH)
-                    merge_blacklist(GOODBYE_DPI_PATH)
-                    merge_settings_to_json()
-                    settings.reload_settings()
-
-                    settings.change_setting('GLOBAL', 'after_update', 'False')
-
                 # first run actions
                 first_run_actions()
 
@@ -150,31 +143,20 @@ if __name__ == "__main__":
 
                 # check after update actions
                 if not settings.settings.getboolean('GLOBAL', 'update_complete'):
-                    after_update_actions()
+                    after_update_actions(logger)
 
                 
             settings.save_settings()
         except:
             logger.raise_critical(traceback.format_exc())
-        
-        # getting ready window
-        mode = settings.settings['APPEARANCE_MODE']['mode']
-        mica = settings.settings['APPEARANCE_MODE']['use_mica'] if check_mica() else "False"
 
-        set_default_color_theme("blue")
-        set_widget_scaling(1)
-        set_appearance_mode(mode if mica != "True" else "dark")
-
-        window = MainWindow(autorun, 'True' if after_update else first_run)
-
+        # ==> Running Qt
         try:
-            window.iconbitmap(DIRECTORY+'data/icon.ico')
-
-            if mica == "True": 
-                ApplyMica(windll.user32.FindWindowW(c_char_p(None), window.title()), True, False)
-
-            window.mainloop()
-        except: pass
+            run_app(first_run)
+        except SystemExit:
+            pass
 
         logger.cleanup_logs()
-        
+except:
+    import traceback
+    logger.raise_critical(traceback.format_exc())
