@@ -72,7 +72,7 @@ def check_args(preset):
     cfg = settings.settings['CONFIG'].get(f'{engine}_config_path', '')
     if cfg != "" and os.path.exists(cfg) and configs[engine].configfile != cfg:
         configs[engine].configfile = cfg
-    else:
+    elif cfg == "" or not os.path.exists(cfg):
         configs[engine].configfile = CONFIG_PATH + f"/{engine}/user.json"
     configs[engine].reload_config()
 
@@ -222,8 +222,8 @@ class Process(QObject):
     @Slot(result=bool)
     def stop_process(self):
         self.is_running = False
-        self.process.stop_goodbyedpi()
-        return True
+        result = self.process.stop_goodbyedpi()
+        return result
     
     @Slot()
     def stop_service(self):
