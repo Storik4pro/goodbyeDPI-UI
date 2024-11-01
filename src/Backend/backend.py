@@ -323,7 +323,7 @@ class Backend(QObject):
             try:
                 if settings.settings['GLOBAL']['notifyaboutupdates'] == "True":
                     version_to_update = get_latest_release()
-                    updates_availible = VERSION!=version_to_update
+                    updates_availible = True if VERSION != version_to_update else False
                     change_setting('GLOBAL', 'lastcheckedtime', datetime.now().strftime("%H:%M %d.%m.%Y"))
                     if updates_availible: 
                         change_setting('GLOBAL', 'version_to_update', version_to_update)
@@ -495,7 +495,7 @@ class UpdateCheckerWorker(QObject):
                     self.parent().toggleBool('GLOBAL', "check_complete", False)
 
                 if self.parent().getValue("COMPONENTS", c+"_version").replace("v", "") != \
-                        self.parent().getValue("COMPONENTS", c+"_server_version"):
+                        self.parent().getValue("COMPONENTS", c+"_server_version").replace("v", ""):
                     update_available = True
 
                 self.progress.emit(int((i + 1) / total_components * 100))
