@@ -122,7 +122,14 @@ ScrollablePage {
                             if (checked) {
                                 process.start_process()
                             } else {
-                                process.stop_process()
+                                var success = process.stop_process()
+                                if (!success) {
+                                    toast.show_error("#NOTF_FAI_retry", text.inAppText['error_title'],
+                                                     backend.get_element_loc('close_error') + " " + 
+                                                     process.get_executable() + " " + 
+                                                     backend.get_element_loc('close_error2'),
+                                                     backend.get_element_loc('retry'), "")
+                                }
                             }
                         }
                         isInitializing = false
@@ -524,6 +531,21 @@ ScrollablePage {
         }
         function onError_happens() {
             startSwitch.checked = false
+        }
+    }
+    Connections {
+        target:toast
+        function onNotificationAction(notificationId, action) {
+            if (notificationId === "#NOTF_FAI_retry" && action === 'user_not_dismissed') {
+                var success = process.stop_process()
+                if (!success) {
+                    toast.show_error("#NOTF_FAI_retry", text.inAppText['error_title'],
+                                        backend.get_element_loc('close_error') + " " + 
+                                        process.get_executable() + " " + 
+                                        backend.get_element_loc('close_error2'),
+                                        backend.get_element_loc('retry'), "")
+                }
+            }
         }
     }
     

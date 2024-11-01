@@ -112,7 +112,14 @@ FramelessWindow {
                     property var _checked: process.is_process_alive()
                     onTriggered: {
                         if (_checked) {
-                            process.stop_process();
+                            var success = process.stop_process();
+                            if (!success){
+                                toast.show_error("#NOTF_FAI_retry", text.inAppText['error_title'],
+                                            backend.get_element_loc('close_error') + " " + 
+                                            process.get_executable() + " " + 
+                                            backend.get_element_loc('close_error2'),
+                                            backend.get_element_loc('retry'), "")
+                            }
                             _checked = false;
                         } else {
                             process.start_process();
@@ -400,7 +407,7 @@ FramelessWindow {
 
     Timer {
         id: delayTimer
-        interval: 1800000
+        interval: 180000
         repeat: false
         onTriggered: {
             Qt.callLater(toast.show_notification, "#NOTF_UPDATE", "GoodbyeDPI UI", backend.get_element_loc("update_available_info"))
@@ -417,7 +424,7 @@ FramelessWindow {
 
     Component.onCompleted :{
         console.log(appArguments.indexOf(" --autorun"))
-        if (appArguments.indexOf(" --autorun") !== -1) {
+        if (appArguments.indexOf(" --autorun") !== -1 || backend.getBool("GLOBAL", "hide_to_tray")) {
             Qt.callLater(process.start_process)
             if (backend.getBool('NOTIFICATIONS', "hide_in_tray")) {
                 Qt.callLater(toast.show_notification, "#NOTF_MAXIMIZE", "GoodbyeDPI UI", backend.get_element_loc("tray_icon"))

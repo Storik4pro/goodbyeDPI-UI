@@ -415,11 +415,10 @@ class GoodbyedpiWorker(QThread):
             self.cleanup()
 
         else:
-            self.proc = start_process(*command)
+            self.proc = start_process(*command, engine=self.engine)
             data = "Filter activated"
             self.queue.put(data)
             self.output_signal.emit(data)
-            self.cleanup()
 
     def cleanup(self):
         if self.pty_process:
@@ -494,11 +493,21 @@ class GoodbyedpiProcess(QObject):
 
     @Slot()
     def stop_goodbyedpi(self):
+        if not winpty_support:
+            for proc in psutil.process_iter(['pid', 'name']):
+                if proc.info['name'] == EXECUTABLES[self.engine]:
+                    try:
+                        proc.terminate()
+                        if self.worker and self.worker.isRunning():
+                            self.worker.stop() 
+                    except psutil.NoSuchProcess:
+                        return False
         if self.worker and self.worker.isRunning():
             self.worker.stop()
             self.process_stopped.emit(self.reason)
             self.error = False
             self.stop = True
+        return True
 
     def handle_output(self, data):
         execut = EXECUTABLES[settings.settings["GLOBAL"]["engine"]]
