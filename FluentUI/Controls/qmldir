@@ -1,0 +1,91 @@
+module FluentUI.Controls
+typeinfo plugins.qmltypes
+prefer :/qt/qml/FluentUI/Controls/
+StandardButton 1.0 StandardButton.qml
+NavigationView 1.0 NavigationView.qml
+PaneItem 1.0 PaneItem.qml
+AppBar 1.0 AppBar.qml
+Breadcrumb 1.0 Breadcrumb.qml
+PaneItemExpander 1.0 PaneItemExpander.qml
+AccentColor 1.0 AccentColor.qml
+IconButton 1.0 IconButton.qml
+Icon 1.0 Icon.qml
+AutoLoader 1.0 AutoLoader.qml
+ColorResource 1.0 ColorResource.qml
+FramelessWindow 1.0 FramelessWindow.qml
+ListTile 1.0 ListTile.qml
+AutoSuggestBox 1.0 AutoSuggestBox.qml
+TextBox 1.0 TextBox.qml
+MultiLineTextBox 1.0 MultiLineTextBox.qml
+ControlBackground 1.0 ControlBackground.qml
+InputBackground 1.0 InputBackground.qml
+FocusItem 1.0 FocusItem.qml
+RoundImageView 1.0 RoundImageView.qml
+RoundClip 1.0 RoundClip.qml
+PageRouter 1.0 PageRouter.qml
+ContentPage 1.0 ContentPage.qml
+Shadow 1.0 Shadow.qml
+PaneItemSeparator 1.0 PaneItemSeparator.qml
+PaneItemHeader 1.0 PaneItemHeader.qml
+InputMenu 1.0 InputMenu.qml
+NavigationMenuItem 1.0 NavigationMenuItem.qml
+NavigationMenu 1.0 NavigationMenu.qml
+HighlightRectangle 1.0 HighlightRectangle.qml
+ScrollablePage 1.0 ScrollablePage.qml
+StackPage 1.0 StackPage.qml
+SyntaxView 1.0 SyntaxView.qml
+Expander 1.0 Expander.qml
+FilledButton 1.0 FilledButton.qml
+ToggleButton 1.0 ToggleButton.qml
+HyperlinkButton 1.0 HyperlinkButton.qml
+DropDownButton 1.0 DropDownButton.qml
+DropDownPopup 1.0 DropDownPopup.qml
+TimePicker 1.0 TimePicker.qml
+NumberBox 1.0 NumberBox.qml
+DatePicker 1.0 DatePicker.qml
+DataGrid 1.0 DataGrid.qml
+TreeDataGrid 1.0 TreeDataGrid.qml
+ProgressRing 1.0 ProgressRing.qml
+InfoBar 1.0 InfoBar.qml
+InfoBarManager 1.0 InfoBarManager.qml
+ColorPicker 1.0 ColorPicker.qml
+CalendarPicker 1.0 CalendarPicker.qml
+InfoBadge 1.0 InfoBadge.qml
+HotLoader 1.0 HotLoader.qml
+Watermark 1.0 Watermark.qml
+Tour 1.0 Tour.qml
+QRCode 1.0 QRCode.qml
+WindowResultLauncher 1.0 WindowResultLauncher.qml
+Pagination 1.0 Pagination.qml
+Acrylic 1.0 Acrylic.qml
+Chart 1.0 Chart.qml
+SplitLayout 1.0 SplitLayout.qml
+StaggeredLayout 1.0 StaggeredLayout.qml
+Starter 1.0 Starter.qml
+BannerLayout 1.0 BannerLayout.qml
+FlipLayout 1.0 FlipLayout.qml
+RatingControl 1.0 RatingControl.qml
+TabView 1.0 TabView.qml
+QMLHighlighter 1.0 QMLHighlighter.qml
+ProgressButton 1.0 ProgressButton.qml
+FastBlur 1.0 FastBlur.qml
+OpacityMask 1.0 OpacityMask.qml
+CopyableText 1.0 CopyableText.qml
+PageContext 1.0 PageContext.qml
+PageRouterView 1.0 PageRouterView.qml
+Marquee 1.0 Marquee.qml
+ColorOverlay 1.0 ColorOverlay.qml
+IconLabel 1.0 IconLabel.qml
+ShortcutPicker 1.0 ShortcutPicker.qml
+MultiSelectComboBox 1.0 MultiSelectComboBox.qml
+Chip 1.0 Chip.qml
+PasswordBox 1.0 PasswordBox.qml
+PillButton 1.0 PillButton.qml
+SegmentedControl 1.0 SegmentedControl.qml
+SegmentedButton 1.0 SegmentedButton.qml
+singleton Theme 1.0 Theme.qml
+singleton Colors 1.0 Colors.qml
+singleton Typography 1.0 Typography.qml
+singleton FluentIcons 1.0 FluentIcons.qml
+singleton WindowRouter 1.0 WindowRouter.qml
+

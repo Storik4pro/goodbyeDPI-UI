@@ -10,7 +10,6 @@ class TreeNode(QObject):
     rowDataChanged = Signal()
     depthChanged = Signal()
     expandedChanged = Signal()
-    checkedChanged = Signal()
     nodeParentChanged = Signal()
     nodeChildrenChanged = Signal()
 
@@ -35,17 +34,6 @@ class TreeNode(QObject):
             return
         self.__nodeParent = value
         self.nodeParentChanged.emit()
-
-    @Property(bool, notify=checkedChanged)
-    def checked(self):
-        return self.__checked
-
-    @checked.setter
-    def checked(self, value):
-        if self.__checked == value:
-            return
-        self.__checked = value
-        self.checkedChanged.emit()
 
     @Property(bool, notify=expandedChanged)
     def expanded(self):
@@ -85,7 +73,6 @@ class TreeNode(QObject):
         self.__rowData = {}
         self.__depth = 0
         self.__expanded = True
-        self.__checked = False
         self.__nodeParent = None
         self.__nodeChildren = []
 
@@ -169,8 +156,6 @@ class TreeDataGridModel(QAbstractListModel):
             return node.depth
         elif roleName == 'expanded':
             return node.expanded
-        elif roleName == 'checked':
-            return node.checked
         elif roleName == 'hasChildren':
             return node.hasChildren()
         else:
@@ -185,10 +170,7 @@ class TreeDataGridModel(QAbstractListModel):
             return False
         roleName = self.__roles[role]
         node = self.__displayData[row]
-        if roleName == "checked":
-            node.checked = value
-        else:
-            node.rowData[roleName] = value
+        node.rowData[roleName] = value
         return True
 
     def handleSourceData(self):
@@ -204,6 +186,7 @@ class TreeDataGridModel(QAbstractListModel):
             data = reverseData.pop()
             node = TreeNode(self)
             node.rowData = data
+            node.expanded = data.get("expanded", False)
             node.nodeParent = data.get("__parent", None)
             node.depth = data.get("__depth", 0)
             if node.nodeParent:
@@ -211,9 +194,9 @@ class TreeDataGridModel(QAbstractListModel):
             else:
                 node.nodeParent = self.__treeRoot
                 self.__treeRoot.appendChildren(node)
-            treeData.append(node)
-            if "__children" in data:
-                children = data["__children"]
+
+            if "children" in data:
+                children = data["children"]
                 if children:
                     reverseChildren = children[::-1]
                     for child in reverseChildren:
@@ -221,7 +204,8 @@ class TreeDataGridModel(QAbstractListModel):
                         child_map["__depth"] = data.get("__depth", 0) + 1
                         child_map["__parent"] = node
                         reverseData.append(child_map)
-
+            if node.nodeParent.expanded:
+                treeData.append(node)
         self.clear()
         self.displayData = treeData
 
@@ -237,17 +221,6 @@ class TreeDataGridModel(QAbstractListModel):
         if 0 <= index < len(self.__displayData):
             return self.__displayData[index].rowData
         return None
-
-    @Slot(result=list)
-    def checkedItems(self):
-        return [item for item in self.__displayData if item.checked]
-
-    @Slot(bool)
-    def allChecked(self, checked):
-        roleIndex = self.roleNames().get(b"checked")
-        for i in range(self.rowCount()):
-            self.__displayData[i].checked = checked
-        self.__emitItemsChanged(0, self.rowCount(), [roleIndex])
 
     @Slot(int)
     def collapse(self, row: int):
@@ -319,7 +292,6 @@ class TreeDataGridModel(QAbstractListModel):
         self.__insertRole("height")
         self.__insertRole("minimumHeight")
         self.__insertRole("maximumHeight")
-        self.__insertRole("checked")
         self.__insertRole("hasChildren")
         self.__insertRole("depth")
         self.__insertRole("expanded")

@@ -10,7 +10,7 @@ from PySide6.QtQuick import QQuickItem
 if sys.platform.startswith("darwin"):
     from FluentUI.impl.OSXHideTitleBar import hide_title_bar
 
-from ...FluentUI.impl.Tools import Tools
+from FluentUI.impl.Tools import Tools
 
 if sys.platform.startswith("win"):
     from ctypes import POINTER, byref, c_bool, c_int, c_void_p, c_long, WinDLL, POINTER, Structure, c_uint, \
@@ -134,18 +134,16 @@ if sys.platform.startswith("win"):
 
 
     def setWindowEffect(hwnd, effectType):
+        margins = MARGINS(1, 1, 0, 1)
         if effectType == 1:
-            margins = MARGINS(-1, -1, -1, -1)
             DwmExtendFrameIntoClientArea(hwnd, byref(margins))
             system_backdrop_type = c_int(2)
             DwmSetWindowAttribute(hwnd, 38, byref(system_backdrop_type), ctypes.sizeof(c_int))
         elif effectType == 2:
-            margins = MARGINS(-1, -1, -1, -1)
             DwmExtendFrameIntoClientArea(hwnd, byref(margins))
             system_backdrop_type = c_int(3)
             DwmSetWindowAttribute(hwnd, 38, byref(system_backdrop_type), ctypes.sizeof(c_int))
         else:
-            margins = MARGINS(1, 1, 0, 1)
             DwmExtendFrameIntoClientArea(hwnd, byref(margins))
 
 QML_IMPORT_NAME = "FluentUI.impl"

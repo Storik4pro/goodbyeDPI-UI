@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/qt/qml/FluentUI">
-        <file>Controls/DraggableWidget.qml</file>
         <file>Button.qml</file>
         <file>CheckBox.qml</file>
         <file>ComboBox.qml</file>
@@ -23,6 +22,7 @@
         <file>ScrollBar.qml</file>
         <file>SelectionRectangle.qml</file>
         <file>Slider.qml</file>
+        <file>RangeSlider.qml</file>
         <file>SplitView.qml</file>
         <file>StackView.qml</file>
         <file>Switch.qml</file>
@@ -70,7 +70,7 @@
         <file>Controls/InputBackground.qml</file>
         <file>Controls/InputMenu.qml</file>
         <file>Controls/ListTile.qml</file>
-        <file>Controls/MultilineTextBox.qml</file>
+        <file>Controls/MultiLineTextBox.qml</file>
         <file>Controls/NavigationMenu.qml</file>
         <file>Controls/NavigationMenuItem.qml</file>
         <file>Controls/NavigationView.qml</file>
@@ -109,6 +109,8 @@
         <file>impl/Objects.qml</file>
         <file>impl/qmldir</file>
         <file>impl/SyntaxHighlighter.qml</file>
+        <file>FluentUI_en_US.qm</file>
+        <file>FluentUI_zh_CN.qm</file>
         <file>Popup.qml</file>
         <file>PageIndicator.qml</file>
         <file>Controls/BannerLayout.qml</file>
@@ -132,5 +134,12 @@
         <file>Controls/IconLabel.qml</file>
         <file>Controls/Marquee.qml</file>
         <file>Controls/TreeDataGrid.qml</file>
+        <file>Controls/Chip.qml</file>
+        <file>Controls/MultiSelectComboBox.qml</file>
+        <file>Controls/PasswordBox.qml</file>
+        <file>Controls/PillButton.qml</file>
+        <file>Controls/SegmentedButton.qml</file>
+        <file>Controls/SegmentedControl.qml</file>
+        <file>Controls/ShortcutPicker.qml</file>
     </qresource>
 </RCC>

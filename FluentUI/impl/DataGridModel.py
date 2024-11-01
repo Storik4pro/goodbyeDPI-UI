@@ -1,4 +1,5 @@
-from PySide6.QtCore import QAbstractListModel, QModelIndex, Qt, Signal, Property, Slot, QObject
+from PySide6.QtCore import QAbstractListModel, QModelIndex, Qt, Signal, Property, Slot, QItemSelectionModel, \
+    QItemSelection
 from PySide6.QtQml import QmlElement, QJSValue
 
 QML_IMPORT_NAME = "FluentUI.Controls"
@@ -57,6 +58,7 @@ class DataGridModel(QAbstractListModel):
         if not index.isValid() or row >= self.rowCount() or row < 0:
             return False
         self.__sourceData[row][self.__roles[role]] = value
+        self.__emitItemsChanged(index.row(), 1, [role])
         return True
 
     @Slot()
@@ -137,27 +139,31 @@ class DataGridModel(QAbstractListModel):
         self.dataChanged.emit(self.createIndex(index, 0), self.createIndex(index, 0))
         return True
 
-    @Slot()
-    def removeCheckedItems(self):
-        i = 0
-        while i < self.rowCount():
-            if self.__sourceData[i].get("checked", False):
-                self.beginRemoveRows(QModelIndex(), i, i)
-                del self.__sourceData[i]
+    @Slot(list)
+    def removeItems(self, indexes):
+        sorted_indexes = sorted(indexes, key=lambda x: x.row(), reverse=True)
+        if len(sorted_indexes) > 50:
+            self.beginResetModel()
+            for index in sorted_indexes:
+                row = index.row()
+                del self.__sourceData[row]
+            self.endResetModel()
+        else:
+            for index in sorted_indexes:
+                row = index.row()
+                self.beginRemoveRows(QModelIndex(), row, row)
+                del self.__sourceData[row]
                 self.endRemoveRows()
-            else:
-                i += 1
 
-    @Slot(result=list)
-    def checkedItems(self):
-        return [item for item in self.__sourceData if item.get("checked", False)]
-
-    @Slot(bool)
-    def allChecked(self, checked):
-        roleIndex = self.roleNames().get(b"checked")
-        for i in range(self.rowCount()):
-            self.__sourceData[i]["checked"] = checked
-        self.__emitItemsChanged(0, self.rowCount(), [roleIndex])
+    @Slot(QItemSelectionModel, int, int)
+    def selectRange(self, selectionModel, startRow, endRow):
+        if not selectionModel:
+            return
+        top_left = self.index(startRow, 0)
+        bottom_right = self.index(endRow, 0)
+        selection = QItemSelection(top_left, bottom_right)
+        selectionModel.select(selection,
+                              QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
 
     def __emitItemsChanged(self, index, count, roles):
         if count > 0:
@@ -172,7 +178,6 @@ class DataGridModel(QAbstractListModel):
         self.__insertRole("height")
         self.__insertRole("minimumHeight")
         self.__insertRole("maximumHeight")
-        self.__insertRole("checked")
         for key in data.keys():
             if key not in self.__roles:
                 self.__insertRole(key)

@@ -1,0 +1,41 @@
+module FluentUI
+typeinfo plugins.qmltypes
+prefer :/qt/qml/FluentUI/
+Button 1.0 Button.qml
+CheckBox 1.0 CheckBox.qml
+Switch 1.0 Switch.qml
+Label 1.0 Label.qml
+Frame 1.0 Frame.qml
+Menu 1.0 Menu.qml
+MenuBar 1.0 MenuBar.qml
+MenuBarItem 1.0 MenuBarItem.qml
+MenuItem 1.0 MenuItem.qml
+MenuSeparator 1.0 MenuSeparator.qml
+ToolBar 1.0 ToolBar.qml
+StackView 1.0 StackView.qml
+Page 1.0 Page.qml
+ProgressBar 1.0 ProgressBar.qml
+RadioButton 1.0 RadioButton.qml
+Slider 1.0 Slider.qml
+RangeSlider 1.0 RangeSlider.qml
+ComboBox 1.0 ComboBox.qml
+TextField 1.0 TextField.qml
+GroupBox 1.0 GroupBox.qml
+TextArea 1.0 TextArea.qml
+ScrollBar 1.0 ScrollBar.qml
+Tumbler 1.0 Tumbler.qml
+DialogButtonBox 1.0 DialogButtonBox.qml
+Dialog 1.0 Dialog.qml
+ToolTip 1.0 ToolTip.qml
+TreeViewDelegate 1.0 TreeViewDelegate.qml
+TabButton 1.0 TabButton.qml
+TabBar 1.0 TabBar.qml
+Drawer 1.0 Drawer.qml
+VerticalHeaderView 1.0 VerticalHeaderView.qml
+HorizontalHeaderView 1.0 HorizontalHeaderView.qml
+SelectionRectangle 1.0 SelectionRectangle.qml
+SplitView 1.0 SplitView.qml
+Dial 1.0 Dial.qml
+Popup 1.0 Popup.qml
+PageIndicator 1.0 PageIndicator.qml
+

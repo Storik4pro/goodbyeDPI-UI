@@ -1,8 +1,14 @@
 from enum import IntFlag
 
 from PySide6.QtCore import QObject, QFlag
+from PySide6.QtQml import QmlElement
+
+QML_IMPORT_NAME = "FluentUI.impl"
+QML_IMPORT_MAJOR_VERSION = 1
+QML_IMPORT_MINOR_VERSION = 0
 
 
+@QmlElement
 class TabViewType(QObject):
     class TabWidthBehavior(IntFlag):
         Equal = 0x0000
@@ -19,6 +25,7 @@ class TabViewType(QObject):
     QFlag(CloseButtonVisibility)
 
 
+@QmlElement
 class WindowType(QObject):
     class LaunchMode(IntFlag):
         Standard = 0x0000
@@ -28,6 +35,7 @@ class WindowType(QObject):
     QFlag(LaunchMode)
 
 
+@QmlElement
 class WindowEffectType(QObject):
     class EffectMode(IntFlag):
         Normal = 0x0000
@@ -37,6 +45,7 @@ class WindowEffectType(QObject):
     QFlag(EffectMode)
 
 
+@QmlElement
 class NavigationViewType(QObject):
     class DisplayMode(IntFlag):
         Open = 0x0000
@@ -48,6 +57,7 @@ class NavigationViewType(QObject):
     QFlag(DisplayMode)
 
 
+@QmlElement
 class TimePickerType(QObject):
     class HourFormat(IntFlag):
         H = 0x0000
@@ -56,6 +66,7 @@ class TimePickerType(QObject):
     QFlag(HourFormat)
 
 
+@QmlElement
 class DatePickerType(QObject):
     class DatePickerField(IntFlag):
         Day = 0x0000
@@ -65,6 +76,7 @@ class DatePickerType(QObject):
     QFlag(DatePickerField)
 
 
+@QmlElement
 class NumberBoxType(QObject):
     class PlacementMode(IntFlag):
         Inline = 0x0000
@@ -73,6 +85,7 @@ class NumberBoxType(QObject):
     QFlag(PlacementMode)
 
 
+@QmlElement
 class InfoBarType(QObject):
     class Severity(IntFlag):
         Info = 0x0000

@@ -1,6 +1,6 @@
-from ..FluentUI.Controls import FluentUIControlsPlugin
-from ..FluentUI.impl import FluentUIImplPlugin
-from ..FluentUI import resource_rc
+from FluentUI.Controls import FluentUIControlsPlugin
+from FluentUI.impl import FluentUIImplPlugin
+from FluentUI import resource_rc
 
 __uri__ = "FluentUI"
 __major__ = 1

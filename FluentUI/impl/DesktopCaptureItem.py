@@ -3,7 +3,7 @@ from PySide6.QtGui import QPainter, QImage, QColor
 from PySide6.QtQml import QmlElement
 from PySide6.QtQuick import QQuickPaintedItem
 
-from ...FluentUI.impl.Tools import Tools
+from FluentUI.impl.Tools import Tools
 
 QML_IMPORT_NAME = "FluentUI.impl"
 QML_IMPORT_MAJOR_VERSION = 1
