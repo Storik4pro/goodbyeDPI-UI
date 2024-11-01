@@ -5,7 +5,6 @@ import threading
 from PySide6.QtCore import QObject, Slot
 from PySide6.QtCore import QProcess, Signal, QThread, QFileSystemWatcher, QTimer,QProcessEnvironment
 import psutil
-import wexpect
 import glob
 from utils import start_process
 from _data import DIRECTORY, configs, settings, Settings, GOODBYE_DPI_PATH, ZAPRET_PATH, GOODCHECK_PATH, DEBUG_PATH, DEBUG
