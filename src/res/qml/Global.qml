@@ -9,5 +9,5 @@ QtObject {
     id: control
     property var starter
     property int displayMode: NavigationViewType.Auto
-    property int windowEffect: WindowEffectType.Mica
+    property int windowEffect: backend.check_mica() && backend.getBool('APPEARANCE_MODE', 'use_mica') ? WindowEffectType.Mica : WindowEffectType.Normal
 }
