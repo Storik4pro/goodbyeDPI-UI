@@ -1,0 +1,7 @@
+{
+    "engine": "Zapret",
+    "curl": "Native",
+    "check_list": 3,
+    "strategies": 2,
+    "p": 1
+}
