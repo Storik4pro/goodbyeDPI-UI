@@ -1,90 +1,116 @@
-from datetime import datetime
 import logging
 import os
-import platform
 import sys
-from tkinter import messagebox
+import threading
 
-system_info = f"{platform.system()} {platform.win32_ver()[1]} {platform.architecture()[0]}"
+from PySide6.QtCore import QDir, qInstallMessageHandler, QtMsgType, QStandardPaths, QDateTime, QSysInfo
+from _data import DEBUG_PATH
 
-error_placeholder = "Unable to start application.\n\
-Application version: {version}\n\
-System information: {system}\n\
-Error type: {_type}\n\
-Details:\n\
------\n\
-{info}\n\
------\n\
-Press CTRL+C to copy error output.\n\n\
-If this error persists, please contact app support and report the issue."
+__logging: logging.Logger
+__fileHandler: logging.FileHandler
+__formatFileHandler: logging.FileHandler
+__stdoutHandler: logging.StreamHandler
+__formatStdoutHandler: logging.StreamHandler
 
-class AppLogger:
-    def __init__(self, version, utilname, log_level=logging.WARNING) -> None:
-        self.__version__ = version
-        self.utilname = utilname
-        self.logs_folder = 'logs'
-        self.log_file_path = os.path.join(self.logs_folder, f'{utilname}.log')
-        self.logger = logging.getLogger(__name__)
-        os.makedirs(self.logs_folder, exist_ok=True)
-        try:
-            logging.basicConfig(filename=self.log_file_path, level=log_level)
-        except:
-            pass
 
-    def create_logs(self, text):
-        _time = datetime.now().strftime('%H:%M:%S')
-        self.logger.info(f'[{_time}] {text}')
+class __CustomFormatter(logging.Formatter):
+    def format(self, record):
+        record.threadId = threading.get_ident()
+        return super().format(record)
 
-    def raise_warning(self, warning):
-        _time = datetime.now().strftime('%H:%M:%S')
-        self.logger.warning(f'[{_time}] {warning}')
-        self.show_warning_message(warning)
 
-    def raise_error(self, error):
-        _time = datetime.now().strftime('%H:%M:%S')
-        self.logger.error(f'[{_time}] {error}')
-        self.show_error_message(error)
+def __get_level_by_msg_type(msg_type):
+    if msg_type == QtMsgType.QtFatalMsg:
+        return logging.FATAL
+    if msg_type == QtMsgType.QtCriticalMsg:
+        return logging.CRITICAL
+    if msg_type == QtMsgType.QtWarningMsg:
+        return logging.WARNING
+    if msg_type == QtMsgType.QtInfoMsg:
+        return logging.INFO
+    if msg_type == QtMsgType.QtDebugMsg:
+        return logging.DEBUG
+    return logging.DEBUG
 
-    def raise_critical(self, error):
-        _time = datetime.now().strftime('%H:%M:%S')
-        self.logger.critical(f'[{_time}] {error}')
-        self.show_criticalerror_message(error)
 
-    def show_warning_message(self, info):
-        messagebox.showwarning("GoodbyeDPI UI", error_placeholder.format(version=self.__version__, system=system_info, _type="WARNING", info=info))
+def __open_format():
+    __logging.removeHandler(__fileHandler)
+    __logging.removeHandler(__stdoutHandler)
+    __logging.addHandler(__formatFileHandler)
+    __logging.addHandler(__formatStdoutHandler)
 
-    def show_error_message(self, info):
-        messagebox.showerror("GoodbyeDPI UI", error_placeholder.format(version=self.__version__, system=system_info, _type="ERROR", info=info))
 
-    def show_criticalerror_message(self, info):
-        messagebox.showerror("GoodbyeDPI UI", error_placeholder.format(version=self.__version__, system=system_info, _type="CRITICAL ERROR", info=info))
-        sys.exit(-1)
+def __close_format():
+    __logging.removeHandler(__formatFileHandler)
+    __logging.removeHandler(__formatStdoutHandler)
+    __logging.addHandler(__fileHandler)
+    __logging.addHandler(__stdoutHandler)
 
-    def create_debug_log(self, text):
-        _time = datetime.now().strftime('%H:%M:%S')
-        self.logger.debug(f'[{_time}] {text}')
 
-    def create_info_log(self, text):
-        _time = datetime.now().strftime('%H:%M:%S')
-        self.logger.info(f'[{_time}] {text}')
+def __message_handler(msg_type, context, message:str):
+    if message == "Retrying to obtain clipboard.":
+        return
+    global __logging
+    global __fileHandler
+    global __formatFileHandler
+    global __stdoutHandler
+    global __formatStdoutHandler
+    message = message.replace("qrc:/qt/qml/", DEBUG_PATH+"GoodbyeDPI_UI\\")
+    __close_format()
+    file_and_line_log_str = ""
+    if context.file:
+        str_file_tmp = context.file
+        ptr = str_file_tmp.rfind('/')
+        if ptr != -1:
+            str_file_tmp = str_file_tmp[ptr + 1:]
+        ptr_tmp = str_file_tmp.rfind('\\')
+        if ptr_tmp != -1:
+            str_file_tmp = str_file_tmp[ptr_tmp + 1:]
+        file_and_line_log_str = f"[{str_file_tmp}:{str(context.line)}]"
+    level = __get_level_by_msg_type(msg_type)
+    final_message = (f"{QDateTime.currentDateTime().toString('yyyy/MM/dd hh:mm:ss.zzz')}[{logging.getLevelName(level)}]"
+                     f"{file_and_line_log_str}[{threading.get_ident()}] {message}")
+    __logging.log(level, final_message)
+    __open_format()
 
-    def create_warning_log(self, text):
-        _time = datetime.now().strftime('%H:%M:%S')
-        self.logger.warning(f'[{_time}] {text}')
 
-    def create_error_log(self, text):
-        _time = datetime.now().strftime('%H:%M:%S')
-        self.logger.error(f'[{_time}] {text}')
+def setup(name, level=logging.DEBUG):
+    global __logging
+    global __fileHandler
+    global __formatFileHandler
+    global __stdoutHandler
+    global __formatStdoutHandler
 
-    def create_critical_log(self, text):
-        _time = datetime.now().strftime('%H:%M:%S')
-        self.logger.critical(f'[{_time}] {text}')
+    __logging = logging.getLogger(name)
+    __logging.setLevel(level)
+    log_file_name = f"{name}_{QDateTime.currentDateTime().toString('yyyyMMdd')}.log"
+    log_dir_path = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation) + "/log"
+    log_dir = QDir(log_dir_path)
+    if not log_dir.exists():
+        log_dir.mkpath(log_dir_path)
+    log_file_path = log_dir.filePath(log_file_name)
+    __fileHandler = logging.FileHandler(log_file_path)
+    __stdoutHandler = logging.StreamHandler(sys.stdout)
+    __formatFileHandler = logging.FileHandler(log_file_path)
+    __formatStdoutHandler = logging.StreamHandler(sys.stdout)
+    fmt = __CustomFormatter("%(asctime)s[%(levelname)s][%(filename)s:%(lineno)s][%(threadId)d] %(message)s")
+    __formatFileHandler.setFormatter(fmt)
+    __formatStdoutHandler.setFormatter(fmt)
+    __logging.addHandler(__formatStdoutHandler)
+    __logging.addHandler(__formatFileHandler)
+    qInstallMessageHandler(__message_handler)
+    __logging.info(f"===================================================")
+    __logging.info(f"[AppName] {name}")
+    __logging.info(f"[AppPath] {sys.argv[0]}")
+    __logging.info(f"[ProcessId] {os.getpid()}")
+    __logging.info(f"[DeviceInfo]")
+    __logging.info(f"  [DeviceId] {QSysInfo.machineUniqueId().toStdString()}")
+    __logging.info(f"  [Manufacturer] {QSysInfo.productVersion()}")
+    __logging.info(f"  [CPU_ABI] {QSysInfo.currentCpuArchitecture()}")
+    __logging.info(f"[LOG_LEVEL] {logging.getLevelName(level)}")
+    __logging.info(f"[LOG_PATH] {log_file_path}")
+    __logging.info(f"===================================================")
 
-    def cleanup_logs(self):
-        if os.path.exists(self.log_file_path) and os.path.getsize(self.log_file_path) == 0:
-            try:
-                logging.shutdown()
-                os.remove(self.log_file_path)
-            except Exception as ex:
-                print(ex)
-                pass
+
+def logger():
+    return __logging
