@@ -14,7 +14,7 @@ from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 
 from logger import AppLogger
-from utils import ProgressToast, change_setting, change_settings, check_version, check_winpty, create_xml, delete_file, download_blacklist, error_sound, extract_zip, get_component_download_url, get_latest_release, get_download_url, download_update, move_settings_file, open_custom_blacklist, open_folder, register_component, remove_xml, stop_servise, unregister_component
+from utils import ProgressToast, background_sound, change_setting, change_settings, check_version, check_winpty, create_xml, delete_file, download_blacklist, error_sound, extract_zip, get_component_download_url, get_latest_release, get_download_url, download_update, move_settings_file, open_custom_blacklist, open_folder, register_component, remove_xml, stop_servise, unregister_component
 from _data import BACKUP_SETTINGS_FILE_PATH, COMPONENTS_URLS, CONFIG_PATH, DEBUG_PATH, EXECUTABLES, LOG_LEVEL, PRESETS, PRESETS_DEFAULT, REPO_NAME, REPO_OWNER, SETTINGS_FILE_PATH, VERSION, settings, DEBUG, DIRECTORY, configs, text
 
 KEY = 'GOODBYEDPI'
@@ -105,6 +105,10 @@ class Backend(QObject):
     def play_sound(self):
         error_sound()
 
+    @Slot()
+    def play_sound_grab(self):
+        background_sound()
+        
     @Slot(result=str)
     def get_version(self):
         return VERSION

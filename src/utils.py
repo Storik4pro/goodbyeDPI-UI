@@ -1,7 +1,6 @@
 import hashlib
 import json
 import platform
-import sys
 import zipfile
 
 def check_winpty():
@@ -22,7 +21,6 @@ import subprocess
 import tempfile
 import threading
 import time
-import webbrowser
 import winreg
 import psutil
 from PySide6.QtCore import QObject, Slot
@@ -38,7 +36,10 @@ from _data import GOODBYE_DPI_EXECUTABLE, ZAPRET_EXECUTABLE, ZAPRET_PATH, \
 
 def error_sound():
     winsound.MessageBeep(winsound.MB_ICONHAND)
-
+    
+def background_sound():
+    winsound.PlaySound("SystemExclamation", winsound.SND_ALIAS)
+    
 # PC test
 def is_weak_pc():
     cpu_freq = psutil.cpu_freq().max

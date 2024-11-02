@@ -321,7 +321,7 @@ FramelessWindow {
             anchors.fill: parent
             acceptedButtons: Qt.AllButtons
             onClicked: {
-                backend.play_sound()
+                backend.play_sound_grab()
             }
             hoverEnabled: true
             onEntered: {}
