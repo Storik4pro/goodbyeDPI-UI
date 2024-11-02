@@ -170,7 +170,8 @@ class UpdaterApp(CTk):
                         destination_path = os.path.join(extract_to, relative_path)
                         destination_dir = os.path.dirname(destination_path)
                         
-                        if relative_path.split(".")[-1] == 'txt' and os.path.exists(destination_path):
+                        if relative_path.split("/")[-1].split(".")[-1] == 'txt' and os.path.exists(destination_path):
+                            self.create_logs(f"Skipping {relative_path}")
                             index += 1
                             continue
                         
