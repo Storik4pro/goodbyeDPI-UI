@@ -35,6 +35,7 @@ FramelessWindow {
         }
     onCloseListener: function(event){
         WindowRouter.removeWindow(window)
+        goodCheck.stop_process()
         event.accepted = false
     }
     initialItem: resolvedUrl("res/qml/screen/GoodCheckScreen.qml")
