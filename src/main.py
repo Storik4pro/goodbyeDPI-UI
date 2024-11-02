@@ -89,7 +89,7 @@ try:
         if not DEBUG: multiprocessing.freeze_support()
         argv = sys.argv[1:]
         try:
-            options, args = getopt.getopt(argv, "", ["after-update"])
+            options, args = getopt.getopt(argv, "", ["after-update", "autorun"])
         except getopt.GetoptError as err:
             pass
 
