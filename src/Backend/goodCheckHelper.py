@@ -157,7 +157,9 @@ class GoodCheckHelper(QObject):
             if os.path.exists(DIRECTORY+"data/goodbyeDPI/x86_64/gdpi.exe"):
                 os.remove(DIRECTORY+"data/goodbyeDPI/x86_64/gdpi.exe")
         else:
-            pass
+            if os.path.exists(DIRECTORY+"data/goodbyeDPI/x86_64/gdpi.exe"):
+                os.remove(DIRECTORY+"data/goodbyeDPI/x86_64/gdpi.exe")
+            self.process_stopped_signal.emit()
 
     @Slot()
     def handle_finished(self):

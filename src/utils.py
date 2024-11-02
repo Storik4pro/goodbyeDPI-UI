@@ -38,7 +38,7 @@ def error_sound():
     winsound.MessageBeep(winsound.MB_ICONHAND)
     
 def background_sound():
-    winsound.PlaySound("SystemExclamation", winsound.SND_ALIAS)
+    winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
     
 # PC test
 def is_weak_pc():
