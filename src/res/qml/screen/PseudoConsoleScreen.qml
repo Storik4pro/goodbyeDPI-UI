@@ -250,7 +250,7 @@ ScrollablePage {
             Qt.callLater(updateStatus, qsTr(backend.get_element_loc('pseudoconsole_success')).arg(execut))
             Qt.callLater(setIcon, "sucess")
             output_str = ""
-            //toast.show_notification("#NOTF_SUC", process.get_executable(), backend.get_element_loc('process_run'))
+            toast.show_notification("#NOTF_SUC", process.get_executable(), backend.get_element_loc('process_run'))
         }
         function onProcess_stopped() {
             var reason = arguments[0];
