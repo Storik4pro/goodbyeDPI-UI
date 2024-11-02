@@ -423,8 +423,8 @@ FramelessWindow {
     }
 
     Component.onCompleted :{
-        console.log(appArguments.indexOf(" --autorun"))
-        if (appArguments.indexOf(" --autorun") !== -1 || backend.getBool("GLOBAL", "hide_to_tray")) {
+        console.log(appArguments.indexOf("--autorun"))
+        if (appArguments.indexOf("--autorun") !== -1 || backend.getBool("GLOBAL", "hide_to_tray")) {
             Qt.callLater(process.start_process)
             if (backend.getBool('NOTIFICATIONS', "hide_in_tray")) {
                 Qt.callLater(toast.show_notification, "#NOTF_MAXIMIZE", "GoodbyeDPI UI", backend.get_element_loc("tray_icon"))
