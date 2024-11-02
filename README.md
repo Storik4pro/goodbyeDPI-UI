@@ -28,11 +28,9 @@ GoodbyeDPI UI предоставляет удобный графический �
 6. Поздравляем! Вы завершили установку!
 
 ## Использование
-![image](https://github.com/user-attachments/assets/3145f2a0-22fd-4b5b-a00e-b54901d2870a)
-![image](https://github.com/user-attachments/assets/fb73530d-b20c-4221-88da-595cfc6a6f3f)
-![image](https://github.com/user-attachments/assets/5d7905d7-6e18-4c1f-8e26-4808da1b5e05)
-![image](https://github.com/user-attachments/assets/e4f243c2-a42c-4f2a-899f-4e1a954aab6a)
-
+![image](https://github.com/user-attachments/assets/1bd27ac1-1f93-4038-886e-c1a6a048469e)
+![image](https://github.com/user-attachments/assets/02ecdf6f-b082-4522-82bd-58c5e7d38ee5)
+![Снимок экрана 2024-10-31 184336](https://github.com/user-attachments/assets/4bdab7b0-5eec-40d5-b0d3-7a3e74770b06)
 
 
 1. Запустите приложение.
