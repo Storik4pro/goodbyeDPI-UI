@@ -317,22 +317,23 @@ class UpdaterApp(CTk):
                 subprocess.Popen([goodbye_dpi_exe, "--after-update"], creationflags=subprocess.DETACHED_PROCESS)
 
                 self.end = True
-                self.safe_exit()
-                sys.exit(0)
+                self.after(0, self.safe_exit)
                 
             else:
                 raise FileNotFoundError(f"{goodbye_dpi_exe} not found")
         except Exception as ex:
-            messagebox.showerror('An error occurred', str(ex))
-            logger.error(f'Failed to launch application: {ex}', exc_info=True)
-            self.finish_status = 1
-            self.exit_button.configure(state='normal')
-            self.protocol("WM_DELETE_WINDOW", self.safe_exit)
+            self.after(0, self.handle_launch_error, ex)
+    
+    def handle_launch_error(self, ex):
+        messagebox.showerror('An error occurred', str(ex))
+        logger.error(f'Failed to launch application: {ex}', exc_info=True)
+        self.finish_status = 1
+        self.exit_button.configure(state='normal')
+        self.protocol("WM_DELETE_WINDOW", self.safe_exit)
 
     def safe_exit(self):
         self.destroy()
         self.quit()
-        sys.exit(0)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
