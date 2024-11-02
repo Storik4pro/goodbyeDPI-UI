@@ -2,6 +2,7 @@ import configparser
 import json
 import logging
 import os
+import shutil
 import sys
 import traceback
 import winreg
@@ -210,6 +211,22 @@ class UserConfig:
         self.write_config()
 
 try:
+    components = ['goodbyedpi', 'zapret', 'byedpi', 'spoofdpi']
+
+    for component in components:
+        src = os.path.join('_internal', 'data', 'settings', 'presets', component, 'user.json')
+        
+        if not os.path.exists(src):
+            break
+        
+        dst_dir = os.path.join(CONFIG_PATH, component)
+        dst = os.path.join(dst_dir, 'user.json')
+
+        os.makedirs(dst_dir, exist_ok=True)
+
+        shutil.copyfile(src, dst)
+        logger.create_info_log(f"Copied {src} to {dst}")
+    
     goodbyedpi_config_path = os.path.join(settings.settings['CONFIG']['goodbyedpi_config_path'])
     zapret_config_path = os.path.join(settings.settings['CONFIG']['zapret_config_path'])
     byedpi_config_path = os.path.join(settings.settings['CONFIG']['byedpi_config_path'])
@@ -232,7 +249,7 @@ try:
     }
 except:
     error_message = traceback.format_exc()
-    logger.raise_critical(error_message)
+    logger.raise_warning(error_message)
 
 def get_log_level():
     log_lvl = settings.settings['GLOBAL']["log_level"]
