@@ -236,7 +236,6 @@ class Backend(QObject):
 
     @Slot()
     def add_to_autorun(self):
-        if settings.settings['GLOBAL']['autorun'] == 'True':return
         try:
             task_name = "GoodbyeDPI_UI_Autostart"
             executable = sys.executable
