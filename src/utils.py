@@ -200,6 +200,7 @@ def remove_ansi_sequences(text):
 
 class GoodbyedpiWorker(QThread):
     output_signal = Signal(str)
+    process_started = Signal()
     process_finished = Signal(str)
     error_occurred = Signal(str)
 
@@ -310,6 +311,7 @@ stop_flags = [
     "Component not installed correctly",
     "--debug=0|1|syslog|@<filename>",
     "error",
+    "could not read"
 ]
 
 class GoodbyedpiProcess(QObject):
@@ -335,7 +337,6 @@ class GoodbyedpiProcess(QObject):
             self.worker.process_finished.connect(self.handle_process_finished)
             self.worker.error_occurred.connect(self.handle_error)
             self.worker.start()
-            self.process_started.emit()
             self.error = False
             self.stop = False
             return True
@@ -365,6 +366,7 @@ class GoodbyedpiProcess(QObject):
         if not self.error and not self.stop: self.output_signal.emit(data)
         if "Filter activated" in data or "capture is started." in data or 'created a listener' in data:
             self.error = False
+            self.process_started.emit()
         elif any(error_msg in data for error_msg in stop_flags):
             self.reason = 'for unknown reason'
             self.error = True

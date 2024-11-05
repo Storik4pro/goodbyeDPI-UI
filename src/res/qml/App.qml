@@ -5,7 +5,7 @@ import GoodbyeDPI_UI
 
 Starter {
     id: starter
-    appId: "GoodbyeDPI UI"
+    appId: backend.is_debug() ? "TEST" : "GoodbyeDPI UI" 
     singleton: true
     windowIcon: "qrc:/qt/qml/GoodbyeDPI_UI/res/image/logo.png"
     onActiveApplicationChanged:
@@ -16,6 +16,13 @@ Starter {
         target: Theme
         function onDarkModeChanged(){
             SettingsHelper.saveDarkMode(Theme.darkMode)
+        }
+    }
+
+    Connections {
+        target:process
+        function onProcess_started(){
+            Qt.callLater(toast.show_notification, "#NOTF_SUC", process.get_executable(), backend.get_element_loc('process_run'))
         }
     }
     
@@ -40,6 +47,7 @@ Starter {
             "/quickstart": resolvedUrl("res/qml/window/AfterUpdateWindow.qml"),
         }
         if (appArguments.indexOf("--after-update") !== -1) {
+            Theme.darkMode = backend.getBackupValue('APPEARANCE_MODE', 'mode') == 'dark' ? 1 : 0
             WindowRouter.go("/quickstart")
         } else {
             WindowRouter.go("/")
