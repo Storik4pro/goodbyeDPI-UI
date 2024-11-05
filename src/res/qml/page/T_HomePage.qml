@@ -532,6 +532,9 @@ ScrollablePage {
         function onError_happens() {
             startSwitch.checked = false
         }
+        function onProcess_started() {
+            startSwitch.checked = true
+        }
     }
     Connections {
         target:toast
