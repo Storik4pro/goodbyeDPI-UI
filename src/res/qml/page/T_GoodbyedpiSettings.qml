@@ -410,7 +410,7 @@ ScrollablePage {
                             Layout.alignment: Qt.AlignVCenter
                             Layout.rightMargin: 35
                             onClicked: {
-                                backend.update_list()
+                                backend.update_list('goodbyeDPI')
                             }
                         }
                     }

@@ -76,6 +76,96 @@ ScrollablePage {
                 context.router.go("/components")
             }
         }
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredWidth: Math.min(1000, parent.width)
+            Layout.minimumWidth: 300
+            Layout.maximumWidth: 1000
+            Layout.alignment: Qt.AlignHCenter
+            color: Theme.res.controlFillColorDefault
+            border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
+            radius: 6
+            Layout.minimumHeight: 68
+            Layout.preferredHeight:clmn.height+20
+
+            RowLayout {
+                id:rwlay
+                anchors.fill: parent
+                anchors{
+                    leftMargin: 20
+                    rightMargin: 20
+                    topMargin: 10
+                    bottomMargin: 10
+                }
+                spacing: 10
+
+                ColumnLayout {
+                    id:clmn
+                    Layout.fillWidth: true
+                    spacing: 2
+
+                    Label {
+                        id:lbl1
+                        Layout.fillWidth: true
+                        text: backend.get_element_loc("blacklist_provider")
+                        horizontalAlignment: Text.AlignLeft
+                        font: Typography.body
+                        wrapMode: Text.Wrap
+                    }
+
+                    Label {
+                        id:lbl2
+                        Layout.fillWidth: true
+                        text: backend.get_element_loc("blacklist_provider_tip")
+                        horizontalAlignment: Text.AlignLeft
+                        font: Typography.caption
+                        color: "#c0c0c0"
+                        wrapMode: Text.Wrap
+                    }
+                    HyperlinkButton {
+                        id:btn
+                        text: backend.get_element_loc("help")
+                        FluentUI.primaryColor: Theme.accentColor.defaultBrushFor()
+                        Layout.preferredHeight:15
+                        font: Typography.caption
+                        Layout.preferredWidth:implicitWidth - 15
+                        flat: true
+                        background: Rectangle {
+                            implicitWidth: 100
+                            implicitHeight: 40
+                            color: Theme.accentColor.defaultBrushFor()
+                            opacity: 0.1
+                            visible:btn.hovered
+                            radius:2
+                        }
+                        onClicked:{
+                            Qt.openUrlExternally("https://habr.com/ru/articles/850292/")
+                        }
+                    }
+                }
+
+                ComboBox {
+                    id:cmbox
+                    enabled:!advancedSwitch.checked
+                    Layout.preferredWidth: rwlay.width < 450 ? rwlay.width-200 : 250
+                    Layout.fillWidth: false
+                    model: [
+                        backend.get_element_loc("default") + " - p.thenewone.lol", 
+                        backend.get_element_loc("re_filter_list") + " - 1andrevich"
+                    ]
+                    currentIndex: backend.getValue('GLOBAL', 'blacklist_provider') === '1andrevich' ? 1 : 0
+                    onCurrentIndexChanged: {
+                        var provider = currentIndex === 0 ? 'thenewone':'1andrevich'
+                        if (backend.getValue('GLOBAL', 'blacklist_provider') !== provider){
+                            backend.changeValue('GLOBAL', 'blacklist_provider', provider);
+                            backend.update_list('goodbyeDPI')
+                            backend.update_list('zapret')
+                        }
+                    }
+
+                }
+            }
+        }
         Expander {
             id:exp
             expanded:true 
@@ -119,10 +209,10 @@ ScrollablePage {
                             id:chkb1
                             topPadding: 10
                             text: backend.get_element_loc("notifications_comp_upd")
-                            checked: backend.getBool("NOTIFICATIONS", 'proc_on')
+                            checked: backend.getBool("NOTIFICATIONS", 'comp_upd')
                             Layout.alignment: Qt.AlignVCenter
                             onClicked: {
-                                backend.toggleBool("NOTIFICATIONS", 'proc_on', chkb1.checked)
+                                backend.toggleBool("NOTIFICATIONS", 'comp_upd', chkb1.checked)
                             }
                         }
                     }
@@ -145,6 +235,28 @@ ScrollablePage {
                             Layout.alignment: Qt.AlignVCenter
                             onClicked: {
                                 backend.toggleBool("NOTIFICATIONS", 'hide_in_tray', chkb2.checked)
+                            }
+                        }
+                    }
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.leftMargin: -15
+                        Layout.topMargin: 5
+                        Layout.bottomMargin: 5
+                        height: 3
+                        color: Qt.rgba(0.0, 0.0, 0.0, 0.3)
+                        opacity: 0.3
+                    }
+                    RowLayout {
+                        spacing: 10
+                        CheckBox {
+                            id:chkb3
+                            bottomPadding: 10
+                            text: backend.get_element_loc("notifications_suc_on")
+                            checked: backend.getBool("NOTIFICATIONS", 'proc_on')
+                            Layout.alignment: Qt.AlignVCenter
+                            onClicked: {
+                                backend.toggleBool("NOTIFICATIONS", 'proc_on', chkb2.checked)
                             }
                         }
                     }
