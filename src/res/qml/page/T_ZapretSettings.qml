@@ -61,6 +61,7 @@ ScrollablePage {
     topPadding: 0
     leftPadding: 0
     rightPadding: 0
+    property var command: ""
 
     ListModel {
         id: blacklistFilesModel
@@ -253,70 +254,376 @@ ScrollablePage {
                 }
             }
         }
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredWidth: Math.min(1000, parent.width)
-            Layout.minimumWidth: 300
-            Layout.maximumWidth: 1000
-            Layout.alignment: Qt.AlignHCenter
-            color: Theme.res.controlFillColorDefault
-            border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
-            radius: 6
-            Layout.minimumHeight: 68
-            Layout.preferredHeight:lbl1.height+lbl2.height+20
-
-            RowLayout {
-                id:rwlay
-                anchors.fill: parent
-                anchors{
-                    leftMargin: 20
-                    rightMargin: 20
-                    topMargin: 10
-                    bottomMargin: 10
+        ListModel {
+            id: componentModel
+            Component.onCompleted: {
+                var jsonFilePath = "data/settings/presets/zapret/" + cmbox.currentIndex + ".json"
+                componentModel.clear()
+                var data = backend.analyze_custom_parameters(jsonFilePath)
+                for (var i = 0; i < data.length; ++i) {
+                    var entry = data[i]
+                    componentModel.append({
+                        'componentId': i,
+                        'blacklist_name': entry.blacklist_name,
+                        'type': entry.type,
+                        'windows': entry.windows 
+                    })
                 }
-                spacing: 10
+                
+            }
+        }
+        ColumnLayout{
+            spacing: 3
+            width: parent.width
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredWidth: Math.min(1000, parent.width)
+                Layout.minimumWidth: 300
+                Layout.maximumWidth: 1000
+                Layout.alignment: Qt.AlignHCenter
+                color: Theme.res.controlFillColorDefault
+                border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
+                radius: 6
+                Layout.minimumHeight: 68
+                Layout.preferredHeight:lbl1.height+lbl2.height+20
 
-                ColumnLayout {
-                    id:clmn
-                    Layout.fillWidth: true
-                    spacing: 2
+                RowLayout {
+                    id:rwlay
+                    anchors.fill: parent
+                    anchors{
+                        leftMargin: 20
+                        rightMargin: 20
+                        topMargin: 10
+                        bottomMargin: 10
+                    }
+                    spacing: 10
 
-                    Label {
-                        id:lbl1
+                    ColumnLayout {
+                        id:clmn
                         Layout.fillWidth: true
-                        text: backend.get_element_loc("preset")
-                        horizontalAlignment: Text.AlignLeft
-                        font: Typography.body
-                        wrapMode: Text.Wrap
+                        spacing: 2
+
+                        Label {
+                            id:lbl1
+                            Layout.fillWidth: true
+                            text: backend.get_element_loc("preset")
+                            horizontalAlignment: Text.AlignLeft
+                            font: Typography.body
+                            wrapMode: Text.Wrap
+                        }
+
+                        Label {
+                            id:lbl2
+                            Layout.fillWidth: true
+                            text: backend.get_element_loc("preset_tip")
+                            horizontalAlignment: Text.AlignLeft
+                            font: Typography.caption
+                            color: "#c0c0c0"
+                            wrapMode: Text.Wrap
+                        }
                     }
 
-                    Label {
-                        id:lbl2
-                        Layout.fillWidth: true
-                        text: backend.get_element_loc("preset_tip")
-                        horizontalAlignment: Text.AlignLeft
-                        font: Typography.caption
-                        color: "#c0c0c0"
-                        wrapMode: Text.Wrap
-                    }
-                }
+                    ComboBox {
+                        id:cmbox
+                        enabled:!advancedSwitch.checked
+                        Layout.preferredWidth: rwlay.width < 550 ? rwlay.width-200 : 350
+                        Layout.fillWidth: false
+                        model: backend.get_presets('zapret')
+                        currentIndex: model[backend.getInt("ZAPRET", "preset")].includes("<separator>") ? backend.getInt("ZAPRET", "preset")+1 :backend.getInt("ZAPRET", "preset")
+                        onCurrentIndexChanged: {
+                            let selectedValue = model[currentIndex];
+                            backend.zapret_update_preset(selectedValue);
+                            process.update_preset()
+                            var jsonFilePath = "data/settings/presets/zapret/" + cmbox.currentIndex + ".json"
+                            componentModel.clear()
+                            var data = backend.analyze_custom_parameters(jsonFilePath)
+                            for (var i = 0; i < data.length; ++i) {
+                                var entry = data[i]
+                                componentModel.append({
+                                    'componentId': i,
+                                    'blacklist_name': entry.blacklist_name,
+                                    'type': entry.type,
+                                    'windows': entry.windows 
+                                })
+                            }
+                        }
 
-                ComboBox {
-                    enabled:!advancedSwitch.checked
-                    Layout.preferredWidth: 300
-                    Layout.fillWidth: false
-                    model: backend.get_presets('zapret')
-                    currentIndex: model[backend.getInt("ZAPRET", "preset")].includes("<separator>") ? backend.getInt("ZAPRET", "preset")+1 :backend.getInt("ZAPRET", "preset")
-                    onCurrentIndexChanged: {
-                        let selectedValue = model[currentIndex];
-                        backend.zapret_update_preset(selectedValue);
-                        process.update_preset()
+                        focus: false
+                        focusPolicy: Qt.NoFocus
                     }
+                    /*
+                    Button {
+                        text: backend.get_element_loc("preset_about")
 
-                    focus: false
-                    focusPolicy: Qt.NoFocus
+                        icon.name:FluentIcons.graph_Info
+                        icon.height:20
+                        icon.width:20
+                        Layout.preferredHeight:cmbox.height
+                        Layout.preferredWidth:cmbox.height
+
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 500
+                        ToolTip.text: text
+
+                        display:Button.IconOnly
+                        onClicked: {
+                            
+                        }
+                    }
+                    */
                 }
             }
+            Label {
+                text: backend.get_element_loc("blacklist_manage")
+                font: Typography.bodyStrong
+                Layout.topMargin: 15
+            }
+            Expander {
+                id: exp
+                expanded: !advancedSwitch.checked
+                enabled:!advancedSwitch.checked
+                Layout.fillWidth: true
+                Layout.preferredWidth: Math.min(1000, parent.width)
+                Layout.minimumWidth: 300
+                Layout.maximumWidth: 1000
+                Layout.alignment: Qt.AlignHCenter
+                _height:68
+
+                header: Label {
+                    text: backend.get_element_loc("blacklist_used")
+                    horizontalAlignment: Qt.AlignVCenter
+                    font: Typography.body
+                    width: exp.width - 100 - 30 - 30
+                    wrapMode: Text.Wrap
+                }
+                subHeader: Label {
+                    text: backend.get_element_loc("blacklist_used_tip")
+                    horizontalAlignment: Qt.AlignVCenter
+                    font: Typography.caption
+                    color: "#c0c0c0"
+                    width: exp.width - 100 - 30 
+                    wrapMode: Text.Wrap
+                }
+                trailing:Button {
+                    text: backend.get_element_loc("open_dir")
+
+                    icon.name:FluentIcons.graph_FolderOpen
+                    icon.height:18
+                    icon.width:18
+
+                    ToolTip.visible: hovered
+                    ToolTip.delay: 500
+                    ToolTip.text: text
+
+                    display:Button.IconOnly
+                    onClicked: {
+                        backend.open_component_folder('zapret')
+                    }
+                }
+                content: ColumnLayout {
+                    id: cnt
+                    spacing: 5
+                    Layout.fillWidth: true
+
+                    
+
+                    Rectangle {
+                        width: parent.width
+                        height: 10
+                        Layout.bottomMargin: 5
+                        opacity: 0.0
+                    }
+
+                    Repeater {
+                        model: componentModel
+                        ColumnLayout {
+                            Layout.fillWidth: true
+
+                            Loader {
+                                Layout.preferredWidth: page.width - 48
+                                sourceComponent: componentRow
+                                onLoaded: {
+                                    item.componentId = model.componentId
+                                    item.blacklist_name = model.blacklist_name
+                                    item.type = model.type
+                                    item.windows = model.windows
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.leftMargin: -15
+                                Layout.topMargin: 5
+                                Layout.bottomMargin: 5
+                                visible: componentId === componentModel.count - 1 ? false : true
+                                height: 3
+                                color: Qt.rgba(0.0, 0.0, 0.0, 0.3)
+                                opacity: componentId === componentModel.count - 1 ? 0.0 : 0.3
+                            }
+                        }
+                    }
+                    
+                    Rectangle {
+                        width: parent.width
+                        height: 10
+                        Layout.topMargin: 5
+                        opacity: 0.0
+                    }
+
+                }
+                Component.onCompleted: {
+                }
+            }
+            Component {
+                id: componentRow
+                RowLayout {
+                    property string componentId
+                    property string type
+                    property string blacklist_name
+                    property var windows
+
+                    Layout.preferredWidth: page.width - 48
+                    spacing: 10
+
+                    ColumnLayout {
+                        Layout.leftMargin:20
+                        Label {
+                            text: type === "iplist" ? backend.get_element_loc("iplist") :
+                                type === "blacklist" ? backend.get_element_loc("blacklist") :
+                                backend.get_element_loc("autoblacklist")
+                            Layout.fillWidth: true
+                            font: Typography.bodyStrong
+                        }
+                        CopyableText {
+                            text: backend.get_element_loc("name") + ": " + blacklist_name
+                            wrapMode:Text.Wrap
+                            Layout.fillWidth: true
+                        }
+
+                    }
+                    RowLayout{
+                        
+                        Button {
+                            text: blacklist_name === 'russia-blacklist.txt' ? backend.get_element_loc("update"):backend.get_element_loc("edit")
+
+                            icon.name:blacklist_name === 'russia-blacklist.txt' ? FluentIcons.graph_Download:FluentIcons.graph_Edit
+                            icon.height:18
+                            icon.width:18
+
+                            visible: type !== "autoblacklist"
+
+                            onClicked: {
+                                if (blacklist_name === 'russia-blacklist.txt') {
+                                    backend.update_list('zapret')
+                                } else {
+                                    backend.edit_blacklist('zapret', blacklist_name)
+                                }
+                            }
+                        }
+                        
+                        Button {
+                            text: backend.get_element_loc("blacklist_watch")
+                            Layout.rightMargin: 20
+
+                            icon.name:FluentIcons.graph_RedEye
+                            icon.height:18
+                            icon.width:18
+
+                            ToolTip.visible: hovered
+                            ToolTip.delay: 500
+                            ToolTip.text: text
+
+                            display:Button.IconOnly
+                            Dialog {
+                                id: blacklistDialog
+                                x: Math.ceil((parent.width - width) / 2)
+                                y: Math.ceil((parent.height - height) / 2)
+                                width: Math.max(500, Math.ceil(parent.width / 3)) 
+                                contentHeight: parent.height < 500 ? Math.ceil(parent.height * 0.4) :parent.height - 300
+                                parent: Overlay.overlay
+                                modal: true
+                                title: backend.get_element_loc("blacklist_watch_title")
+                                Flickable {
+                                    id: flickable
+                                    clip: true
+                                    anchors.fill: parent
+                                    anchors.rightMargin:-10
+                                    anchors.leftMargin:-10
+                                    contentHeight: column.implicitHeight
+                                    ColumnLayout {
+                                        id:column
+                                        anchors.fill: parent
+                                        anchors.rightMargin:10
+                                        anchors.leftMargin:10
+                                        spacing: 5
+                                        width:400
+                                        Label {
+                                            text:blacklist_name
+                                            wrapMode:Text.Wrap
+                                            font:Typography.bodyLarge
+                                        }
+                                        ListModel {
+                                            id: _settingsModel
+                                            
+                                        }
+                                        Repeater {
+                                            model: _settingsModel
+                                            
+                                            delegate: ColumnLayout {
+                                                Layout.fillWidth: true
+                                                Layout.preferredWidth: column.width
+                                                Layout.alignment: Qt.AlignHCenter
+                                                
+                                                Loader {
+                                                    id: itemLoader
+                                                    
+                                                    Layout.preferredWidth: column.width
+                                                    Layout.preferredHeight: sourceComponent.implicitHeight
+                                                    sourceComponent: blacklistComponent
+                                                    property var modelData: model
+                                                }
+                                            }
+                                        }
+                                        
+                                    }
+                                    ScrollBar.vertical: ScrollBar {
+                                        
+                                    }
+                                }
+                                footer: DialogButtonBox{
+                                    Button{
+                                        text: "OK"
+                                        highlighted: true
+                                        width:Math.ceil(blacklistDialog.width / 2) - 20
+                                        onClicked: {
+                                            blacklistDialog.close()
+                                        }
+                                    }
+                                }
+                                
+                            }
+                            onClicked: {
+                                _settingsModel.clear()
+                                for (var i = 0; i < windows.count; ++i) {
+                                    var _window = windows.get(i)
+                                    _settingsModel.append({
+                                        'itemIndex': i,
+                                        'args': _window.full_args,
+                                        'values_before': _window.values_before,
+                                        'values_after': _window.values_after
+                                    })
+                                    
+                                }
+                                blacklistDialog.open()
+                            }
+
+                            
+                        }
+                    }
+                }
+            }
+
+
         }
         ColumnLayout {
             id: mainLayout
@@ -512,7 +819,7 @@ ScrollablePage {
                         
                         Component.onCompleted: {
                             text = backend.get_from_config("ZAPRET", "custom_parameters")
-                            generateCommandLine()
+                            Qt.callLater(generateCommandLine)
                         }
                         function saveCustomParameters() {
                             var params = customParameters.text.trim()
@@ -567,129 +874,56 @@ ScrollablePage {
     
     }
     
-    
-
     Component {
-        id: defaultItemComponent
-        Rectangle {
+        id: blacklistComponent
+        ColumnLayout {
+            id:rest
             Layout.fillWidth: true
-            Layout.preferredHeight: 40
-            color: modelData.index % 2 === 0 ? Theme.res.subtleFillColorSecondary : Theme.res.subtleFillColorTertiary
-            border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
-            radius: 0
+            
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: 10
-                spacing: 10
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                spacing: 5
 
                 Label {
-                    text: backend.get_element_loc(modelData.optionId+"_text")
-                    font: Typography.body
-                    Layout.fillWidth: true
-                    verticalAlignment: Text.AlignVCenter
+                    id:itemLabel
+                    text: "--new"
+                    font: Typography.bodyStrong
+                    Layout.fillWidth:true
+                    wrapMode: Text.Wrap
+                    height:20
+                    Layout.maximumHeight:20
+                    Layout.preferredWidth: parent.width
                 }
+                ColumnLayout {
+                    Layout.minimumHeight:70
+                    Layout.preferredHeight:commandLineOutput1.implicitHeight + 20
+                    
+                    Rectangle {
+                        id: rest1
+                        Layout.fillWidth: true
+                        Layout.preferredWidth: Math.min(1000, parent.width)
+                        Layout.minimumWidth: 300
+                        Layout.maximumWidth: 1000
+                        Layout.alignment: Qt.AlignHCenter
+                        color: "#1E1E1E"
+                        border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
+                        radius: 6
+                        visible: true
+                        Layout.preferredHeight:parent.height
 
-                Item {
-                    Layout.alignment: Qt.AlignVCenter
-
-                    RowLayout {
-                        anchors{
-                            right: parent.right
-                            verticalCenter: parent.verticalCenter
-                        }
-                        spacing: 5
-
-                        CheckBox {
-                            id: checkBoxControl
-                            checked: modelData.checked
-                            visible: modelData.type === "input"
-                            property bool isInitializing: true
-                            FluentUI.radius:0
-
-                            onCheckedChanged: {
-                                if (!isInitializing) {
-                                    settingsModel.setProperty(modelData.index, "checked", checked)
-                                    if (modelData.type === "input") {
-                                        inputField.enabled = checked
-                                    }
-                                    backend.set_to_config("ZAPRET", modelData.optionId, checked)
-                                    generateCommandLine()
-                                }
-                            }
-                            Component.onCompleted: {
-                                checked = backend.get_bool_from_config("ZAPRET", modelData.optionId)
-                                settingsModel.setProperty(modelData.index, "checked", checked)
-                                if (modelData.type === "input") {
-                                    inputField.enabled = checked
-                                }
-                                isInitializing = false
-                                generateCommandLine()
-                            }
-                        }
-
-                        TextField {
-                            id: inputField
-                            text: modelData.value
-                            placeholderText: modelData.placeholder
-                            inputMethodHints: Qt.ImhDigitsOnly
-                            enabled: modelData.checked
-                            width: 100
-                            visible: modelData.type === "input"
-                            property bool isInitializing: true
-                            FluentUI.radius:0
-
-                            onTextChanged: {
-                                if (!isInitializing) {
-                                    if (modelData.type === "input") {
-                                        var allowedCharsRegex = /^[0-9a-zA-Z:\/\\.\-\_\s,]*$/
-                                        if (!allowedCharsRegex.test(text)) {
-                                            var cursorPosition = inputField.cursorPosition - 1
-                                            text = text.slice(0, cursorPosition) + text.slice(cursorPosition + 1)
-                                            inputField.cursorPosition = cursorPosition
-                                            info_manager_bottomright.show(InfoBarType.Warning, backend.get_element_loc("warn_entry"), 3000)
-                                        } else {
-                                            settingsModel.setProperty(modelData.index, "value", text)
-                                            backend.set_to_config("ZAPRET", modelData.optionId + "_value", text)
-                                            generateCommandLine()
-                                        }
-                                    }    
-                                }
-                                
-                                isInitializing = false
-                            }
-                            
-                            Component.onCompleted: {
-                                if (modelData.type === "input") {
-                                    text = backend.get_from_config("ZAPRET", modelData.optionId + "_value")
-                                }
-                                settingsModel.setProperty(modelData.index, "value", text)
-                                isInitializing = false
-                                generateCommandLine()
-                            }
-                        }
-
-                        Switch {
-                            id: switchControl
-                            checked: modelData.checked
-                            visible: modelData.type === "switch"
-                            property bool isInitializing : true
-                            FluentUI.radius:0
-                            onCheckedChanged: {
-                                if (!isInitializing) {
-                                    settingsModel.setProperty(modelData.index, "checked", checked)
-                                    backend.set_to_config("ZAPRET", modelData.optionId, checked)
-                                    generateCommandLine()
-                                }
-                                isInitializing = false
-                                console.log(isInitializing)
-                            }
-                            Component.onCompleted: {
-                                checked = backend.get_bool_from_config("ZAPRET", modelData.optionId)
-                                settingsModel.setProperty(modelData.index, "checked", checked)
-                                isInitializing = false
-                                generateCommandLine()
-                            }
+                        CopyableText {
+                            id: commandLineOutput1
+                            anchors.fill: parent
+                            anchors.margins: 10
+                            width: parent.width - 20
+                            text: modelData.args
+                            wrapMode: Text.Wrap
+                            font.pixelSize: 14
+                            font.family: "Cascadia Code"
+                            color: "#D4D4D4"
+                            height: implicitHeight
                         }
                     }
                 }
@@ -697,6 +931,7 @@ ScrollablePage {
             }
         }
     }
+
     ColumnLayout{
         anchors.margins: 20
         Layout.fillWidth: true
@@ -739,18 +974,16 @@ ScrollablePage {
         text = backend.get_from_config("ZAPRET", modelData.optionId + "_value")
         settingsModel.setProperty(itemIndex, "value", text)
 
-        generateCommandLine()
+        //generateCommandLine()
         
     }
 
-    function generateCommandLine(blacklist_values=blacklistFilesModel) {
-        var command = "winws.exe"
+    function generateCommandLine() {
+        command = "winws.exe"
 
         if (customParameters.text.trim() !== "") {
             command += " " + customParameters.text.trim()
         }
-
-        commandLineOutput.text = command
     }
     function download_component() {
         progressBar.visible = true;
