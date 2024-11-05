@@ -355,7 +355,7 @@ FramelessWindow {
             Qt.callLater(WindowRouter.go, "/");
         }
         function onUpdates_checked(result) {
-            if (result) {
+            if (result && backend.getBool('NOTIFICATIONS', 'comp_upd')) {
                 delayTimer1.start()
                 
             }
