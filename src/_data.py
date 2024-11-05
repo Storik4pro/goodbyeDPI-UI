@@ -34,7 +34,7 @@ def is_font_installed(font_name):
 
 DIRECTORY = f'{application_path}/' if not DEBUG else ''
 
-VERSION = "1.2.1.1"
+VERSION = "1.2.2"
 
 SETTINGS_FILE_PATH = DIRECTORY+'data/settings/settings.ini'
 BACKUP_SETTINGS_FILE_PATH = DIRECTORY+'data/settings/_settings.ini'
@@ -130,6 +130,11 @@ PRESETS_DEFAULT = {
 REPO_OWNER = "Storik4pro"
 REPO_NAME = "goodbyeDPI-UI"
 CONFIGS_REPO_NAME = "goodbyeDPI-UI-configs"
+
+BLACKLIST_PROVIDERS = {
+    "thenewone":"https://p.thenewone.lol/domains-export.txt",
+    "1andrevich": "https://raw.githubusercontent.com/1andrevich/Re-filter-lists/refs/heads/main/community.lst"
+}
 
 logger = AppLogger(VERSION, "settings_import")
 
