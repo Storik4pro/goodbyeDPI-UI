@@ -93,6 +93,7 @@ ScrollablePage {
         id: qfooter
         RowLayout {
             Layout.fillWidth: true
+            Layout.bottomMargin: -15
             spacing: 24
 
             Button {
