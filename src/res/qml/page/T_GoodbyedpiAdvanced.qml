@@ -234,7 +234,7 @@ ScrollablePage {
                 delegate: ColumnLayout {
                     Layout.preferredHeight: type === "blacklist" ? undefined : 40 
                     Layout.fillWidth: true
-                    Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
+                    Layout.preferredWidth: Math.min(1000, parent.width)
                     Layout.minimumWidth: 300
                     Layout.maximumWidth: 1000
                     Layout.alignment: Qt.AlignHCenter
@@ -243,7 +243,7 @@ ScrollablePage {
                         id: itemLoader
                         
                         Layout.preferredWidth:parent.width
-                        Layout.preferredHeight:parent.height
+                        Layout.preferredHeight:type === "blacklist" ? sourceComponent.implicitHeight: parent.height
                         sourceComponent: type === "blacklist" ? blacklistItemComponent : defaultItemComponent
                         property int itemIndex: index
                         property var modelData: model
@@ -438,8 +438,6 @@ ScrollablePage {
     Component {
         id: defaultItemComponent
         Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: 40
             color: modelData.index % 2 === 0 ? Theme.res.subtleFillColorSecondary : Theme.res.subtleFillColorTertiary
             border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
             radius: 0
