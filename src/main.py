@@ -104,7 +104,7 @@ try:
                 settings.change_setting('GLOBAL', 'update_complete', "False")
             pompt+=name+value
 
-        if not is_admin():
+        if not is_admin() and not DEBUG:
             logger.raise_warning(text.inAppText['run_as_admin'])
             sys.exit(-1)
             
