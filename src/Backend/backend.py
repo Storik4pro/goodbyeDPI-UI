@@ -1,8 +1,10 @@
 import configparser
 from datetime import datetime
+import json
 import os
 import platform
 import random
+import shlex
 import subprocess
 import sys
 import time
@@ -15,7 +17,7 @@ from PySide6.QtQml import QQmlApplicationEngine
 
 from logger import AppLogger
 from utils import ProgressToast, background_sound, change_setting, change_settings, check_version, check_winpty, create_xml, delete_file, download_blacklist, error_sound, extract_zip, get_component_download_url, get_latest_release, get_download_url, download_update, move_settings_file, open_custom_blacklist, open_folder, register_component, remove_xml, stop_servise, unregister_component
-from _data import BACKUP_SETTINGS_FILE_PATH, COMPONENTS_URLS, CONFIG_PATH, DEBUG_PATH, EXECUTABLES, LOG_LEVEL, PRESETS, PRESETS_DEFAULT, REPO_NAME, REPO_OWNER, SETTINGS_FILE_PATH, VERSION, settings, DEBUG, DIRECTORY, configs, text
+from _data import BACKUP_SETTINGS_FILE_PATH, BLACKLIST_PROVIDERS, COMPONENTS_URLS, CONFIG_PATH, DEBUG_PATH, EXECUTABLES, LOG_LEVEL, PRESETS, PRESETS_DEFAULT, REPO_NAME, REPO_OWNER, SETTINGS_FILE_PATH, VERSION, Settings, settings, DEBUG, DIRECTORY, configs, text
 
 KEY = 'GOODBYEDPI'
 PATH = 'GoodbyeDPI_UI'
@@ -39,6 +41,10 @@ class Backend(QObject):
         try:
             return text.inAppText[element_name].replace("{executable}", "%1")
         except:return "<globallocalize."+element_name+">"
+        
+    @Slot(result=bool)
+    def is_debug(self):
+        return DEBUG
         
     @Slot(result=str)
     def get_fact(self):
@@ -101,6 +107,69 @@ class Backend(QObject):
         configs[engine].configfile = CONFIG_PATH+f"/{engine.lower()}/user.json"
         configs[engine].reload_config()
 
+    @Slot(str, result='QVariantList')
+    def analyze_custom_parameters(self, json_file_path):
+        with open(json_file_path, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+        
+        custom_params = data.get("custom_parameters", "")
+
+        windows = [window.strip() for window in custom_params.split('--new') if window.strip()]
+
+        blacklists = {} 
+
+        for window in windows:
+            tokens = shlex.split(window)
+
+            i = 0
+            while i < len(tokens):
+                if tokens[i] == '--hostlist' and i + 1 < len(tokens):
+                    blacklist_type = 'blacklist'
+                    blacklist_name = tokens[i + 1]
+                    index = i
+                    i += 2
+                elif tokens[i] == '--ipset' and i + 1 < len(tokens):
+                    blacklist_type = 'iplist'
+                    blacklist_name = tokens[i + 1]
+                    index = i
+                    i += 2
+                elif tokens[i] == '--hostlist-auto' and i + 1 < len(tokens):
+                    blacklist_type = 'autoblacklist'
+                    blacklist_name = tokens[i + 1]
+                    index = i
+                    i += 2
+                else:
+                    i += 1
+                    continue
+
+                values_before = ' '.join(tokens[:index])
+                values_after = ' '.join(tokens[index + 2:])
+
+                window_params = {
+                    'values_before': values_before,
+                    'values_after': values_after,
+                    'full_args': window.strip()
+                }
+
+                key = (blacklist_name, blacklist_type)
+
+                if key not in blacklists:
+                    blacklists[key] = {
+                        'blacklist_name': blacklist_name,
+                        'type': blacklist_type,
+                        'windows': [window_params]
+                    }
+                else:
+                    blacklists[key]['windows'].append(window_params)
+
+        unique_entries = []
+        for idx, ((blacklist_name, blacklist_type), data) in enumerate(blacklists.items()):
+            data['componentId'] = idx
+            unique_entries.append(data)
+
+
+        return unique_entries
+    
     @Slot()
     def play_sound(self):
         error_sound()
@@ -108,7 +177,14 @@ class Backend(QObject):
     @Slot()
     def play_sound_grab(self):
         background_sound()
-        
+    
+    @Slot(str, str, result=str)
+    def getBackupValue(self, group, key):
+        try:
+            return Settings(BACKUP_SETTINGS_FILE_PATH).get_value(group, key)
+        except:
+            return settings.get_value(group, key)
+    
     @Slot(result=str)
     def get_version(self):
         return VERSION
@@ -187,12 +263,17 @@ class Backend(QObject):
     @Slot()  
     def edit_custom_blacklist(self):
         open_custom_blacklist()
+        
+    @Slot(str, str)
+    def edit_blacklist(self, component, file):
+        os.startfile(DEBUG_PATH + f"{DIRECTORY}/data/{component}/{file}")
     
-    @Slot()  
-    def update_list(self):
-        progress_toast = ProgressToast('GoodbyeDPI_app', text.inAppText['update_in_process'], text.inAppText['update_in_process_info'], 'russia_blacklist.txt')
+    @Slot(str)  
+    def update_list(self, component):
+        progress_toast = ProgressToast('GoodbyeDPI_app', text.inAppText['update_in_process'], text.inAppText['update_in_process_info'] + f"\n[{component}]", 'russia_blacklist.txt')
         try:
-            download_blacklist("https://p.thenewone.lol/domains-export.txt", progress_toast)
+            download_blacklist(BLACKLIST_PROVIDERS[self.getValue('GLOBAL', 'blacklist_provider')], progress_toast, 
+                               local_filename=DEBUG_PATH+DIRECTORY+f"data/{component}/russia-blacklist.txt")
         except Exception as ex:
             logger.raise_warning(traceback.format_exc())
     
@@ -387,7 +468,7 @@ class Backend(QObject):
     @Slot()
     def start_check_component_updates(self):
         self.thread = QThread()
-        self.worker = UpdateCheckerWorker(parent=self)
+        self.worker = UpdateCheckerWorker()
         self.worker.moveToThread(self.thread)
 
         self.thread.started.connect(self.worker.check_updates)
@@ -472,16 +553,20 @@ class UpdateCheckerWorker(QObject):
     progress = Signal(int)
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super().__init__()
 
     def check_updates(self):
         update_available = False
-        self.parent().toggleBool('GLOBAL', "check_complete", True)
+        settings.settings['GLOBAL']["check_complete"] = 'True'
         try:
             total_components = len(COMPONENTS_URLS)
             for i, component_name in enumerate(COMPONENTS_URLS):
                 c = component_name.lower()
-                if not self.parent().getBool('COMPONENTS', c):
+                if not settings.settings.getboolean('COMPONENTS', c):
+                    continue
+                if settings.get_value("COMPONENTS", c+"_version").replace("v", "") != \
+                        settings.get_value("COMPONENTS", c+"_server_version").replace("v", ""):
+                    update_available = True
                     continue
                 try:
                     pre_url = get_component_download_url(component_name)
@@ -491,21 +576,23 @@ class UpdateCheckerWorker(QObject):
                     print(url)
                     version = pre_url.split("|")[1]
 
-                    if self.parent().getValue("COMPONENTS", c+"_version").replace("v", "") != version:
-                        self.parent().changeValue('COMPONENTS', c+"_server_version", version)
+                    if settings.get_value("COMPONENTS", c+"_version").replace("v", "") != version:
+                        settings.settings["COMPONENTS"][c+"_server_version"] = version
                 except Exception as ex:
                     print(ex)
-                    self.parent().toggleBool('GLOBAL', "check_complete", False)
+                    settings.settings['GLOBAL']["check_complete"] = "False"
 
-                if self.parent().getValue("COMPONENTS", c+"_version").replace("v", "") != \
-                        self.parent().getValue("COMPONENTS", c+"_server_version").replace("v", ""):
+                if settings.get_value("COMPONENTS", c+"_version").replace("v", "") != \
+                        settings.get_value("COMPONENTS", c+"_server_version").replace("v", ""):
                     update_available = True
 
                 self.progress.emit(int((i + 1) / total_components * 100))
 
+            settings.save_settings()
             self.finished.emit(update_available)
         except Exception as ex:
-            self.parent().toggleBool('GLOBAL', "check_complete", False)
+            settings.settings['GLOBAL']["check_complete"] = 'False'
+            settings.save_settings()
             self.finished.emit(False)
 
 class DownloadWorker(QObject):
