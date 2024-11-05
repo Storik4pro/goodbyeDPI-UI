@@ -108,7 +108,7 @@ Page {
                                     color: Qt.rgba(0, 0, 0, 0.0)
                                     radius: 6
                                     border.color: Qt.rgba(0, 0, 0, 0.0)
-                                    visible: ((backend.check_component_version(component) !== 
+                                    visible: (backend.check_component_version(component) !== '0.2.3rc3' && (backend.check_component_version(component) !== 
                                               backend.getValue("COMPONENTS", component+"_version")) && 
                                               backend.getBool('COMPONENTS', component))
                                     ColumnLayout{
