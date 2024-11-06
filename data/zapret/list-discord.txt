@@ -32,3 +32,4 @@ discord.dev
 discord.new
 discord.gift
 discord.co
+cloudflare-ech.com
