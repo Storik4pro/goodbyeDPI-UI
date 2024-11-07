@@ -22,7 +22,9 @@ Starter {
     Connections {
         target:process
         function onProcess_started(){
-            Qt.callLater(toast.show_notification, "#NOTF_SUC", process.get_executable(), backend.get_element_loc('process_run'))
+            if (backend.getBool("NOTIFICATIONS", 'proc_on')){
+                Qt.callLater(toast.show_notification, "#NOTF_SUC", process.get_executable(), backend.get_element_loc('process_run'))
+            }
         }
     }
     

@@ -256,7 +256,7 @@ ScrollablePage {
                             checked: backend.getBool("NOTIFICATIONS", 'proc_on')
                             Layout.alignment: Qt.AlignVCenter
                             onClicked: {
-                                backend.toggleBool("NOTIFICATIONS", 'proc_on', chkb2.checked)
+                                backend.toggleBool("NOTIFICATIONS", 'proc_on', chkb3.checked)
                             }
                         }
                     }
