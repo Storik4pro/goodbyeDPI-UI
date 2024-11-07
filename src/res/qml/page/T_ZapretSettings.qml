@@ -27,7 +27,6 @@ Loader {
         title: qsTr("Save File As")
         nameFilters: ["JSON Files (*.json)"]
         fileMode: FileDialog.SaveFile
-        currentFolder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
         onAccepted: {
             var filePath = selectedFile.toString().replace("file:///", "")
             backend.save_preset('zapret', filePath)
@@ -259,7 +258,7 @@ ScrollablePage {
             Component.onCompleted: {
                 var jsonFilePath = "data/settings/presets/zapret/" + cmbox.currentIndex + ".json"
                 componentModel.clear()
-                var data = backend.analyze_custom_parameters(jsonFilePath)
+                var data = backend.analyze_custom_parameters(jsonFilePath, true)
                 for (var i = 0; i < data.length; ++i) {
                     var entry = data[i]
                     componentModel.append({
@@ -336,7 +335,7 @@ ScrollablePage {
                             process.update_preset()
                             var jsonFilePath = "data/settings/presets/zapret/" + cmbox.currentIndex + ".json"
                             componentModel.clear()
-                            var data = backend.analyze_custom_parameters(jsonFilePath)
+                            var data = backend.analyze_custom_parameters(jsonFilePath, true)
                             for (var i = 0; i < data.length; ++i) {
                                 var entry = data[i]
                                 componentModel.append({
@@ -346,16 +345,33 @@ ScrollablePage {
                                     'windows': entry.windows 
                                 })
                             }
+                            editModel.clear()
+                            var data = backend.analyze_custom_parameters(jsonFilePath, false)
+                            for (var i = 0; i < data.length; ++i) {
+                                var entry = data[i]
+
+                                for (var j = 0; j < entry.windows.length; ++j) {
+                                    var _window = entry.windows[j]
+                                    editModel.append({
+                                        'blacklist_name': entry.blacklist_name,
+                                        'type': entry.type,
+                                        'windows': entry.windows,
+                                        'args': _window.full_args,
+                                        'values_before': _window.values_before,
+                                        'values_after': _window.values_after
+                                    })
+                                    
+                                }
+                            }
                         }
 
                         focus: false
                         focusPolicy: Qt.NoFocus
                     }
-                    /*
                     Button {
-                        text: backend.get_element_loc("preset_about")
-
-                        icon.name:FluentIcons.graph_Info
+                        text: "[" + backend.get_element_loc("_beta") + "] " + backend.get_element_loc("edit")
+                        visible: backend.getBool('GLOBAL', 'usebetafeatures')
+                        icon.name:FluentIcons.graph_Edit
                         icon.height:20
                         icon.width:20
                         Layout.preferredHeight:cmbox.height
@@ -367,11 +383,196 @@ ScrollablePage {
 
                         display:Button.IconOnly
                         onClicked: {
-                            
+                            editDialog.open()
                         }
                     }
-                    */
                 }
+            }
+            Dialog {
+                id: editDialog
+                x: Math.ceil((parent.width - width) / 2)
+                y: Math.ceil((parent.height - height) / 2)
+                width: Math.max(500, Math.ceil(parent.width / 3)) 
+                contentHeight: parent.height < 500 ? Math.ceil(parent.height * 0.4) :parent.height - 300
+                parent: Overlay.overlay
+                modal: true
+                title: backend.get_element_loc("edit") + ": " + cmbox.currentIndex + ".json"
+                Flickable {
+                    id: flickable
+                    clip: true
+                    anchors.fill: parent
+                    anchors.rightMargin:-10
+                    anchors.leftMargin:-10
+                    contentHeight: column.implicitHeight
+                    ColumnLayout {
+                        id:column
+                        anchors.fill: parent
+                        anchors.rightMargin:10
+                        anchors.leftMargin:10
+                        spacing: 5
+                        width:400
+                        Rectangle {
+                            id:rest111
+                            Layout.preferredHeight: Math.max(60, infoColumnLayout1.implicitHeight + 20)
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignHCenter
+                            color: Theme.res.controlFillColorDefault
+                            radius: 6
+                            border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
+
+                            ColumnLayout{
+                                id:infoColumnLayout1
+                                anchors.verticalCenter: parent.verticalCenter  
+                                RowLayout{    
+                                    spacing:10
+                                    height:20
+                                    Layout.leftMargin:10
+                                    
+                                    Icon{
+                                        Layout.preferredHeight:20
+                                        source:FluentIcons.graph_InfoSolid
+                                        color:Theme.accentColor.defaultBrushFor()
+                                    }
+                                    ColumnLayout{
+                                        Label{
+                                            text:backend.get_element_loc('attention')
+                                            font: Typography.bodyStrong
+                                        }
+                                        Label{
+                                            Layout.preferredWidth:rest111.width - 100
+                                            text:backend.get_element_loc('beta')
+                                            font: Typography.body
+                                            wrapMode:Text.Wrap
+                                        }
+                                    }
+
+                                }
+                            }
+                        }
+                        Rectangle {
+                            id:restWarn
+                            Layout.preferredHeight: Math.max(60, warnColumnLayout1.implicitHeight + 20)
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignHCenter
+                            color: Theme.res.systemFillColorCautionBackground
+                            radius: 6
+                            border.color: Theme.res.cardStrokeColorDefault
+
+                            ColumnLayout{
+                                id:warnColumnLayout1
+                                anchors.verticalCenter: parent.verticalCenter  
+                                RowLayout{    
+                                    spacing:10
+                                    height:20
+                                    Layout.leftMargin:10
+                                    
+                                    Icon{
+                                        Layout.preferredHeight:20
+                                        source:FluentIcons.graph_Warning
+                                        color:Theme.res.systemFillColorCaution
+                                    }
+                                    ColumnLayout{
+                                        Label{
+                                            text:backend.get_element_loc('warning')
+                                            font: Typography.bodyStrong
+
+                                        }
+                                        Label{
+                                            Layout.preferredWidth:restWarn.width - 100
+                                            text:backend.get_element_loc('edit_warn')
+                                            font: Typography.body
+                                            wrapMode:Text.Wrap
+                                        }
+                                    }
+
+                                }
+                            }
+                        }
+                        ListModel {
+                            id: editModel
+                            Component.onCompleted: {
+                                var jsonFilePath = "data/settings/presets/zapret/" + cmbox.currentIndex + ".json"
+                                editModel.clear()
+                                var data = backend.analyze_custom_parameters(jsonFilePath, false)
+                                for (var i = 0; i < data.length; ++i) {
+                                    var entry = data[i]
+
+                                    for (var j = 0; j < entry.windows.length; ++j) {
+                                        var _window = entry.windows[j]
+                                        editModel.append({
+                                            'blacklist_name': entry.blacklist_name,
+                                            'type': entry.type,
+                                            'windows': entry.windows,
+                                            'args': _window.full_args,
+                                            'values_before': _window.values_before,
+                                            'values_after': _window.values_after
+                                        })
+                                        
+                                    }
+                                }
+                                
+                                
+                            }
+                        }
+                        Repeater {
+                            model: editModel
+                            
+                            delegate: ColumnLayout {
+                                Layout.fillWidth: true
+                                Layout.preferredWidth: column.width
+                                Layout.alignment: Qt.AlignHCenter
+                                
+                                Loader {
+                                    id: itemLoader
+                                    
+                                    Layout.preferredWidth: column.width
+                                    sourceComponent: editComponent
+                                    property var modelData: model
+                                    property int modelIndex: index
+
+                                    onLoaded: {
+                                        
+                                        //Layout.preferredHeight = sourceComponent.implicitHeight
+                                    }
+                                }
+
+                            }
+                        }
+                        
+                    }
+                    ScrollBar.vertical: ScrollBar {
+                        
+                    }
+                }
+                footer: DialogButtonBox{
+                    Button{
+                        text: backend.get_element_loc("accept")
+                        onClicked: {
+                            var updatedData = []
+                            for (var i = 0; i < editModel.count; ++i) {
+                                var item = editModel.get(i)
+                                updatedData.push({
+                                    'blacklist_name': item.blacklist_name,
+                                    'type': item.type,
+                                    'args': item.args,
+                                    'values_before': item.values_before,
+                                    'values_after': item.values_after
+                                })
+                            }
+
+                            backend.save_custom_parameters(cmbox.currentIndex, updatedData)
+                            editDialog.close()
+                        }
+                    }
+                    Button{
+                        text: backend.get_element_loc("cancel")
+                        highlighted: true
+                        onClicked: {
+                            editDialog.close()
+                        }
+                    }
+                }
+                
             }
             Label {
                 text: backend.get_element_loc("blacklist_manage")
@@ -931,6 +1132,65 @@ ScrollablePage {
             }
         }
     }
+    Component {
+        id: editComponent
+
+        ColumnLayout {
+            id: rest
+            Layout.fillWidth: true
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                spacing: 5
+
+                Label {
+                    id: itemLabel
+                    text: "--new (" + (modelData ? modelData.blacklist_name : "") + ")"
+                    font: Typography.bodyStrong
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    height: 20
+                    Layout.maximumHeight: 20
+                    Layout.preferredWidth: parent.width
+                }
+                ColumnLayout {
+                    Layout.minimumHeight: 70
+                    Layout.preferredHeight: customParameters.implicitHeight + 20
+
+                    TextArea {
+                        id: customParameters
+                        placeholderText: backend.get_element_loc("custom_params_placeholder")
+                        wrapMode: TextEdit.Wrap
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        FluentUI.radius: 6
+                        property bool isInitializing: false
+
+                        onTextChanged: {
+                            if (!isInitializing) {
+                                var cursorPosition = customParameters.cursorPosition
+                                var previousText = text
+                                var newText = text.replace(/[^0-9a-zA-Z:"><\/\\.\-_\s,=]/g, '')
+                                if (newText !== previousText) {
+                                    var diff = previousText.length - newText.length
+                                    text = newText
+                                    customParameters.cursorPosition = cursorPosition - diff
+                                    info_manager_bottomright.show(InfoBarType.Warning, backend.get_element_loc("warn_entry"), 3000)
+                                }
+                                editModel.set(modelIndex, { "args": text })
+                            }
+                            isInitializing = false
+                        }
+
+                        Component.onCompleted: {
+                            text = (modelData ? modelData.args : "")
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     ColumnLayout{
         anchors.margins: 20
@@ -971,9 +1231,6 @@ ScrollablePage {
     }
 
     Component.onCompleted: {
-        text = backend.get_from_config("ZAPRET", modelData.optionId + "_value")
-        settingsModel.setProperty(itemIndex, "value", text)
-
         //generateCommandLine()
         
     }
@@ -998,7 +1255,7 @@ ScrollablePage {
 
     Connections {
         target: backend
-        onComponent_installing_finished: {
+        function onComponent_installing_finished() {
             var success = arguments[0];
             progressBar.visible = false;
             checkBtn.enabled = true;

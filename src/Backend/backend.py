@@ -106,9 +106,10 @@ class Backend(QObject):
         change_setting('CONFIG', f'{engine.lower()}_config_path', "")
         configs[engine].configfile = CONFIG_PATH+f"/{engine.lower()}/user.json"
         configs[engine].reload_config()
+        
 
-    @Slot(str, result='QVariantList')
-    def analyze_custom_parameters(self, json_file_path):
+    @Slot(str, bool, result='QVariantList')
+    def analyze_custom_parameters(self, json_file_path, unique):
         with open(json_file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
         
@@ -122,26 +123,34 @@ class Backend(QObject):
             tokens = shlex.split(window)
 
             i = 0
+            found_blacklist = False
             while i < len(tokens):
                 if tokens[i] == '--hostlist' and i + 1 < len(tokens):
                     blacklist_type = 'blacklist'
                     blacklist_name = tokens[i + 1]
                     index = i
                     i += 2
+                    found_blacklist = True
                 elif tokens[i] == '--ipset' and i + 1 < len(tokens):
                     blacklist_type = 'iplist'
                     blacklist_name = tokens[i + 1]
                     index = i
                     i += 2
+                    found_blacklist = True
                 elif tokens[i] == '--hostlist-auto' and i + 1 < len(tokens):
                     blacklist_type = 'autoblacklist'
                     blacklist_name = tokens[i + 1]
                     index = i
                     i += 2
+                    found_blacklist = True
                 else:
                     i += 1
                     continue
-
+                if i < len(tokens) and tokens[i] in ['--hostlist', '--ipset', '--hostlist-auto'] and not unique:
+                    blacklist_name += " + " + tokens[i + 1]
+                    i += 2
+                    found_blacklist = True
+                    
                 values_before = ' '.join(tokens[:index])
                 values_after = ' '.join(tokens[index + 2:])
 
@@ -161,7 +170,25 @@ class Backend(QObject):
                     }
                 else:
                     blacklists[key]['windows'].append(window_params)
+                    
+            if not found_blacklist and not unique:
+                window_params = {
+                    'values_before': "",
+                    'values_after': "",
+                    'full_args': window.strip()
+                }
+                key = ("", "NULL")
 
+                if key not in blacklists:
+                    blacklists[key] = {
+                        'blacklist_name': "",
+                        'type': "NULL",
+                        'windows': [window_params]
+                    }
+                else:
+                    blacklists[key]['windows'].append(window_params)
+
+                continue
         unique_entries = []
         for idx, ((blacklist_name, blacklist_type), data) in enumerate(blacklists.items()):
             data['componentId'] = idx
@@ -170,6 +197,24 @@ class Backend(QObject):
 
         return unique_entries
     
+    @Slot(str, 'QVariantList')
+    def save_custom_parameters(self, filename:str, updated_data):
+        json_file_path = CONFIG_PATH + "/zapret/" + filename + ".json"
+
+        custom_parameters_list = []
+        for item in updated_data:
+            custom_parameters_list.append(item['args'])
+
+        custom_parameters = ' --new '.join(custom_parameters_list)
+
+        with open(json_file_path, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+
+        data['custom_parameters'] = custom_parameters.strip()
+
+        with open(json_file_path, 'w', encoding='utf-8') as file:
+            json.dump(data, file, ensure_ascii=False, indent=4)
+        
     @Slot()
     def play_sound(self):
         error_sound()
