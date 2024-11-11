@@ -17,7 +17,7 @@ try:
     import resource_rc
     from PySide6.QtCore import QProcess
     from PySide6.QtGui import QGuiApplication, QIcon
-    from PySide6.QtQml import QQmlApplicationEngine
+    from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
 
     from FluentUI import FluentUIPlugin
     import Logger
@@ -27,7 +27,7 @@ try:
     from Backend import Backend, Process, Toast, MultiWindow, GoodCheckHelper, AfterUpdateHelper
 
     from quick_start import after_update_actions, check_app_is_runned, chk_directory, first_run_actions, kill_update, merge_settings, merge_blacklist, rename_update_exe, merge_settings_to_json
-    logger = AppLogger(VERSION, "goodbyeDPI", LOG_LEVEL)
+    logger = AppLogger(VERSION, "goodbyeDPI", LOG_LEVEL if not DEBUG else logging.DEBUG)
 except:
     import traceback
     logger = AppLogger("-x-", "goodbyeDPI", logging.CRITICAL)
@@ -54,7 +54,7 @@ try:
         QGuiApplication.setApplicationName(GlobalConfig.application_name)
         QGuiApplication.setApplicationDisplayName(GlobalConfig.application_name)
         QGuiApplication.setApplicationVersion(GlobalConfig.application_version)
-        Logger.setup("GoodbyeDPI_UI", level=LOG_LEVEL)
+        Logger.setup("GoodbyeDPI_UI", level=LOG_LEVEL if not DEBUG else logging.DEBUG)
         app = QGuiApplication(sys.argv)
         engine = QQmlApplicationEngine()
         
@@ -157,6 +157,8 @@ try:
             pass
 
         logger.cleanup_logs()
+except SystemExit as ex:
+    pass
 except:
     import traceback
     logger.raise_critical(traceback.format_exc())
