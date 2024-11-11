@@ -535,6 +535,9 @@ ScrollablePage {
         function onProcess_started() {
             startSwitch.checked = true
         }
+        function onProcess_stopped() {
+            startSwitch.checked = false
+        }
     }
     Connections {
         target:toast
