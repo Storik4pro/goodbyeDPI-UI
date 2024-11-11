@@ -311,7 +311,8 @@ stop_flags = [
     "Component not installed correctly",
     "--debug=0|1|syslog|@<filename>",
     "error",
-    "could not read"
+    "could not read",
+    "invalid value"
 ]
 
 class GoodbyedpiProcess(QObject):
