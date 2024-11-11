@@ -223,7 +223,7 @@ ScrollablePage {
         function onUpdateComponentsStarted() {
             progressRingUpdatingComponents.visible = true;
             iconUpdatingComponents.visible = false;
-            lbl.text = backend.get_element_loc('after_update_finish');
+            lbl.text = backend.get_element_loc('after_update_updating_components');
         }
         function onUpdateComponentsCompleted() {
             progressRingUpdatingComponents.visible = false;

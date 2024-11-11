@@ -1,14 +1,16 @@
 import traceback
 from PySide6.QtCore import QObject, Signal, Slot, QThread
 import time
-
+import logging
 import os
 import shutil
 from logger import AppLogger
 from quick_start import merge_blacklist, merge_settings
-from _data import BACKUP_SETTINGS_FILE_PATH, DIRECTORY, DEBUG, GOODBYE_DPI_PATH, LOG_LEVEL, SETTINGS_FILE_PATH, VERSION, settings
+from _data import BACKUP_SETTINGS_FILE_PATH, COMPONENTS_URLS, DIRECTORY, DEBUG, GOODBYE_DPI_PATH, LOG_LEVEL, SETTINGS_FILE_PATH, VERSION, settings
+from utils import get_component_download_url
+from .backend import DownloadComponent
 
-logger = AppLogger(VERSION, 'after_update', LOG_LEVEL)
+logger = AppLogger(VERSION, 'after_update', LOG_LEVEL if not DEBUG else logging.DEBUG)
 
 class AfterUpdateHelper(QObject):
     progressIndeterminateVisibleChanged = Signal(bool)
@@ -74,7 +76,7 @@ class AfterUpdateHelper(QObject):
         self.worker_thread = QThread()
         self.worker = UpdateComponentsWorker()
         self.worker.moveToThread(self.worker_thread)
-        self.worker.progressVisibleChanged.connect(self.progressVisibleChanged)
+        self.worker.progressIndeterminateVisibleChanged.connect(self.progressIndeterminateVisibleChanged)
         self.worker.progressValueChanged.connect(self.progressValueChanged)
         self.worker.finished.connect(self.updateComponentsFinished)
         self.worker_thread.started.connect(self.worker.run)
@@ -250,16 +252,113 @@ class CleanupWorker(QObject):
         return total_files
 
 class UpdateComponentsWorker(QObject):
-    progressVisibleChanged = Signal(bool)
+    progressIndeterminateVisibleChanged = Signal(bool)
     progressValueChanged = Signal(int)
     finished = Signal()
 
-    def run(self):
+    def __init__(self):
+        super().__init__()
+        self.components_to_update = []
+        self.update_urls = {}
+        self.current_component_index = 0
+        self.qthreads = []
+        self.workers = []
+        
+    def check_updates(self):
+        update_available = False
+        settings.settings['GLOBAL']["check_complete"] = 'True'
+        urls = {}
+        try:
+            total_components = len(COMPONENTS_URLS)
+            for i, component_name in enumerate(COMPONENTS_URLS):
+                c = component_name.lower()
+                if not settings.settings.getboolean('COMPONENTS', c):
+                    continue
+                try:
+                    pre_url = get_component_download_url(component_name)
+                    url = pre_url.split("|")[0]
+                    if url == "ERR_LATEST_VERSION_ALREADY_INSTALLED":
+                        continue
+                    print(url)
+                    version = pre_url.split("|")[1]
 
-        import time
-        self.progressVisibleChanged.emit(True)
-        for i in range(101):
-            time.sleep(0.03) 
-            self.progressValueChanged.emit(i)
-        self.progressVisibleChanged.emit(False)
-        self.finished.emit()
+                    if settings.get_value("COMPONENTS", c+"_version").replace("v", "") != version:
+                        settings.settings["COMPONENTS"][c+"_server_version"] = version
+                        urls[component_name] = pre_url
+                except Exception as ex:
+                    print(ex)
+                    settings.settings['GLOBAL']["check_complete"] = "False"
+
+                if settings.get_value("COMPONENTS", c+"_version").replace("v", "") != \
+                        settings.get_value("COMPONENTS", c+"_server_version").replace("v", ""):
+                    update_available = True
+
+            settings.save_settings()
+            return update_available, urls
+        except Exception as ex:
+            print(ex)
+            settings.settings['GLOBAL']["check_complete"] = 'False'
+            settings.save_settings()
+            return False, urls
+
+    @Slot()
+    def run(self):
+        self.progressIndeterminateVisibleChanged.emit(True)
+        update_available, urls = self.check_updates()
+        if not update_available and not urls:
+            self.progressIndeterminateVisibleChanged.emit(False)
+            self.finished.emit()
+            return
+
+        self.update_urls = urls
+        for component_name in COMPONENTS_URLS:
+            c = component_name.lower()
+            if not settings.settings.getboolean('COMPONENTS', c):
+                continue
+            if settings.get_value("COMPONENTS", c + "_version").replace("v", "") != \
+               settings.get_value("COMPONENTS", c + "_server_version").replace("v", ""):
+                self.components_to_update.append(component_name)
+
+        self.current_component_index = 0
+        self.start_next_download()
+
+    def start_next_download(self):
+        if self.current_component_index >= len(self.components_to_update):
+            self.progressIndeterminateVisibleChanged.emit(False)
+            self.finished.emit()
+            return
+
+        component_name = self.components_to_update[self.current_component_index]
+        url = self.update_urls.get(component_name)
+
+        qthread = QThread()
+        worker = DownloadComponent(component_name, url)
+        worker.moveToThread(qthread)
+        worker.downloadFinished.connect(self.on_download_finished)
+        qthread.started.connect(worker.run)
+        worker.workFinished.connect(qthread.quit)
+        worker.workFinished.connect(worker.deleteLater)
+        qthread.finished.connect(qthread.deleteLater)
+
+        self.qthreads.append(qthread)
+        self.workers.append(worker)
+
+        qthread.finished.connect(lambda: self.cleanup_thread(qthread, worker))
+
+        qthread.start()
+
+    def cleanup_thread(self, qthread, worker):
+        try:
+            self.qthreads.remove(qthread)
+        except ValueError:
+            pass
+        try:
+            self.workers.remove(worker)
+        except ValueError:
+            pass
+
+    @Slot(str)
+    def on_download_finished(self, result):
+        logger.create_debug_log(f"Download finished for component {self.components_to_update[self.current_component_index]} with result {result}")
+        self.current_component_index += 1
+        self.start_next_download()
