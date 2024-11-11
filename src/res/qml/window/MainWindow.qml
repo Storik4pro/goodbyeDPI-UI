@@ -40,35 +40,102 @@ FramelessWindow {
             }
         }
     */
-    onCloseListener: function(event){
-        if (window.visibility !== Window.Minimized) {
-            var qw = window.width - _width
-            var qh = window.height - _height
-            if (backend.getBool("APPEARANCE_MODE", "use_custom_window_size")) {
-                if (-50 > qw || qw > 50) {
-                    backend.changeValue("APPEARANCE_MODE", 'width', window.width)
-                }
-                if (-50 > qh || qh > 50) {
-                    backend.changeValue("APPEARANCE_MODE", 'height', window.height)
+    Dialog {
+        id: dialog_close
+        x: Math.ceil((parent.width - width) / 2)
+        y: Math.ceil((parent.height - height) / 2)
+        parent: Overlay.overlay
+        modal: true
+        title: backend.get_element_loc("hide_to_tray_title")
+        Column {
+            spacing: 20
+            anchors.fill: parent
+            Label {
+                width: 350
+                wrapMode: Text.Wrap
+                text: backend.get_element_loc("hide_to_tray")
+            }
+            CheckBox {
+                id: checkBoxA
+                text: backend.get_element_loc("do_not_ask")
+                checked: backend.getBool("OTHER", "do_not_ask_quit_dialog")
+                onClicked: {
+                    backend.toggleBool("OTHER", "do_not_ask_quit_dialog", checked)
                 }
             }
-            var x = window.x
-            var y = window.y + appBar.height - 17
-            backend.changeValue("APPEARANCE_MODE", 'x', x)
-            backend.changeValue("APPEARANCE_MODE", 'y', y)
-            
-            goodCheck.stop_process()
-            process.stop_process()
-            WindowRouter.exit(0)
+        }
+        footer: DialogButtonBox{
+            Button{
+                text: backend.get_element_loc("cancel")
+                onClicked: {
+                    dialog_close.close()
+                }
+            }
+            Button{
+                text: backend.get_element_loc("minimize")
+                onClicked: {
+                    if (checkBoxA.checked) {
+                        backend.changeValue("APPEARANCE_MODE", 'quit_to', 'tray')
+                    }
+                    trayHide()
+                    dialog_close.close()
+                }
+            }
+            Button{
+                text: backend.get_element_loc("quit")
+                highlighted: true
+                onClicked: {
+                    if (checkBoxA.checked) {
+                        backend.changeValue("APPEARANCE_MODE", 'quit_to', 'system')
+                    }
+                    exit()
+                }
+            }
         }
     }
+    function exit() {
+        var qw = window.width - _width
+        var qh = window.height - _height
+        if (backend.getBool("APPEARANCE_MODE", "use_custom_window_size")) {
+            if (-50 > qw || qw > 50) {
+                backend.changeValue("APPEARANCE_MODE", 'width', window.width)
+            }
+            if (-50 > qh || qh > 50) {
+                backend.changeValue("APPEARANCE_MODE", 'height', window.height)
+            }
+        }
+        var x = window.x
+        var y = window.y + appBar.height - 17
+        backend.changeValue("APPEARANCE_MODE", 'x', x)
+        backend.changeValue("APPEARANCE_MODE", 'y', y)
+        
+        goodCheck.stop_process()
+        process.stop_process()
+        WindowRouter.exit(0)
+    }
+    onCloseListener: function(event){
+        if (window.visibility !== Window.Minimized) {
+            if (backend.getValue("APPEARANCE_MODE", "quit_to") === 'unknown') {
+                dialog_close.open()
+            } else if (backend.getValue("APPEARANCE_MODE", "quit_to") === 'tray') {
+                trayHide()
+            } else {
+                exit()
+            }
+            
+            event.accepted = false
+        }
+    }
+    property var toolTip: "GoodbyeDPI UI - " + qsTr(backend.get_element_loc('state')).arg(engine) + " " +
+                          (process.is_process_alive() ? backend.get_element_loc('runned') : backend.get_element_loc('stopped'))
     Component {
         id: trayIconComponent
         P.SystemTrayIcon {
             id: system_tray
             visible: true
-            icon.source: "qrc:/qt/qml/GoodbyeDPI_UI/res/image/logo.png"
-            tooltip: "GoodbyeDPI UI"
+            icon.source: process.is_process_alive() ? "qrc:/qt/qml/GoodbyeDPI_UI/res/image/tray_logo_green.png" : 
+                                                      "qrc:/qt/qml/GoodbyeDPI_UI/res/image/tray_logo_red.png" 
+            tooltip: toolTip
             menu: P.Menu {
                 /*
                 P.Menu {
@@ -109,6 +176,7 @@ FramelessWindow {
                 P.MenuItem {
                     id:onItem
                     text: _checked? backend.get_element_loc("_off"):backend.get_element_loc("on")
+                    //icon.source: "qrc:/qt/qml/GoodbyeDPI_UI/res/image/tray_logo_red.png"
                     property var _checked: process.is_process_alive()
                     onTriggered: {
                         if (_checked) {
@@ -213,6 +281,15 @@ FramelessWindow {
             }
         }
     }
+    function updateIcon() {
+        if (system_tray) {
+            system_tray.icon.source = process.is_process_alive() ? "qrc:/qt/qml/GoodbyeDPI_UI/res/image/tray_logo_green.png" : 
+                                                                   "qrc:/qt/qml/GoodbyeDPI_UI/res/image/tray_logo_red.png"
+            
+        }
+        toolTip = "GoodbyeDPI UI - " + qsTr(backend.get_element_loc('state')).arg(engine) + " " +
+                          (process.is_process_alive() ? backend.get_element_loc('runned') : backend.get_element_loc('stopped'))
+    }
 
     function changeEngine(_engine) {
         engine = _engine;
@@ -228,24 +305,29 @@ FramelessWindow {
 
     property var system_tray
 
+    function trayHide() {
+        system_tray = trayIconComponent.createObject(window)
+        updateIcon()
+        window.hide()
+        var qw = window.width - _width
+        var qh = window.height - _height
+
+        if (backend.getBool("APPEARANCE_MODE", "use_custom_window_size") ){
+            if (-100 > qw || qw > 100) {
+                backend.changeValue("APPEARANCE_MODE", 'width', window.width)
+            }
+            if (-100 > qh || qh > 100) {
+                backend.changeValue("APPEARANCE_MODE", 'height', window.height)
+            }
+        }
+        if (backend.getBool('NOTIFICATIONS', "hide_in_tray")) {
+            toast.show_notification("#NOTF_MAXIMIZE", "GoodbyeDPI UI", backend.get_element_loc("tray_icon"))
+        }
+    }
+
     onVisibilityChanged: {
         if (window.visibility === Window.Minimized) {
-            system_tray = trayIconComponent.createObject(window)
-            window.hide()
-            var qw = window.width - _width
-            var qh = window.height - _height
-
-            if (backend.getBool("APPEARANCE_MODE", "use_custom_window_size") ){
-                if (-100 > qw || qw > 100) {
-                    backend.changeValue("APPEARANCE_MODE", 'width', window.width)
-                }
-                if (-100 > qh || qh > 100) {
-                    backend.changeValue("APPEARANCE_MODE", 'height', window.height)
-                }
-            }
-            if (backend.getBool('NOTIFICATIONS', "hide_in_tray")) {
-                toast.show_notification("#NOTF_MAXIMIZE", "GoodbyeDPI UI", backend.get_element_loc("tray_icon"))
-            }
+            trayHide()
         } 
     }
     
@@ -310,6 +392,13 @@ FramelessWindow {
         } 
         function onEngine_changed() {
             engine = backend.getValue('GLOBAL', 'engine');
+            updateIcon()
+        }
+        function onProcess_started() {
+            updateIcon()
+        }
+        function onProcess_stopped() {
+            updateIcon()
         }
     }
     Item {
@@ -423,7 +512,7 @@ FramelessWindow {
     }
 
     Component.onCompleted :{
-        console.log(appArguments.indexOf("--autorun"))
+        console.log(appArguments.indexOf("--autorun")) 
         if (appArguments.indexOf("--autorun") !== -1 || backend.getBool("GLOBAL", "hide_to_tray")) {
             Qt.callLater(process.start_process)
             if (backend.getBool('NOTIFICATIONS', "hide_in_tray")) {
@@ -436,7 +525,7 @@ FramelessWindow {
         if (backend.check_updates()) {
             delayTimer.start()
         }
-
+        updateIcon()
         backend.start_check_component_updates()
         
     }
