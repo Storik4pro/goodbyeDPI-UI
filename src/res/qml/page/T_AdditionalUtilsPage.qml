@@ -65,7 +65,6 @@ ScrollablePage {
                     radius: 6
                     border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
 
-                    visible: backend.getValue('GLOBAL', 'engine') === "spoofdpi" ? false : true 
                     ColumnLayout{
                         id:infoColumnLayout
                         anchors.verticalCenter: parent.verticalCenter  
