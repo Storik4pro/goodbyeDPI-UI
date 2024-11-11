@@ -109,8 +109,11 @@ class Backend(QObject):
         
 
     @Slot(str, bool, result='QVariantList')
-    def analyze_custom_parameters(self, json_file_path, unique):
-        with open(json_file_path, 'r', encoding='utf-8') as file:
+    def analyze_custom_parameters(self, filename, unique):
+        path = DEBUG_PATH+CONFIG_PATH+ "/zapret/" + filename + ".json"
+        
+        if not os.path.exists(path) : path = DEBUG_PATH+CONFIG_PATH+ "/zapret/" + str(int(filename)-1) + ".json"
+        with open(path, 'r', encoding='utf-8') as file:
             data = json.load(file)
         
         custom_params = data.get("custom_parameters", "")
@@ -704,9 +707,10 @@ class DownloadComponent(QObject):
     downloadFinished = Signal(str)
     workFinished = Signal()
 
-    def __init__(self, component_name:str) -> None:
+    def __init__(self, component_name:str, url:str = None) -> None:
         super().__init__()
         self.component_name = 'goodbyeDPI' if component_name == 'goodbyedpi' else component_name
+        self.url = url
     
     def run(self):
         success = self._download_component()
@@ -716,12 +720,12 @@ class DownloadComponent(QObject):
     def _download_component(self):
         import requests
         try:
-            pre_url = get_component_download_url(self.component_name)
+            if self.url is None: self.url = get_component_download_url(self.component_name)
 
-            url = pre_url.split("|")[0]
+            url = self.url.split("|")[0]
             if "ERR" in url:
                 return url
-            version = pre_url.split("|")[1]
+            version = self.url.split("|")[1]
         except Exception as ex:
             return 'ERR_INVALID_SERVER_RESPONSE'
         

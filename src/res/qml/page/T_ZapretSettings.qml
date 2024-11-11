@@ -256,7 +256,7 @@ ScrollablePage {
         ListModel {
             id: componentModel
             Component.onCompleted: {
-                var jsonFilePath = "data/settings/presets/zapret/" + cmbox.currentIndex + ".json"
+                var jsonFilePath = cmbox.currentIndex 
                 componentModel.clear()
                 var data = backend.analyze_custom_parameters(jsonFilePath, true)
                 for (var i = 0; i < data.length; ++i) {
@@ -333,7 +333,7 @@ ScrollablePage {
                             let selectedValue = model[currentIndex];
                             backend.zapret_update_preset(selectedValue);
                             process.update_preset()
-                            var jsonFilePath = "data/settings/presets/zapret/" + cmbox.currentIndex + ".json"
+                            var jsonFilePath = cmbox.currentIndex
                             componentModel.clear()
                             var data = backend.analyze_custom_parameters(jsonFilePath, true)
                             for (var i = 0; i < data.length; ++i) {
@@ -491,7 +491,7 @@ ScrollablePage {
                         ListModel {
                             id: editModel
                             Component.onCompleted: {
-                                var jsonFilePath = "data/settings/presets/zapret/" + cmbox.currentIndex + ".json"
+                                var jsonFilePath = cmbox.currentIndex
                                 editModel.clear()
                                 var data = backend.analyze_custom_parameters(jsonFilePath, false)
                                 for (var i = 0; i < data.length; ++i) {
@@ -920,7 +920,22 @@ ScrollablePage {
                     id:clmn1
                     Layout.alignment: Qt.AlignRight
                     Layout.fillWidth:true
+                    /*
+                    Button {
+                        text: backend.get_element_loc("convert_batch_file")
+                        icon.name: FluentIcons.graph_RepeatAll
+                        icon.height: 20
+                        icon.width:20
+                        onClicked: {
+                            fileDialogOpen.open()
+                        }
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 500
+                        ToolTip.text: text
+                    }
+                    */
                     RowLayout{
+                    Layout.alignment: Qt.AlignRight
                     Button {
                         text: backend.get_element_loc("load_config_file")
                         display: Button.IconOnly
