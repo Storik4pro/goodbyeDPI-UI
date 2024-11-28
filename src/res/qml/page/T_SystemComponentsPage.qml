@@ -400,8 +400,9 @@ Page {
                     button.value += 0.02;
                     errorLabel.message = "";
                     errorLabel.title = backend.get_element_loc("component_not_installed_e");
+                    var process_need_reload = process.is_process_alive()
                     process.stop_process()
-                    backend.download_component(componentName);
+                    backend.download_component(componentName, process_need_reload);
                 }
                 Connections {
                     target: backend
@@ -415,7 +416,11 @@ Page {
                         if (success === 'True') {
                             pageLoader.sourceComponent = null;
                             pageLoader.sourceComponent = pageComponent;
-                        } else {
+                        } else if (success === 'reload_need') {
+                            Qt.callLater(process.start_process)
+                            pageLoader.sourceComponent = null;
+                            pageLoader.sourceComponent = pageComponent;
+                        }else {
                             errorLabel.visible = true;
                             errorLabel.message = success;
                         }

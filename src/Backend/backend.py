@@ -35,6 +35,7 @@ class Backend(QObject):
     def __init__(self, first_run=False, parent: QObject | None = ...) -> None:
         super().__init__()
         self.first_run = first_run
+        self.process_need_reload = False
 
     @Slot(str, result=str)
     def get_element_loc(self, element_name) -> str:
@@ -544,16 +545,26 @@ class Backend(QObject):
         result = delete_file(directory)
         if result: return result
         return unregister_component(component_name)
-
+    
     @Slot(str)
-    def download_component(self, component_name:str):
-        print('STOP_PROCESS')
+    def _component_installing_finished(self, result):
+        if self.process_need_reload and result == 'True':
+            self.process_need_reload = False
+            self.component_installing_finished.emit("reload_need")
+        else:
+            self.process_need_reload = False
+            self.component_installing_finished.emit(result)
+
+    @Slot(str, bool)
+    def download_component(self, component_name:str, process_need_reload:bool = False):
+        self.process_need_reload = process_need_reload
+        
         self.qthread = QThread()
         self.worker = DownloadComponent(component_name)
         self.worker.moveToThread(self.qthread)
 
         self.qthread.started.connect(self.worker.run)
-        self.worker.downloadFinished.connect(self.component_installing_finished)
+        self.worker.downloadFinished.connect(self._component_installing_finished)
         self.worker.workFinished.connect(self.qthread.quit)
         self.worker.workFinished.connect(self.worker.deleteLater)
         self.qthread.finished.connect(self.qthread.deleteLater)
