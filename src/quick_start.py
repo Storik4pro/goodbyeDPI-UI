@@ -8,7 +8,7 @@ import json
 
 from utils import install_font, is_process_running, is_weak_pc, register_app
 from logger import AppLogger
-from _data import DEBUG, DIRECTORY, CONFIG_PATH, SETTINGS_FILE_PATH, settings, text
+from _data import DEBUG, DIRECTORY, CONFIG_PATH, SETTINGS_FILE_PATH, ZAPRET_PATH, settings, text
 
 def check_app_is_runned(logger:AppLogger):
     if not DEBUG:
@@ -27,10 +27,22 @@ def check_app_is_runned(logger:AppLogger):
             else:
                 sys.exit(0)
 
+def create_custom_hostlist(filename):
+    content = """simplex.im
+radiofrance.fr
+dns.comss.one
+cdn.betterttv.net
+cdn.frankerfacez.com
+rtmps.youtube.com"""
+    if not os.path.exists(filename):
+        with open(filename, 'w') as file:
+            file.write(content)
+
 def first_run_actions():
     first_run = settings.settings.getboolean('GLOBAL', 'is_first_run')
     if first_run:
         register_app()
+        create_custom_hostlist(ZAPRET_PATH+"/myhostlist.txt")
         settings.change_setting('GLOBAL', 'is_first_run', 'False')
 
         if is_weak_pc():
