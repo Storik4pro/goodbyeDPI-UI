@@ -737,6 +737,10 @@ def is_process_running(process_name):
 # autorun
 
 def create_xml(author, executable, arguments):
+  user_domain = os.environ.get('USERDOMAIN', '')
+  user_name = os.environ.get('USERNAME', '')
+  current_user = f"{user_domain}\\{user_name}" if user_domain else user_name
+    
   xml_content = f"""<?xml version="1.0" encoding="UTF-16"?>
   <Task xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
     <RegistrationInfo>
@@ -746,10 +750,13 @@ def create_xml(author, executable, arguments):
     <Triggers>
       <LogonTrigger>
         <Enabled>true</Enabled>
+        <UserId>{current_user}</UserId>
       </LogonTrigger>
     </Triggers>
     <Principals>
       <Principal id="Author">
+        <UserId>{current_user}</UserId>
+        <LogonType>InteractiveToken</LogonType>
         <RunLevel>HighestAvailable</RunLevel>
       </Principal>
     </Principals>
