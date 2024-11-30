@@ -25,7 +25,7 @@ skip_files = [
     "update.exe", "custom_blacklist.txt", 
     f"WinDivert64.sys", f"list-discord.txt",
     f"list-general.txt", f"list-youtube.txt", 
-    "user.json", "youtube.txt", "vcruntime140_1.dll"
+    "user.json", "youtube.txt", "vcruntime140_1.dll", "myhostlist.txt", "russia-blacklist.txt"
 ]
 
 def close_procces():
