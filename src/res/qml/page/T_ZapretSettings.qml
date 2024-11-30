@@ -641,7 +641,7 @@ ScrollablePage {
                             Layout.fillWidth: true
 
                             Loader {
-                                Layout.preferredWidth: page.width - 48
+                                Layout.preferredWidth: mainLayoutt.width
                                 sourceComponent: componentRow
                                 onLoaded: {
                                     item.componentId = model.componentId
@@ -683,7 +683,7 @@ ScrollablePage {
                     property string blacklist_name
                     property var windows
 
-                    Layout.preferredWidth: page.width - 48
+                    Layout.preferredWidth: mainLayoutt.width - 28
                     spacing: 10
 
                     ColumnLayout {
