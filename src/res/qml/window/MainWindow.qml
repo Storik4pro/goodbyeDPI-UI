@@ -285,6 +285,7 @@ FramelessWindow {
         if (system_tray) {
             system_tray.icon.source = process.is_process_alive() ? "qrc:/qt/qml/GoodbyeDPI_UI/res/image/tray_logo_green.png" : 
                                                                    "qrc:/qt/qml/GoodbyeDPI_UI/res/image/tray_logo_red.png"
+            onItem._checked = process.is_process_alive()
             
         }
         toolTip = "GoodbyeDPI UI - " + qsTr(backend.get_element_loc('state')).arg(engine) + " " +
