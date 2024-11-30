@@ -166,45 +166,7 @@ ScrollablePage {
             Layout.fillWidth: true
             spacing: 10
 
-            Rectangle {
-                Layout.preferredHeight: 68
-                Layout.fillWidth: true
-                Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
-                Layout.minimumWidth: 300
-                Layout.maximumWidth: 1000
-                Layout.alignment: Qt.AlignHCenter
-                color: Theme.res.controlFillColorDefault
-                border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
-                radius: 6
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: 20
-                    spacing: 10
-
-                    Label {
-                        text: backend.get_element_loc("notify")
-                        font: Typography.body
-                        Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                        wrapMode: Text.Wrap
-                    }
-
-                    
-
-                    Switch {
-                        property bool isInitializing: backend.getBool("GLOBAL", "notifyaboutupdates")
-                        text: checked ? backend.get_element_loc("on_") : backend.get_element_loc("off")
-                        checked: backend.getBool("GLOBAL", "notifyaboutupdates")
-                        onCheckedChanged: {
-                            if (!isInitializing) {
-                                backend.toggleBool("GLOBAL", "notifyaboutupdates", checked)
-                            }
-                            isInitializing = false
-                        }
-                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                    }
-                }
-            }
+            
 
             Rectangle {
                 Layout.preferredHeight: 68

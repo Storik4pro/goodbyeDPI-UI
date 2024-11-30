@@ -260,6 +260,28 @@ ScrollablePage {
                             }
                         }
                     }
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.leftMargin: -15
+                        Layout.topMargin: 5
+                        Layout.bottomMargin: 5
+                        height: 3
+                        color: Qt.rgba(0.0, 0.0, 0.0, 0.3)
+                        opacity: 0.3
+                    }
+                    RowLayout {
+                        spacing: 10
+                        CheckBox {
+                            id:chkb4
+                            bottomPadding: 10
+                            text: backend.get_element_loc("notify")
+                            checked: backend.getBool("GLOBAL", 'notifyaboutupdates')
+                            Layout.alignment: Qt.AlignVCenter
+                            onClicked: {
+                                backend.toggleBool("GLOBAL", "notifyaboutupdates", chkb4.checked)
+                            }
+                        }
+                    }
 
                     Rectangle {
                         width: parent.width
