@@ -153,13 +153,36 @@ ScrollablePage {
                     Layout.maximumHeight:20
                     Layout.preferredWidth: parent.width
                 }
-                ComboBox{
-                    Layout.preferredWidth:column.width
-                    model: ["default - all", "default - googlevideo", "default - miscellaneous", "nothing", "twitter"]
-                    currentIndex: backend.get_int_from_config("GOODCHECK", "check_list")
-                    onActivated: {
-                        let selectedValue = model[currentIndex];
-                        backend.set_to_config("GOODCHECK", "check_list", currentIndex)
+                RowLayout{
+                    spacing:0
+                    ComboBox{
+                        id:cmbox
+                        Layout.preferredWidth:column.width - height - 5
+                        model: [backend.get_element_loc("goodcheck_all"), backend.get_element_loc("goodcheck_googlevideo"), 
+                        backend.get_element_loc("goodcheck_miscellaneous"), backend.get_element_loc("goodcheck_nothing"), backend.get_element_loc("goodcheck_twitter")]
+                        currentIndex: backend.get_int_from_config("GOODCHECK", "check_list")
+                        onActivated: {
+                            let selectedValue = model[currentIndex];
+                            backend.set_to_config("GOODCHECK", "check_list", currentIndex)
+                        }
+                    }
+                    Button {
+                        text: backend.get_element_loc("edit")
+                        icon.name:FluentIcons.graph_Edit
+                        icon.height:20
+                        icon.width:20
+                        Layout.preferredHeight:cmbox.height
+                        Layout.preferredWidth:cmbox.height
+                        Layout.leftMargin:5
+
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 500
+                        ToolTip.text: text
+
+                        display:Button.IconOnly
+                        onClicked: {
+                            goodCheck.open_goodcheck_file(cmbox.currentIndex);
+                        }
                     }
                 }
                 Label {

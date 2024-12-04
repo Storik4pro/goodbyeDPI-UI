@@ -57,6 +57,10 @@ class GoodCheckHelper(QObject):
         self.log_monitor_timer.setInterval(100) 
         self.log_monitor_timer.timeout.connect(self.read_new_log_content)
 
+    @Slot(int)
+    def open_goodcheck_file(self, file):
+        os.startfile(DEBUG_PATH + f"{GOODCHECK_PATH}/CheckLists/{CHECKLISTS[file] + '.txt'}")
+        
     @Slot(str, str, str)
     def set_value(self, group, key, value):
         print(key)
