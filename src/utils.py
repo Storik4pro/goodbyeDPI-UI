@@ -650,6 +650,13 @@ def extract_zip(zip_file, zip_folder_to_unpack, extract_to, files_to_skip=[]):
 def download_files_from_github(remote_dir, local_dir):
     base_url = f"https://api.github.com/repos/{REPO_OWNER}/{CONFIGS_REPO_NAME}/contents/{remote_dir}?ref=main"
     headers = {'Accept': 'application/vnd.github.v3.raw'}
+    
+    skip_files = [
+        "custom_blacklist.txt", 
+        f"list-discord.txt",
+        f"list-youtube.txt", 
+        "youtube.txt", "myhostlist.txt", "russia-blacklist.txt"
+    ]
 
     try:
         response = requests.get(base_url)
@@ -671,7 +678,10 @@ def download_files_from_github(remote_dir, local_dir):
                 if filename == 'user.json' and os.path.exists(local_filepath):
                     print(local_filepath)
                     continue
-
+                
+                if filename in skip_files and os.path.exists(local_filepath):
+                    continue
+                
                 download_url = file_info['download_url']
                 file_response = requests.get(download_url, headers=headers)
                 if file_response.status_code == 200:
