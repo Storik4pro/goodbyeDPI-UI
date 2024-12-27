@@ -9,6 +9,7 @@ StackPage {
     router: PageRouter{
         routes: {
             "/": {url: resolvedUrl("res/qml/page/T_UpdatePage.qml"),singleton:true},
+            "/developerSettings": {url: resolvedUrl("res/qml/page/T_UpdateDeveloperSettingsPage.qml")}
         }
     }
     Component.onCompleted: {
