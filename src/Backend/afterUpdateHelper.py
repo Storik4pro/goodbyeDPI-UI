@@ -6,7 +6,7 @@ import os
 import shutil
 from logger import AppLogger
 from quick_start import merge_blacklist, merge_settings
-from _data import BACKUP_SETTINGS_FILE_PATH, COMPONENTS_URLS, DIRECTORY, DEBUG, GOODBYE_DPI_PATH, LOG_LEVEL, SETTINGS_FILE_PATH, VERSION, settings
+from _data import BACKUP_SETTINGS_FILE_PATH, COMPONENTS_URLS, DEBUG_PATH, DIRECTORY, DEBUG, GOODBYE_DPI_PATH, LOG_LEVEL, SETTINGS_FILE_PATH, VERSION, settings
 from utils import get_component_download_url
 from .backend import DownloadComponent
 
@@ -26,10 +26,16 @@ class AfterUpdateHelper(QObject):
     def __init__(self):
         super().__init__()
         self.worker_thread = None
-
+        self.skip_components_update = False
+        
     @Slot()
-    def startUpdateProcess(self):
+    def open_logs(self):
+        os.startfile(DEBUG_PATH + DIRECTORY + 'update.log')
+
+    @Slot(bool)
+    def startUpdateProcess(self, skip_components_update): # Add flag for skip components update
         self.startMovingSettings()
+        self.skip_components_update = skip_components_update
 
     def startMovingSettings(self):
         self.worker_thread = QThread()
@@ -72,7 +78,11 @@ class AfterUpdateHelper(QObject):
 
     def startUpdatingComponents(self):
         self.updateComponentsStarted.emit()
-
+        
+        if self.skip_components_update:
+            self.updateComponentsCompleted.emit()
+            return
+        
         self.worker_thread = QThread()
         self.worker = UpdateComponentsWorker()
         self.worker.moveToThread(self.worker_thread)
@@ -81,12 +91,23 @@ class AfterUpdateHelper(QObject):
         self.worker.finished.connect(self.updateComponentsFinished)
         self.worker_thread.started.connect(self.worker.run)
         self.worker_thread.start()
+        
+    @Slot()
+    def exitApp(self):
+        os._exit(0)
+        
+    @Slot()
+    def gotoMainWindow(self):
+        self.updateComponentsCompleted.emit()
 
     @Slot()
     def updateComponentsFinished(self):
         self.updateComponentsCompleted.emit()
-        self.worker_thread.quit()
-        self.worker_thread.wait()
+        try:
+            self.worker_thread.quit()
+            self.worker_thread.wait()
+        except:
+            pass
 
 class MovingSettingsWorker(QObject):
     progressVisibleChanged = Signal(bool)
@@ -110,15 +131,14 @@ class MovingSettingsWorker(QObject):
                 total_files = len(files_to_move)
                 
                 if not merge_settings(source_dir+"/settings/_settings.ini", dest_dir+"/settings/settings.ini"):
-                    logger.raise_warning("The update could not be completed correctly. Your data may be lost.\n\n" +\
+                    logger.create_error_log("The update could not be completed correctly. Your data may be lost.\n\n" +\
                                         f"Backup settings file {source_dir+'/settings/_settings.ini'} does not exist.")
                 settings.reload_settings()
                 
                 if total_files == 0:
                     self.finished.emit()
                     return
-                
-                time.sleep(5)
+
                 self.progressVisibleChanged.emit(True)
                 for index, (source_file, dest_file) in enumerate(files_to_move):
                     try:
@@ -141,7 +161,6 @@ class MovingSettingsWorker(QObject):
                 merge_settings(BACKUP_SETTINGS_FILE_PATH, SETTINGS_FILE_PATH)
                 merge_blacklist(GOODBYE_DPI_PATH)
                 settings.reload_settings()
-                time.sleep(5)
 
                 settings.change_setting('GLOBAL', 'after_update', 'False')
             except:

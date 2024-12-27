@@ -1,4 +1,3 @@
-import configparser
 import logging
 import os
 import zipfile
@@ -7,100 +6,79 @@ import threading
 from tkinter import messagebox
 from datetime import datetime
 import argparse
-from customtkinter import *
-from PIL import Image
+from tkinter import ttk, Tk, Variable
 import subprocess
 import shutil
-
 import psutil
 
-FONT = 'Nunito SemiBold'
 DIRECTORY = f'{os.path.dirname(os.path.abspath(__file__))}/'
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='update.log', level=logging.INFO)
 
-zapret_path = "_internal/data/zapret"
-config_path = "_internal/data/settings/"
 skip_files = [
-    "update.exe", "custom_blacklist.txt", 
-    f"WinDivert64.sys", f"list-discord.txt",
-    f"list-general.txt", f"list-youtube.txt", 
-    "user.json", "youtube.txt", "vcruntime140_1.dll", "myhostlist.txt", "russia-blacklist.txt"
+    "update.exe",
 ]
 
 def close_procces():
     for proc in psutil.process_iter(['pid', 'name']):
-        if proc.info['name'] == 'goodbyedpi.exe':
-            try:
-                proc.terminate()
-                logger.info(f'process goodbyedpi.exe terminated')
-            except psutil.NoSuchProcess:
-                pass
         if proc.info['name'] == 'goodbyeDPI.exe':
             try:
                 proc.terminate()
                 logger.info(f'process goodbyeDPI.exe terminated')
             except psutil.NoSuchProcess:
                 pass
+            
+error_names = {
+    1: "ERR_PERMISSION_DENIED",
+    2: "ERR_FILE_NOT_FOUND",
+    3: "ERR_EXTRACTING_FILE",
+    4: "ERR_UNEXPECTED_ERROR",
+    5: "ERR_LAUNCHING_APP"
+}
 
-class Text:
-    def __init__(self, language) -> None:
-        self.inAppText = {'': ''}
-        self.reload_text(language)
+error_message = \
+"""An unexpected error occurred while updating the application.
+Additionally, an attempt to downgrade to the previous version failed.\n
+You may need to manually reinstall the application to resolve this issue.\n
+Please follow these steps:\n
+1. Uninstall the current version of the application.\n
+2. Download the latest version from GitHub.\n
+3. Install the downloaded version.\n
+If the problem persists, contact support.\n
+"""
 
-    def reload_text(self, language=None):
-        self.selectLanguage = language if language else 'EN' 
-        config = configparser.ConfigParser()
-        config.read(DIRECTORY+'loc.ini', encoding='utf-8')
-        self.inAppText = config[f'{self.selectLanguage}']
-
-class UpdaterApp(CTk):
-    def __init__(self, zip_file_path, unpack_directory, text, *args, **kwargs):
+class UpdaterApp(Tk):
+    def __init__(self, zip_file_path, unpack_directory, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.zip_file_path = zip_file_path
         self.unpack_directory = unpack_directory
-        self.geometry("800x500")
+        self.geometry("300x125")
         self.resizable(False, False)
         self.title("Update Assistant")
         self.iconbitmap(DIRECTORY+'update_icon.ico')
         self.end = False
 
-        self.content_frame = CTkFrame(self)
-        self.content_frame.pack(pady=10, padx=10, fill="both", expand=True)
+        self.content_frame = ttk.Frame(self)
+        self.content_frame.pack(pady=(10, 10), padx=10, fill="both", expand=True)
 
-        self.header_frame = CTkFrame(self.content_frame)
-        self.header_frame.pack(fill="x", pady=(10, 0), padx=10)
+        self.label = ttk.Label(self.content_frame, text="Patching application (GoodbyeDPI UI) ...")
+        self.label.pack(fill="both", expand=True)
 
-        self.logo = CTkImage(light_image=Image.open(DIRECTORY+"update_icon.png"), size=(50, 50))
-        self.logo_label = CTkLabel(self.header_frame, image=self.logo, text="")
-        self.logo_label.pack(side="left", pady=10, padx=(10, 5))
+        self.progress_var = Variable()
+        self.progress_bar = ttk.Progressbar(self.content_frame, style="red.Horizontal.TProgressbar", variable=self.progress_var, 
+                                            maximum=1)
+        self.progress_bar.pack(pady=(5, 0), fill="x")
+        
+        self.file_label = ttk.Label(self.content_frame, text="Getting ready ...")
+        self.file_label.pack(fill="both")
 
-        self.header_text_frame = CTkFrame(self.header_frame, fg_color='transparent')
-        self.header_text_frame.pack(fill='x')
-
-        self.header_text = CTkLabel(self.header_text_frame, text = text.inAppText['update_log'], anchor="w", font=(FONT, 18, "bold"))
-        self.header_text.pack(pady=(10, 0), padx=(5, 10), fill="x", expand=True)
-
-        self.status_text = text.inAppText['update_installing']
-        self.status_label = CTkLabel(self.header_text_frame, text=self.status_text, anchor="w", justify='left', font=(FONT, 14))
-        self.status_label.pack(side="bottom", padx=(5, 10), pady=(0, 10), fill="x", expand=True)
-
-        self.textbox_frame = CTkFrame(self.content_frame, fg_color='transparent')
-        self.textbox_frame.pack(fill="both", expand=True)
-
-        self.changelog_textbox = CTkTextbox(self.textbox_frame, wrap="word", font=(FONT, 15))
-        self.changelog_textbox.pack(pady=10, padx=10, fill="both", expand=True)
-        self.changelog_textbox.configure(state="disabled")
-
-        self.progress_var = DoubleVar(value=0)
-        self.progress_bar = CTkProgressBar(self.content_frame, variable=self.progress_var)
-        self.progress_bar.pack(pady=(10, 0), padx=10, fill="x")
-
-        self.button_frame = CTkFrame(self.content_frame, fg_color='transparent')
+        self.button_frame = ttk.Frame(self.content_frame)
         self.button_frame.pack(fill="x", side='bottom')
 
-        self.exit_button = CTkButton(self.button_frame, text=text.inAppText['exit'], fg_color="transparent", border_width=2, font=(FONT, 15), width=200, state=DISABLED, command=self.safe_exit)
-        self.exit_button.pack(side="right", padx=(5, 10), pady=10)
+        self.exit_button = ttk.Button(self.button_frame, text='Cancel',
+                                      command=self.safe_exit)
+        self.exit_button.config(state="disabled")
+        self.exit_button.pack(side="right", pady=(2, 0))
 
         self.finish_status = 0
 
@@ -118,25 +96,54 @@ class UpdaterApp(CTk):
     def create_logs(self, text):
         _time = datetime.now().strftime('%H:%M:%S')
         logger.info(f'[{_time}] {text}')
-        self.changelog_textbox.configure(state="normal")
-        self.changelog_textbox.insert("end", f"\n[{_time}] {text}")
-        self.changelog_textbox.see("end")
-        self.changelog_textbox.configure(state="disabled")
-        self.status_label.configure(text=text)
+        self.file_label.configure(text=f"{text}")
+        
+    def downgrade_program(self):
+        old_directory = os.path.join(self.unpack_directory, ".old")
+        self.label.configure(text="Downgrading application (GoodbyeDPI UI) ...")
+        if os.path.exists(old_directory):
+            try:
+                total_files = sum([len(files) for r, d, files in os.walk(old_directory)])
+                index = 0
+                for root, _, files in os.walk(old_directory):
+                    for name in files:
+                        s = os.path.join(root, name)
+                        d = os.path.join(self.unpack_directory, os.path.relpath(s, old_directory))
+                        os.makedirs(os.path.dirname(d), exist_ok=True)
+                        shutil.copy2(s, d)
+                        index += 1
+                        progress = index / total_files
+                        self.progress_var.set(progress)
+                        self.create_logs(f"Downgraded {name}")
+                self.create_logs("Successfully downgraded to previous version.")
+                self.progress_var.set(100)
+                return True
+            except Exception as ex:
+                logger.error(f"Error downgrading to previous version: {ex}", exc_info=True)
+                messagebox.showerror('An error occurred', error_message + 
+                                     f'ERROR CODE: \n{error_names[self.finish_status]}/ERR_UNEXPECTED_ERROR')
+            return False
+        else:
+            self.create_logs("No old version found to downgrade to. Operation cancelled.")
+            messagebox.showerror('An error occurred', error_message + 
+                                 f'ERROR CODE: \n{error_names[self.finish_status]}/ERR_NO_OLD_VERSION')
+            return False
 
     def update_program(self):
         self.create_logs("Starting extraction process")
         self.extract_zip()
         if self.finish_status == 0:
-            self.header_text.configure(text="Update Complete")
-            self.status_label.configure(text="Extraction completed successfully.")
             self.create_logs("Extraction completed successfully.")
             self.launch_application()
         else:
-            self.header_text.configure(text="Update Error")
-            self.status_label.configure(text="An error occurred during extraction.")
+            result = self.downgrade_program()
             self.create_logs("An error occurred during extraction.")
-            self.protocol("WM_DELETE_WINDOW", self.safe_exit)
+            
+            if result:
+                self.launch_application(error=True)
+            else:
+                self.protocol("WM_DELETE_WINDOW", self.safe_exit)
+
 
     def extract_zip(self):
         try:
@@ -160,8 +167,6 @@ class UpdaterApp(CTk):
                         if relative_path == '':
                             index += 1
                             continue 
-                        
-                        
 
                         destination_path = os.path.join(extract_to, relative_path)
                         destination_dir = os.path.dirname(destination_path)
@@ -190,27 +195,16 @@ class UpdaterApp(CTk):
                                 print(pe.errno)
                                 if '13' in str(pe.errno):
                                     self.create_logs(f"Permission denied when extracting {relative_path}")
-                                    user_choice = self.show_permission_error_dialog(relative_path)
-                                    if user_choice == "skip":
-                                        self.create_logs(f"Skipping {relative_path}")
-                                        index += 1
-                                        continue
-                                    elif user_choice == "retry":
-                                        self.create_logs(f"Retrying {relative_path}")
-                                        continue 
-                                    elif user_choice == "cancel":
-                                        self.create_logs("Installation cancelled by user.")
-                                        self.finish_status = 1
-                                        return
+                                    self.create_logs("Installation cancelled by unexpected error.")
+                                    self.finish_status = 1
+                                    return
                                 else:
                                     self.create_logs(f"Error extracting {relative_path}: {ex}")
-                                    messagebox.showerror('Error', f"Error extracting {relative_path}:\n{ex}")
-                                    self.finish_status = 1
+                                    self.finish_status = 2
                                     return
                             except Exception as ex:
                                 self.create_logs(f"Error extracting {relative_path}: {ex}")
-                                messagebox.showerror('Error', f"Error extracting {relative_path}:\n{ex}")
-                                self.finish_status = 1
+                                self.finish_status = 3
                                 return
 
                         extracted_files += 1
@@ -221,101 +215,17 @@ class UpdaterApp(CTk):
                     index += 1  
 
         except Exception as ex:
-            messagebox.showerror('An error occurred', str(ex))
             logger.error(f'Extraction failed: {ex}', exc_info=True)
-            self.finish_status = 1
+            self.finish_status = 4            
+        self.progress_var.set(100)
 
-    def show_permission_error_dialog(self, file_name):
-        dialog = CTkToplevel(self)
-        dialog.title("Cannot extract file")
-        dialog_width = 400
-        dialog_height = 205
-
-        x = self.winfo_x() + (self.winfo_width() // 2) - (dialog_width // 2)
-        y = self.winfo_y() + (self.winfo_height() // 2) - (dialog_height // 2)
-        dialog.geometry(f"{dialog_width}x{dialog_height}+{x}+{y}")
-
-        dialog.resizable(False, False)
-        dialog.transient(self)  
-        dialog.grab_set() 
-
-        dialog.after(200, lambda: dialog.iconbitmap(DIRECTORY+'update_icon.ico'))
-        
-        top_frame = CTkFrame(dialog, corner_radius=0)
-        top_frame.pack(fill=X, padx=10, pady=5)
-
-        file_icon_image = Image.open(DIRECTORY+"file_icon.png") 
-        file_icon_photo = CTkImage(file_icon_image, size=(50, 50))
-        file_icon_label = CTkLabel(top_frame, text="", image=file_icon_photo)
-        file_icon_label.pack(side=LEFT, padx=10)
-
-        text_frame = CTkFrame(top_frame, corner_radius=0)
-        text_frame.pack(fill=X, expand=True)
-
-        cannot_extract_label = CTkLabel(text_frame, text=text.inAppText['error1'], font=(FONT, 16, "bold"))
-        cannot_extract_label.pack(anchor='nw', padx=20)
-
-        file_name_label = CTkLabel(text_frame, text=file_name, font=(FONT, 12))
-        file_name_label.pack(anchor='sw', pady=(0, 0), padx=20)
-
-        bottom_frame = CTkFrame(dialog, fg_color='transparent')
-        bottom_frame.pack(fill=BOTH, expand=True, padx=10, pady=5)
-
-        skip_icon = Image.open(DIRECTORY+"skip_icon.png")  
-        skip_icon_photo = CTkImage(light_image=skip_icon, size=(20, 20))
-
-        retry_icon = Image.open(DIRECTORY+"retry_icon.png")  
-        retry_icon_photo = CTkImage(light_image=retry_icon, size=(20, 20))
-
-        cancel_icon = Image.open(DIRECTORY+"cancel_icon.png") 
-        cancel_icon_photo = CTkImage(light_image=cancel_icon, size=(20, 20))
-
-        def on_skip():
-            dialog.destroy()
-            return_value[0] = "skip"
-
-        def on_retry():
-            dialog.destroy()
-            return_value[0] = "retry"
-
-        def on_cancel():
-            if messagebox.askyesno("Confirm Cancellation", "Cancelling the installation may cause issues. Do you wish to continue?"):
-                dialog.destroy()
-                return_value[0] = "cancel"
-            else:
-                pass
-
-        return_value = [None]
-
-        button_width = dialog_width - 40  
-
-        skip_button = CTkButton(bottom_frame, text=text.inAppText['skip'], width=button_width, height=40,
-            corner_radius=0, image=skip_icon_photo, fg_color='transparent', text_color=['black', 'white'], border_width=1,
-             anchor='w', command=on_skip, compound='left')
-        skip_button.configure(font=(FONT, 14))
-        skip_button.pack(fill=X, pady=1)
-
-        retry_button = CTkButton(bottom_frame, text=text.inAppText['retry'], width=button_width, height=40,
-             corner_radius=0, image=retry_icon_photo, fg_color='transparent', text_color=['black', 'white'], border_width=1, 
-             anchor='w', command=on_retry, compound='left')
-        retry_button.configure(font=(FONT, 14))
-        retry_button.pack(fill=X, pady=1)
-
-        cancel_button = CTkButton(bottom_frame, text=text.inAppText['exit'], width=button_width, height=40, 
-             corner_radius=0, image=cancel_icon_photo, fg_color='transparent', text_color=['black', 'white'], border_width=1, 
-             anchor='w', command=on_cancel, compound='left')
-        cancel_button.configure(font=(FONT, 14))
-        cancel_button.pack(fill=X, pady=1)
-
-        self.wait_window(dialog)
-        return return_value[0]
-
-    def launch_application(self):
+    def launch_application(self, error=False):
+        param = "--after-failed-update" if error else "--after-patching"
         try:
             goodbye_dpi_exe = os.path.join(self.unpack_directory, "goodbyeDPI.exe")
             if os.path.exists(goodbye_dpi_exe):
-                self.create_logs("Launching goodbyeDPI.exe with --after-update parameter")
-                subprocess.Popen([goodbye_dpi_exe, "--after-update"], creationflags=subprocess.DETACHED_PROCESS)
+                self.create_logs(f"Launching goodbyeDPI.exe with {param} parameter")
+                subprocess.Popen([goodbye_dpi_exe, param], creationflags=subprocess.DETACHED_PROCESS)
 
                 self.end = True
                 self.after(0, self.safe_exit)
@@ -323,12 +233,13 @@ class UpdaterApp(CTk):
             else:
                 raise FileNotFoundError(f"{goodbye_dpi_exe} not found")
         except Exception as ex:
+            self.label.configure(text="Unexpected error happens")
             self.after(0, self.handle_launch_error, ex)
     
     def handle_launch_error(self, ex):
         messagebox.showerror('An error occurred', str(ex))
         logger.error(f'Failed to launch application: {ex}', exc_info=True)
-        self.finish_status = 1
+        self.finish_status = 5
         self.exit_button.configure(state='normal')
         self.protocol("WM_DELETE_WINDOW", self.safe_exit)
 
@@ -340,17 +251,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-directory-to-unpack', required=True, help='Directory to unpack to')
     parser.add_argument('-directory-to-zip', required=True, help='Path to zip file to unpack')
-    parser.add_argument('-localize', required=True, help='Localization for UI')
+    parser.add_argument('-localize', required=False, help='Localization for UI (Outdated)')
     args = parser.parse_args()
 
     zip_file_path = args.directory_to_zip
     unpack_directory = args.directory_to_unpack
     loc = args.localize
 
-    text = Text(loc)
-
     logger.info('Starting UpdaterApp')
     close_procces()
-    app = UpdaterApp(zip_file_path, unpack_directory, text)
+    app = UpdaterApp(zip_file_path, unpack_directory)
     logger.info('App started successfully')
     app.mainloop()

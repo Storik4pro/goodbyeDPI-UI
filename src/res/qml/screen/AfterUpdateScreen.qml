@@ -18,16 +18,19 @@ ScrollablePage {
         Layout.fillWidth: true
 
         Label {
+            id: title
             text: qsTr(backend.get_element_loc('after_update_title'))
             font: Typography.title
         }
         Label {
+            id: subTitle
             text: qsTr(backend.get_element_loc('after_update_info'))
             font: Typography.bodyLarge
         }
     }
     }
     ColumnLayout{
+        id: base_layout_after_update
         Layout.fillHeight:true
         Label {
             text: qsTr(backend.get_element_loc('after_update_total'))
@@ -104,6 +107,49 @@ ScrollablePage {
         }
     }
 
+    ColumnLayout {
+        id: base_layout_after_error
+        visible: false
+        Layout.fillHeight:true
+        RowLayout{
+            Icon {
+                Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+                Layout.topMargin: 2
+                source: FluentIcons.graph_StatusErrorFull
+                color: Theme.res.systemFillColorCritical
+                Layout.preferredWidth: 50
+                Layout.preferredHeight: 50
+            }
+            ColumnLayout {
+                CopyableText {
+                    text: qsTr(backend.get_element_loc('failed_update_info_tip')).arg(qsTr(backend.get_version()))
+                    wrapMode: Text.Wrap
+                    Layout.fillWidth: true
+                }
+                HyperlinkButton {
+                    id:btn
+                    text: backend.get_element_loc("open_logs")
+                    FluentUI.primaryColor: Theme.accentColor.defaultBrushFor()
+                    Layout.preferredHeight:15
+                    font: Typography.caption
+                    Layout.preferredWidth:implicitWidth - 15
+                    flat: true
+                    background: Rectangle {
+                        implicitWidth: 100
+                        implicitHeight: 40
+                        color: Theme.accentColor.defaultBrushFor()
+                        opacity: 0.1
+                        visible:btn.hovered
+                        radius:2
+                    }
+                    onClicked:{
+                        updateHelper.open_logs()
+                    }
+                }
+            }
+        }
+    }
+
     footer: ColumnLayout {
         id: qfooter
     ColumnLayout{
@@ -155,6 +201,7 @@ ScrollablePage {
                 enabled:false
                 spacing: 5
                 onClicked: {
+                    updateHelper.exitApp()
                 }
             }
 
@@ -180,11 +227,8 @@ ScrollablePage {
                 icon.height: 18
                 Layout.preferredWidth: 200
                 onClicked: {
-
+                    updateHelper.gotoMainWindow()
                 }
-                ToolTip.visible: hovered
-                ToolTip.delay: 500
-                ToolTip.text: qsTr(backend.get_element_loc('pseudoconsole_stop'))
             }
         }
     
@@ -241,8 +285,31 @@ ScrollablePage {
         }
     }
     }
+    function failedUpdateOptions() {
+        lbl.visible = false;
+        prgBrInd.visible = false;
+        prgBr.visible = false;
+        status.visible = false;
+        copy_button.enabled = true;
+        stop_button.visible = true;
+        title.text = qsTr(backend.get_element_loc('failed_update_title'));
+        subTitle.text = qsTr(backend.get_element_loc('failed_update_info'));
+        base_layout_after_update.visible = false;
+        base_layout_after_error.visible = true;
+    }
+
     Component.onCompleted: {
-        updateHelper.startUpdateProcess()
         prgBrInd.visible = true;
+        if (!backend.is_debug()) {
+            if (appArguments.indexOf("--after-patching") !== -1) {
+                updateHelper.startUpdateProcess(true)
+            } else {
+                updateHelper.startUpdateProcess(false)
+            }
+        }
+        if (appArguments.indexOf("--after-failed-update") !== -1) {
+            failedUpdateOptions();
+        }
+        
     }
 }
