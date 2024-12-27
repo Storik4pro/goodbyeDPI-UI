@@ -18,6 +18,7 @@ ScrollablePage {
     property string availableVersion: backend.getValue('GLOBAL', 'version_to_update')
     property bool isError : false
     property string errorText: ''
+    property bool getting_ready: patcher.is_getting_ready()
 
     InfoBarManager{
         id: info_manager_bottomright
@@ -73,7 +74,8 @@ ScrollablePage {
                         text: isError ? backend.get_element_loc("update_fail") :
                               isDownloading ? backend.get_element_loc("update_downloading") :
                               isUpdating ? backend.get_element_loc("update_check") :
-                              updatesAvailable ? backend.get_element_loc("update_available_t") : backend.get_element_loc("update_available_f")
+                              updatesAvailable ? backend.get_element_loc("update_available_t") : 
+                              getting_ready? backend.get_element_loc("getting_ready") : backend.get_element_loc("update_available_f")
                         font: Typography.subtitle
                         wrapMode: Text.Wrap
                         Layout.alignment: Qt.AlignLeft
@@ -207,6 +209,72 @@ ScrollablePage {
                     }
                 }
             }
+            Button {
+                Layout.minimumHeight: 68
+                Layout.fillWidth: true
+                Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
+                Layout.minimumWidth: 300
+                Layout.maximumWidth: 1000
+                Layout.alignment: Qt.AlignHCenter
+                visible: backend.getBool('GLOBAL', 'developer_mode') || backend.is_debug()
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors{
+                        leftMargin: 20
+                        rightMargin: 20
+                    }
+                    spacing: 10
+
+                    Icon {
+                        source: FluentIcons.graph_DeveloperTools
+                        width: 20
+                        height: 20
+                        Layout.alignment: Qt.AlignVCenter | Qt.AlignLeft
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 2
+
+                        Label {
+                            Layout.fillWidth: true
+                            text: backend.get_element_loc("developer_settings")
+                            horizontalAlignment: Text.AlignLeft
+                            font: Typography.body
+                            wrapMode: Text.Wrap
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            text: backend.get_element_loc("developer_settings_tip")
+                            horizontalAlignment: Text.AlignLeft
+                            font: Typography.caption
+                            color: "#c0c0c0"
+                            wrapMode: Text.Wrap
+                        }
+                    }
+
+                    IconButton {
+                        id: btn_icon
+                        width: 30
+                        height: 30
+                        Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                        Icon {
+                            anchors.centerIn: parent
+                            source: FluentIcons.graph_ChevronRight
+                            width: 15
+                            height: 15
+                        }
+                        onClicked: {
+                            context.router.go("/developerSettings")
+                        }
+                    }
+                }
+
+                onClicked: {
+                    context.router.go("/developerSettings")
+                }
+            }
         }
     }
 
@@ -216,6 +284,11 @@ ScrollablePage {
         checkBtn.text = updatesAvailable ? backend.get_element_loc("update_available_btn_t") : backend.get_element_loc("update_available_btn_f")
         if (window.title !== title){
             multiWindow.close_window(title);
+        }
+        if (getting_ready){
+            progressBar.visible = true
+            timeLabel.visible = false
+            checkBtn.enabled = false
         }
     }
 
@@ -234,8 +307,9 @@ ScrollablePage {
         isDownloading = true
         progressBar.visible = true
         progressBarDownload.value = 0
+        getting_ready = false
         checkBtn.text = backend.get_element_loc("update_available_btn_t")
-        backend.download_update()
+        patcher.download_update()
     }
 
     function showWhatsNew() {
@@ -251,6 +325,7 @@ ScrollablePage {
             checkBtn.enabled = true
             timeLabel.visible = true
             isUpdating = false
+            getting_ready = false
             if (version !== 'false') {
                 updatesAvailable = true
                 availableVersion = version
@@ -265,7 +340,10 @@ ScrollablePage {
             lastCheckedTime = currentTime.toLocaleString(Qt.locale(), "HH:mm dd.MM.yyyy")
             backend.changeValue("GLOBAL", "lastCheckedTime", lastCheckedTime)
         }
-        function onDownload_progress() {
+    }
+    Connections {
+        target: patcher
+        function onDownloadProgress() {
             var progress = arguments[0]
             progressBar.visible = false
             progressBarDownload.visible = true
@@ -274,18 +352,27 @@ ScrollablePage {
             timeLabel.visible = false
             checkBtn.enabled = false
             isDownloading = true
+            getting_ready = false
             checkBtn.text = backend.get_element_loc("update_available_btn_t")
             console.log(progress, progressBarDownload.value)
         }
+        function onPreparationProgress() {
+            progressBar.visible = true
+            progressBarDownload.visible = false
+            timeLabel.visible = false
+            isDownloading = true
+            checkBtn.enabled = false
+            getting_ready = true
+        }
 
-        function onDownload_finished() {
+        function onDownloadFinished() {
             var success = arguments[0]
             isDownloading = false
-            
+            getting_ready = false
             progressBarDownload.visible = false
             if (success === 'True') {
-                errorText = ''
                 process.stop_service()
+                patcher.get_ready_for_install()
                 Qt.callLater(backend._update)
                 Qt.callLater(WindowRouter.close, 0)
             } else {

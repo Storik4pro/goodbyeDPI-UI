@@ -24,7 +24,8 @@ try:
     import GlobalConfig
     from Components import CircularReveal
     from AppInfo import AppInfo
-    from Backend import Backend, Process, Toast, MultiWindow, GoodCheckHelper, AfterUpdateHelper
+    from Backend import Backend, Process, Toast, MultiWindow, GoodCheckHelper, AfterUpdateHelper, \
+        Patcher
 
     from quick_start import after_update_actions, check_app_is_runned, chk_directory, first_run_actions, kill_update, merge_settings, merge_blacklist, rename_update_exe, merge_settings_to_json
     logger = AppLogger(VERSION, "goodbyeDPI", LOG_LEVEL if not DEBUG else logging.DEBUG)
@@ -47,6 +48,7 @@ try:
         multiWindow = MultiWindow()
         goodCheck = GoodCheckHelper()
         afterUpdate = AfterUpdateHelper()
+        patcher = Patcher()
         print(sys.argv)
         os.environ["QT_QUICK_CONTROLS_STYLE"] = "FluentUI"
         QGuiApplication.setOrganizationName(GlobalConfig.application_company)
@@ -65,6 +67,7 @@ try:
         engine.rootContext().setContextProperty("multiWindow", multiWindow)
         engine.rootContext().setContextProperty("goodCheck", goodCheck)
         engine.rootContext().setContextProperty("updateHelper", afterUpdate)
+        engine.rootContext().setContextProperty("patcher", patcher)
 
         engine.addImportPath(":/qt/qml")
         
@@ -89,7 +92,8 @@ try:
         if not DEBUG: multiprocessing.freeze_support()
         argv = sys.argv[1:]
         try:
-            options, args = getopt.getopt(argv, "", ["after-update", "autorun"])
+            options, args = getopt.getopt(argv, "", ["after-update", "autorun", 
+                                                     "after-patching", "after-failed-update"])
         except getopt.GetoptError as err:
             pass
 

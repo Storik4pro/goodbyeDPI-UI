@@ -48,7 +48,8 @@ Starter {
             "/goodcheck": resolvedUrl("res/qml/window/GoodCheckWindow.qml"),
             "/quickstart": resolvedUrl("res/qml/window/AfterUpdateWindow.qml"),
         }
-        if (appArguments.indexOf("--after-update") !== -1) {
+        if (appArguments.indexOf("--after-update") !== -1 || appArguments.indexOf("--after-patching") !== -1 
+            || appArguments.indexOf("--after-failed-update") !== -1){
             Theme.darkMode = backend.getBackupValue('APPEARANCE_MODE', 'mode') == 'dark' ? 1 : 0
             WindowRouter.go("/quickstart")
         } else {
