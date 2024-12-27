@@ -1265,7 +1265,7 @@ ScrollablePage {
         errorLabel.visible = true;
         errorLabel.text = "";
         process.stop_process()
-        backend.download_component("zapret");
+        backend.download_component("zapret", false);
     }
 
     Connections {

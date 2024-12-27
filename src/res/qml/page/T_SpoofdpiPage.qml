@@ -735,7 +735,7 @@ ScrollablePage {
         errorLabel.visible = true;
         errorLabel.text = "";
         process.stop_process()
-        backend.download_component("spoofdpi");
+        backend.download_component("spoofdpi", false);
     }
     Connections {
         target: backend
