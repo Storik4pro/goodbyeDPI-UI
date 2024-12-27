@@ -144,3 +144,9 @@ src/_settings/Gallery/res/qml/page/DraggableWidget.qml
 pyinstaller.txt
 DLLcheck.py
 src/GlobalConfig.py
+tempfiles/versiondata_bol-van_zapret.json
+tempfiles/versiondata_hufrea_byedpi.json
+tempfiles/versiondata_Storik4pro_goodbyeDPI-UI.json
+tempfiles/versiondata_ValdikSS_GoodbyeDPI.json
+tempfiles/versiondata_xvzc_SpoofDPI.json
+patch.cdpipatch
