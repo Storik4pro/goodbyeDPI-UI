@@ -66,10 +66,10 @@ ScrollablePage {
                     Layout.fillHeight: true
                     ScrollBar.vertical.policy: ScrollBar.AlwaysOn
                     Column {
-                        width: parent.width
+                        width: rest.width - 20
                         CopyableText {
                             id: commandLineOutput
-                            width: parent.width
+                            width: rest.width - 20
                             text: output_str
                             wrapMode: Text.Wrap
                             font.pixelSize: 14
