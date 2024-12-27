@@ -34,7 +34,7 @@ def is_font_installed(font_name):
 
 DIRECTORY = f'{application_path}/' if not DEBUG else ''
 
-VERSION = "1.2.4"
+VERSION = "1.2.5"
 
 SETTINGS_FILE_PATH = DIRECTORY+'data/settings/settings.ini'
 BACKUP_SETTINGS_FILE_PATH = DIRECTORY+'data/settings/_settings.ini'
