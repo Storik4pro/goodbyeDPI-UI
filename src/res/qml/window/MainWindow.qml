@@ -27,6 +27,7 @@ FramelessWindow {
     launchMode: WindowType.SingleInstance
     windowEffect: Global.windowEffect
     autoDestroy: false
+    property var processStarted: process.is_process_alive()
     appBar: AppBar{
         implicitHeight: 48
         windowIcon: Item{}
@@ -175,11 +176,10 @@ FramelessWindow {
                 */
                 P.MenuItem {
                     id:onItem
-                    text: _checked? backend.get_element_loc("_off"):backend.get_element_loc("on")
+                    text: processStarted ? backend.get_element_loc("_off"):backend.get_element_loc("on")
                     //icon.source: "qrc:/qt/qml/GoodbyeDPI_UI/res/image/tray_logo_red.png"
-                    property var _checked: process.is_process_alive()
                     onTriggered: {
-                        if (_checked) {
+                        if (processStarted) {
                             var success = process.stop_process();
                             if (!success){
                                 toast.show_error("#NOTF_FAI_retry", text.inAppText['error_title'],
@@ -188,10 +188,10 @@ FramelessWindow {
                                             backend.get_element_loc('close_error2'),
                                             backend.get_element_loc('retry'), "")
                             }
-                            _checked = false;
+                            processStarted = false;
                         } else {
                             process.start_process();
-                            _checked = true;
+                            processStarted = true;
                         }
                         
                     }
@@ -284,9 +284,9 @@ FramelessWindow {
     function updateIcon() {
         if (system_tray) {
             system_tray.icon.source = process.is_process_alive() ? "qrc:/qt/qml/GoodbyeDPI_UI/res/image/tray_logo_green.png" : 
-                                                                   "qrc:/qt/qml/GoodbyeDPI_UI/res/image/tray_logo_red.png"
-            
+                                                                   "qrc:/qt/qml/GoodbyeDPI_UI/res/image/tray_logo_red.png" 
         }
+        processStarted = process.is_process_alive()
         toolTip = "GoodbyeDPI UI - " + qsTr(backend.get_element_loc('state')).arg(engine) + " " +
                           (process.is_process_alive() ? backend.get_element_loc('runned') : backend.get_element_loc('stopped'))
     }
@@ -405,6 +405,7 @@ FramelessWindow {
         id: blocker
         anchors.fill: parent
         z: 99999
+        enabled: false
         visible: false
         MouseArea {
             anchors.fill: parent
@@ -421,13 +422,16 @@ FramelessWindow {
         target:goodCheck
         function onStarted() {
             WindowRouter.go("/goodcheck");
-            blocker.visible = true;
+            blocker.enabled = true;
+            blocker.visible = true; 
 
         }
         function onProcess_finished_signal () {
+            blocker.enabled = false;
             blocker.visible = false;
         }
         function onProcess_stopped_signal() {
+            blocker.enabled = false;
             blocker.visible = false;
         }
     }
