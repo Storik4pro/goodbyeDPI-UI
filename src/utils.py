@@ -1,6 +1,7 @@
 import hashlib
 import json
 import platform
+from typing import Literal
 import zipfile
 
 def check_winpty():
@@ -417,7 +418,7 @@ def stop_servise():
 
 def download_blacklist(url, progress_toast:ProgressToast, local_filename=GOODBYE_DPI_PATH+'russia-blacklist.txt'):
     temp_filename = local_filename + '.tmp'
-    progress_toast.update_toast(-1, 'downloading')
+    progress_toast.update_toast(0, 'downloading')
     try:
         with requests.get(url, stream=True) as r:
             r.raise_for_status()
@@ -478,29 +479,68 @@ def check_mica():
     return build >= 22000
 
 # update
-
-def get_latest_release():
-    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/releases/latest"
+def save_version_data_to_cache(owner, name, object='prg', url='releases/latest'):
+    url = f"https://api.github.com/repos/{owner}/{name}/{url}"
     response = requests.get(url)
+    
+    if response.status_code != 200:
+        return f'ERR_SERVER_STATUS_CODE_{response.status_code}'
+        
+    
     data = response.json()
+    
+    if not os.path.exists(f'{DIRECTORY}tempfiles'):
+        os.makedirs(f'{DIRECTORY}tempfiles')
+    
+    with open(f'{DIRECTORY}tempfiles/versiondata_{owner}_{name}.json', 'w', encoding='utf-8') as file:
+        json.dump(data, file, indent=2, ensure_ascii=False)
+        
+    settings.change_setting('CACHE', f'{object}_update_check_time', datetime.now().strftime("%d.%m.%Y"))
+    settings.save_settings()
+    
+    return True
+
+def get_latest_release(reason:Literal['auto', 'manual']='auto'):
+    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/releases/latest"
+    
+    if settings.get_value('CACHE', 'prg_update_check_time') != datetime.now().strftime("%d.%m.%Y") or \
+        not os.path.exists(f'{DIRECTORY}tempfiles/versiondata_{REPO_OWNER}_{REPO_NAME}.json') or \
+        reason == 'manual':
+        code = save_version_data_to_cache(REPO_OWNER, REPO_NAME, object='prg')
+        if code != True:
+            return code
+    
+    with open(f'{DIRECTORY}tempfiles/versiondata_{REPO_OWNER}_{REPO_NAME}.json', 'r', encoding='utf-8') as file:
+        data = json.load(file)
+
     latest_version = data["tag_name"]
 
-    return latest_version if not DEBUG else "1.1.3"
+    return latest_version
 
 def get_release_info(version):
-    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/releases/tags/{version}"
-    response = requests.get(url)
-    data = response.json()
+    if settings.get_value('CACHE', 'prg_update_check_time') != datetime.now().strftime("%d.%m.%Y") or \
+        not os.path.exists(f'{DIRECTORY}tempfiles/versiondata_{REPO_OWNER}_{REPO_NAME}.json'):
+        code = save_version_data_to_cache(REPO_OWNER, REPO_NAME, object='prg')
+        if code != True:
+            return code
+    
+    with open(f'{DIRECTORY}tempfiles/versiondata_{REPO_OWNER}_{REPO_NAME}.json', 'r', encoding='utf-8') as file:
+        data = json.load(file)
+
     return data
 
-def get_download_url(version):
-    if DEBUG: return "https://google.com"
+def get_download_url(version, filetype=".zip"):
+    if DEBUG: return "patch.cdpipatch"
     try:
         data = get_release_info(version)
+        
+        if type(data) == str and 'ERR' in data:
+            return data
+        
         download_url = None
 
         for asset in data["assets"]:
-            if asset["name"].endswith(".zip"):
+            if asset["name"].endswith(filetype):
                 download_url = asset["browser_download_url"]
                 break
 
@@ -513,8 +553,8 @@ def get_download_url(version):
     except Exception as ex:
         return 'ERR_UNKNOWN'
     
-def download_update(url, directory, signal=None):
-    if not DEBUG or signal is None:
+def download_update(url, directory, signal=None, debug_check=True):
+    if not debug_check or not DEBUG or signal is None:
         with requests.get(url, stream=True) as r:
             total_length = r.headers.get('content-length')
             if total_length is None:
@@ -534,54 +574,55 @@ def download_update(url, directory, signal=None):
             i+=1
             if signal:signal.emit(i)
             time.sleep(0.05)
+        shutil.copyfile(url, directory)
 
 def get_component_download_url(component_name:str):
     component_addres = COMPONENTS_URLS[component_name]
+    repo = component_addres.split("/")[1]
+    owner = component_addres.split("/")[0]
     component_url = f"https://api.github.com/repos/{component_addres}/releases"
     try:
-        response = requests.get(component_url)
-        if response.status_code == 200:
-            releases = response.json()
-            if releases:
-                latest_release = releases[0]
-                version = latest_release.get("tag_name")
-                if component_name == 'zapret':
-                    return f"https://github.com/bol-van/zapret-win-bundle/archive/refs/heads/master.zip|{version}"
-                
-                if component_name == 'goodbyeDPI' and version == '0.2.3rc3':
-                    return f'ERR_LATEST_VERSION_ALREADY_INSTALLED|{version}'
-                pre_download_url = f"https://api.github.com/repos/{component_addres}/releases/tags/{version}"
+        if settings.get_value('CACHE', f'component_{component_name.lower()}_update_check_time') != datetime.now().strftime("%d.%m.%Y") or \
+            not os.path.exists(f'{DIRECTORY}tempfiles/versiondata_{owner}_{repo}.json'):
+            code = save_version_data_to_cache(owner, repo, object=f'component_{component_name.lower()}', 
+                                              url='releases')
+            if code != True:
+                return code
+        
+        with open(f'{DIRECTORY}tempfiles/versiondata_{owner}_{repo}.json', 'r', encoding='utf-8') as file:
+            response = json.load(file)
 
-                download_url = None
+        latest_release = response[0]
+        
+        version = latest_release.get("tag_name")
+        if component_name == 'zapret':
+            return f"https://github.com/bol-van/zapret-win-bundle/archive/refs/heads/master.zip|{version}"
+        
+        if component_name == 'goodbyeDPI' and version == '0.2.3rc3':
+            return f'ERR_LATEST_VERSION_ALREADY_INSTALLED|{version}'
+        pre_download_url = f"https://api.github.com/repos/{component_addres}/releases/tags/{version}"
 
-                _response = requests.get(pre_download_url)
-                data = _response.json()
+        download_url = None
 
-                for asset in data["assets"]:
-                    if asset["name"].endswith(".zip"):
-                        if component_name == 'byedpi': 
-                            if "x86_64-w64" in asset["name"]:
-                                download_url = asset["browser_download_url"]
-                                break
-                            continue
-                        else:
-                            download_url = asset["browser_download_url"]
-                        break
-                    elif asset["name"].endswith(".exe"):
+        for asset in latest_release["assets"]:
+            if asset["name"].endswith(".zip"):
+                if component_name == 'byedpi': 
+                    if "x86_64-w64" in asset["name"]:
                         download_url = asset["browser_download_url"]
                         break
+                    continue
+                else:
+                    download_url = asset["browser_download_url"]
+                break
+            elif asset["name"].endswith(".exe"):
+                download_url = asset["browser_download_url"]
+                break
 
-                if download_url is None:
-                    return 'ERR_INVALID_URL'
+        if download_url is None:
+            return 'ERR_INVALID_URL'
 
-                
-                return download_url+"|"+version
-                
-                
-            else:
-                return 'ERR_CANNOT_FIND_RELEASE'
-        else:
-            return f'ERR_SERVER_STATUS_CODE_{response.status_code}'
+        return download_url+"|"+version
+
     except Exception as ex:
         return 'ERR_UNKNOWN'
     

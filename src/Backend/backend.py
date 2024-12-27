@@ -40,7 +40,7 @@ class Backend(QObject):
     @Slot(str, result=str)
     def get_element_loc(self, element_name) -> str:
         try:
-            return text.inAppText[element_name].replace("{executable}", "%1")
+            return text.inAppText[element_name].replace("{executable}", "%1").replace("<br>", "\n")
         except:return "<globallocalize."+element_name+">"
         
     @Slot(result=bool)
@@ -439,7 +439,9 @@ class Backend(QObject):
     def _update(self):
         if not DEBUG:
             move_settings_file(SETTINGS_FILE_PATH, BACKUP_SETTINGS_FILE_PATH)
-            subprocess.Popen(f'update.exe -directory-to-unpack "'+ DIRECTORY.replace("_internal/", "") + '" -directory-to-zip "' + DIRECTORY + "_portable.zip" + '" -localize ' + settings.settings['GLOBAL']['language'])
+            subprocess.Popen(f'update.exe -directory-to-unpack "'+ DIRECTORY.replace("_internal/", "") + \
+                '" -directory-to-zip "' + DIRECTORY + "_portable.zip" + \
+                '" -localize ' + settings.settings['GLOBAL']['language'])
 
     @Slot()
     def changeMode(self):
@@ -452,21 +454,23 @@ class Backend(QObject):
     @Slot(result=bool)
     def check_updates(self):
         updates_availible = False
-        if not DEBUG:
-            try:
-                if settings.settings['GLOBAL']['notifyaboutupdates'] == "True":
-                    version_to_update = get_latest_release()
-                    updates_availible = True if VERSION != version_to_update else False
-                    change_setting('GLOBAL', 'lastcheckedtime', datetime.now().strftime("%H:%M %d.%m.%Y"))
-                    if updates_availible: 
-                        change_setting('GLOBAL', 'version_to_update', version_to_update)
-                        change_setting('GLOBAL', 'updatesavailable', "True")
-                    else:
-                        change_setting('GLOBAL', 'updatesavailable', "False")
-                        change_setting('GLOBAL', 'version_to_update', "")
+        try:
+            if settings.settings['GLOBAL']['notifyaboutupdates'] == "True":
+                version_to_update = get_latest_release()
+                if "ERR" in version_to_update:
+                    return False
+                updates_availible = True if VERSION != version_to_update else False
+                change_setting('GLOBAL', 'lastcheckedtime', datetime.now().strftime("%H:%M %d.%m.%Y"))
+                if updates_availible: 
+                    change_setting('GLOBAL', 'version_to_update', version_to_update)
+                    change_setting('GLOBAL', 'updatesavailable', "True")
+                else:
+                    change_setting('GLOBAL', 'updatesavailable', "False")
+                    change_setting('GLOBAL', 'version_to_update', "")
 
-            except:
-                return False
+        except Exception as ex:
+            print(ex)
+            return False
         return updates_availible
 
     @Slot(str)
@@ -568,7 +572,6 @@ class Backend(QObject):
         self.worker.workFinished.connect(self.qthread.quit)
         self.worker.workFinished.connect(self.worker.deleteLater)
         self.qthread.finished.connect(self.qthread.deleteLater)
-        
 
         self.qthread.start()
 
@@ -669,10 +672,15 @@ class DownloadWorker(QObject):
 
     def _get_download_url(self):
 
-        version = get_latest_release()
+        version = get_latest_release(reason='manual')
+        if "ERR" in version:
+            return 'false'
 
         time.sleep(5)
-
+        
+        if DEBUG:
+            return version
+        
         return version if version != VERSION else 'false'
     
     
