@@ -7,6 +7,8 @@
         <file>res/image/update.png</file>
         <file>res/image/zapret.png</file>
         <file>res/image/ByeDPI.png</file>
+        <file>res/image/ad.png</file>
+        <file>res/image/logout.png</file>
         <file>res/qml/App.qml</file>
         <file>res/qml/Global.qml</file>
         <file>res/qml/component/CardHighlight.qml</file>
