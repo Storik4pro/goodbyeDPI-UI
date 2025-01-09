@@ -10,6 +10,8 @@ import QtQuick.Window
 FramelessWindow {
     id: window
     property alias infoBarManager: infobar_manager
+    property var currentError: ""
+    property var currentErrorCode: ""
     property var tourSteps: []
     property var engine: backend.getValue('GLOBAL', 'engine')
     property var _height: backend.getInt("APPEARANCE_MODE", 'height')
@@ -28,11 +30,32 @@ FramelessWindow {
     windowEffect: Global.windowEffect
     autoDestroy: false
     property var processStarted: process.is_process_alive()
+    initialItem: resolvedUrl("res/qml/screen/MainScreen.qml")
     appBar: AppBar{
+        id:appbar
+        property var color: Theme.darkMode ? '#FFFFFF': '#000000'
         implicitHeight: 48
         windowIcon: Item{}
+        action: RowLayout{
+            id:rwlay
+            IconButton{
+                id: btn_exit
+                visible:backend.getValue("APPEARANCE_MODE", "quit_to") === 'tray'
+                implicitWidth: 46
+                padding: 0
+                radius: 0
+                icon.width: 18
+                icon.height: 18
+                icon.color:appbar.color
+                icon.source: resolvedUrl("res/image/logout.png")
+                ToolTip.visible: hovered
+                ToolTip.text: backend.get_element_loc("quit_to_system")
+                ToolTip.delay: Theme.toolbarDelay
+                onClicked: exit()
+                
+            }
+        }
     }
-    initialItem: resolvedUrl("res/qml/screen/MainScreen.qml")
     /*onNewInit:
         (argument)=>{
             if(argument.type===0){
@@ -92,6 +115,85 @@ FramelessWindow {
                     exit()
                 }
             }
+        }
+    }
+
+    Dialog {
+        id: errorDialog
+        x: Math.ceil((parent.width - width) / 2)
+        y: Math.ceil((parent.height - height) / 2)
+        width: 500
+        contentHeight: 300
+        parent: Overlay.overlay
+        closePolicy: Popup.NoAutoClose
+        modal: true
+        title: backend.get_element_loc("error")
+        Flickable {
+            id: errorFlickable
+            clip: true
+            anchors.fill: parent
+            anchors.rightMargin:-10
+            anchors.leftMargin:-10
+            contentHeight: askColumn.implicitHeight
+            ColumnLayout {
+                anchors.fill: parent
+                ColumnLayout {
+                    id:askColumn
+                    anchors.fill: parent
+                    anchors.rightMargin:10
+                    anchors.leftMargin:10
+                    spacing: 5
+                    width:400
+                    Label {
+                        text: backend.get_element_loc("error_info_title")
+                        wrapMode:Text.Wrap
+                        font:Typography.bodyLarge
+                        Layout.preferredWidth:askColumn.width-20
+                        Layout.bottomMargin:10
+                    }
+                    Label {
+                        text: backend.get_element_loc("error_info_tip")
+                        wrapMode:Text.Wrap
+                        font:Typography.bodyStrong
+                        Layout.preferredWidth:askColumn.width-20
+                    }
+                    CopyableText {
+                        id:askBlacklistDialogSubTitle
+                        text: currentError
+                        wrapMode:Text.Wrap
+                        font:Typography.body
+                        Layout.preferredWidth:askColumn.width-20
+                    }
+                    Label {
+                        text: backend.get_element_loc("error_info_code")
+                        wrapMode:Text.Wrap
+                        font:Typography.bodyStrong
+                        Layout.preferredWidth:askColumn.width-20
+                    }
+                    CopyableText {
+                        text: currentErrorCode
+                        wrapMode:Text.Wrap
+                        font:Typography.body
+                        Layout.preferredWidth:askColumn.width-20
+                    }
+                }            
+            }
+            ScrollBar.vertical: ScrollBar {
+                
+            }
+        }
+        footer: DialogButtonBox{
+            Button{
+                text: "OK"
+                width:(errorDialog.width / 2) - 10
+                highlighted: true
+                visible:true
+                onClicked: {
+                    errorDialog.close()
+
+                }
+            }
+            
         }
     }
     function exit() {
@@ -327,7 +429,10 @@ FramelessWindow {
 
     onVisibilityChanged: {
         if (window.visibility === Window.Minimized) {
-            trayHide()
+            if (backend.getValue("APPEARANCE_MODE", "quit_to") !== 'tray') {
+                trayHide()
+            }
+
         } 
     }
     
@@ -376,6 +481,17 @@ FramelessWindow {
             Theme.darkMode = FluentUI.Light
         }else{
             Theme.darkMode = FluentUI.Dark
+        }
+    }
+
+    Connections{
+        target: Theme
+        function onDarkModeChanged(){
+            if (Theme.darkMode) {
+                appBar.color ="#FFFFFF"
+            } else {
+                appBar.color ="#000000"
+            }
         }
     }
 
@@ -452,6 +568,12 @@ FramelessWindow {
                 delayTimer1.start()
                 
             }
+        }
+
+        function onErrorHappens(text, code) {
+            currentError = text
+            currentErrorCode = code
+            errorDialog.open()
         }
     }
     Connections {
