@@ -8,6 +8,8 @@ FluentUI/Controls/*.qml
 FluentUI/*.qm
 FluentUI/*.ts
 config.properties
+converted/
+data/zapret/converted*/
 # Vagrant
 .vagrant/
 
