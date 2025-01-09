@@ -17,6 +17,19 @@ Page{
         target: page
         edge: Qt.BottomEdge | Qt.RightEdge
     }
+    InfoBarManager{
+        id: info_manager_top
+        target: page
+        edge: Qt.TopEdge | Qt.LeftEdge
+    }
+
+    function reloadWindow() {
+        info_manager_bottomright.clearAllInfo()
+        
+        pageLoader.sourceComponent = null;
+        pageLoader.sourceComponent = pageComponent;
+    }
+    
 Loader {
     id: pageLoader
     anchors.fill: parent
@@ -37,8 +50,12 @@ Loader {
 
     FileDialog {
         id: fileDialogOpen
-        title: "Choose JSON file..."
-        nameFilters: ["JSON Files (*.json)"]
+        title: backend.get_element_loc("choose_file")
+        nameFilters: [
+            backend.get_element_loc("all_files_tip")+" (*.json; *.bat; *.cmd)",
+            backend.get_element_loc("json_files_tip")+" (*.json)",
+            backend.get_element_loc("bat_files_tip")+" (*.bat; *.cmd)",
+        ]
         onAccepted: {
             var filePath = selectedFile.toString().replace("file:///", "")
             var result = backend.load_preset('zapret', filePath)
@@ -52,6 +69,147 @@ Loader {
             }
         }
     }
+    ListModel {
+        id: askBlacklistFilesModel
+        onCountChanged: {
+            if (count === 0) {
+                
+            }
+        }
+    }
+
+    Dialog {
+        id: askBlacklistDialog
+        x: Math.ceil((parent.width - width) / 2)
+        y: Math.ceil((parent.height - height) / 2)
+        width: 500
+        contentHeight: 300
+        parent: Overlay.overlay
+        closePolicy: Popup.NoAutoClose
+        modal: true
+        title: backend.get_element_loc("blacklist_missing")
+        Flickable {
+            id: askFlickable
+            clip: true
+            anchors.fill: parent
+            anchors.rightMargin:-10
+            anchors.leftMargin:-10
+            contentHeight: askColumn.implicitHeight
+            ColumnLayout {
+                anchors.fill: parent
+                ColumnLayout {
+                    id:askColumn
+                    anchors.fill: parent
+                    anchors.rightMargin:10
+                    anchors.leftMargin:10
+                    spacing: 5
+                    width:400
+                    Label {
+                        id:askBlacklistDialogSubTitle
+                        text:backend.get_element_loc("blacklist_missing_tip")
+                        wrapMode:Text.Wrap
+                        font:Typography.bodyLarge
+                        Layout.preferredWidth:askColumn.width-20
+                    }
+                    Repeater {
+                        model: askBlacklistFilesModel
+                        
+                        delegate: ColumnLayout {
+                            Layout.fillWidth: true
+                            Layout.preferredWidth: askColumn.width
+                            Layout.alignment: Qt.AlignHCenter
+                            
+                            Loader {
+                                id: askItemLoader
+                                
+                                Layout.preferredWidth: askColumn.width
+                                
+                                sourceComponent: askBlacklistComponent
+                                property var modelData: model
+                            }
+                        }
+                    }
+                }
+                ColumnLayout {
+                    visible:false
+                    id: progressRingColumn
+                    anchors.centerIn: parent
+                    ProgressRing {
+                        anchors.horizontalCenter:parent.horizontalCenter
+                        indeterminate: true
+                        width: 30
+                        height: 30
+                        
+                    }
+                    Label {
+                        text:backend.get_element_loc("update_in_process")
+                    }
+                }
+                
+                
+            }
+            ScrollBar.vertical: ScrollBar {
+                
+            }
+        }
+        footer: DialogButtonBox{
+            Button{
+                id:autocorrectAllButton
+                text: backend.get_element_loc("autocorrect_all")
+                highlighted: true
+                visible:true
+                onClicked: {
+                    progressRingColumn.visible = true
+                    askColumn.visible = false
+                    autocorrectAllButton.enabled = false
+                    cancelButton.enabled = false
+                    
+                    for (var i = askBlacklistFilesModel.count - 1; i >= 0; i--) {
+                        var autocorrect = backend.get_load_preset_autocorrect_vars(
+                            'zapret', 
+                            askBlacklistFilesModel.get(i).blacklist_name
+                            )
+                        if (autocorrect === '') {
+                            continue
+                        }
+                        var _result = backend.apply_autocorrect('zapret', 
+                                                                askBlacklistFilesModel.get(i).blacklist_name, 
+                                                                autocorrect)
+                        if (_result === 'True') {
+                            askBlacklistFilesModel.remove(i)
+                        }
+                    }
+                    progressRingColumn.visible = false
+                    askColumn.visible = true
+                    autocorrectAllButton.enabled = true
+                    cancelButton.enabled = true
+
+                    if (askBlacklistFilesModel.count === 0) {
+                        askBlacklistDialog.close()
+                        
+                        reloadWindow()
+                    } else {
+                        askBlacklistDialogSubTitle.text = backend.get_element_loc("blacklist_missing_tip_error")
+                        autocorrectAllButton.enabled = false
+                    }
+
+                }
+            }
+            Button {
+                id:cancelButton
+                text: backend.get_element_loc("cancel")
+                visible:true
+                onClicked: {
+                    backend.return_autocorrect_to_default("zapret")
+                    askBlacklistDialog.close()
+                    reloadWindow()
+                    askToReopen()
+                }
+            }
+            
+        }
+    }
+    
 
     Component {
     id: pageComponent
@@ -61,6 +219,7 @@ ScrollablePage {
     leftPadding: 0
     rightPadding: 0
     property var command: ""
+    property var infoIndex: 0
 
     ListModel {
         id: blacklistFilesModel
@@ -68,7 +227,66 @@ ScrollablePage {
             generateCommandLine()
         }
     }
+    // DIALOGS
 
+    Dialog {
+        id: adDialog
+        x: Math.ceil((parent.width - width) / 2)
+        y: Math.ceil((parent.height - height) / 2)
+        width: 500
+        contentHeight: 300
+        parent: Overlay.overlay
+        closePolicy: Popup.CloseOnEscape
+        modal: true
+        title: backend.get_element_loc("load_config_file")
+        Flickable {
+            id: adFlickable
+            clip: true
+            anchors.fill: parent
+            anchors.rightMargin: -10
+            anchors.leftMargin: -10
+            contentHeight: adColumn.implicitHeight
+            ColumnLayout {
+                id: adColumn
+                anchors.fill: parent
+                anchors.rightMargin: 10
+                anchors.leftMargin: 10
+                spacing: 5
+                width: 400
+                Image{
+                    source: "qrc:/qt/qml/GoodbyeDPI_UI/res/image/ad.png"
+                    Layout.preferredWidth:adDialog.width - 20
+                    Layout.preferredHeight:220
+                    asynchronous: true
+                    clip: false
+                    fillMode: Image.PreserveAspectFit
+                }
+                Label {
+                    text: backend.get_element_loc("load_config_file_ad")
+                    wrapMode: Text.Wrap
+                    Layout.preferredWidth:adDialog.width - 20
+                    font: Typography.body
+                }
+            }
+            ScrollBar.vertical: ScrollBar {
+            
+            }
+        }
+        
+        footer: DialogButtonBox{
+            Button{
+                text: backend.get_element_loc("got_it")
+                highlighted: true
+                onClicked: {
+                    adDialog.close()
+                    fileDialogOpen.open()
+                }
+            }
+        }
+    }
+
+    
+    // CONTENT
     ColumnLayout{
         id:base_layout
         anchors.margins: 20
@@ -246,6 +464,7 @@ ScrollablePage {
                             onClicked:{
                                 process.change_engine("zapret")
                                 rest1.visible = false
+                                askToReopen()
                             }
                         }
                     }
@@ -329,8 +548,16 @@ ScrollablePage {
                         Layout.fillWidth: false
                         model: backend.get_presets('zapret')
                         currentIndex: model[backend.getInt("ZAPRET", "preset")].includes("<separator>") ? backend.getInt("ZAPRET", "preset")+1 :backend.getInt("ZAPRET", "preset")
+                        property var isInitializing: true
                         onCurrentIndexChanged: {
                             let selectedValue = model[currentIndex];
+
+                            if (!isInitializing) {
+                                askToReopen()
+                            }
+                            isInitializing = false
+
+                            console.log(process.get_preset(), selectedValue)
                             backend.zapret_update_preset(selectedValue);
                             process.update_preset()
                             var jsonFilePath = cmbox.currentIndex
@@ -884,6 +1111,7 @@ ScrollablePage {
                             if (!isInitializing){
                                 backend.toggleBool('ZAPRET', 'use_advanced_mode', checked)
                                 process.update_preset()
+                                askToReopen()
                             }
                             isInitializing = false
                         }
@@ -920,20 +1148,7 @@ ScrollablePage {
                     id:clmn1
                     Layout.alignment: Qt.AlignRight
                     Layout.fillWidth:true
-                    /*
-                    Button {
-                        text: backend.get_element_loc("convert_batch_file")
-                        icon.name: FluentIcons.graph_RepeatAll
-                        icon.height: 20
-                        icon.width:20
-                        onClicked: {
-                            fileDialogOpen.open()
-                        }
-                        ToolTip.visible: hovered
-                        ToolTip.delay: 500
-                        ToolTip.text: text
-                    }
-                    */
+                    
                     RowLayout{
                     Layout.alignment: Qt.AlignRight
                     Button {
@@ -943,7 +1158,12 @@ ScrollablePage {
                         icon.height: 20
                         icon.width:20
                         onClicked: {
-                            fileDialogOpen.open()
+                            if (backend.getBool("GLOBAL", "isadconvertshown")) {
+                                fileDialogOpen.open()
+                            } else {
+                                adDialog.open()
+                                backend.toggleBool("GLOBAL", "isadconvertshown", true)
+                            }
                         }
                         ToolTip.visible: hovered
                         ToolTip.delay: 500
@@ -1020,7 +1240,7 @@ ScrollablePage {
                             if (!isInitializing) {
                                 var cursorPosition = customParameters.cursorPosition
                                 var previousText = text
-                                var newText = text.replace(/[^0-9a-zA-Z:"><\/\\.\-_\s,=]/g, '')
+                                var newText = text.replace(/[^0-9a-zA-Z:"><\/\\.\-_\s,=+]/g, '')
                                 if (newText !== previousText) {
                                     var diff = previousText.length - newText.length
                                     text = newText
@@ -1040,6 +1260,9 @@ ScrollablePage {
                         function saveCustomParameters() {
                             var params = customParameters.text.trim()
                             var processedParams = params.replace(/=/g, ' ').replace(/"/g, '')
+                            if (processedParams !== backend.get_from_config("ZAPRET", "custom_parameters")) {
+                                askToReopen()
+                            }
                             backend.set_to_config("ZAPRET", "custom_parameters", processedParams)
                         }
                     }
@@ -1089,6 +1312,7 @@ ScrollablePage {
         }
     
     }
+    // COMPONENTS
     
     Component {
         id: blacklistComponent
@@ -1186,7 +1410,7 @@ ScrollablePage {
                             if (!isInitializing) {
                                 var cursorPosition = customParameters.cursorPosition
                                 var previousText = text
-                                var newText = text.replace(/[^0-9a-zA-Z:"><\/\\.\-_\s,=]/g, '')
+                                var newText = text.replace(/[^0-9a-zA-Z:"><\/\\.\-_\s,=+]/g, '')
                                 if (newText !== previousText) {
                                     var diff = previousText.length - newText.length
                                     text = newText
@@ -1245,8 +1469,33 @@ ScrollablePage {
         }
     }
 
-    Component.onCompleted: {
-        //generateCommandLine()
+    Component{
+        id: comp_action
+        Button{
+            text: backend.get_element_loc("pseudoconsole_restart")
+            onClicked: {
+                var result = process.stop_process()
+                if (result) {
+                    process.start_process()
+                    info_manager_bottomright.show(InfoBarType.Success, backend.get_element_loc("save_complete"), 3000)
+                } else {
+                    info_manager_bottomright.show(InfoBarType.Error, backend.get_element_loc("error_title"), 10000)
+                }
+                infoIndex = 0
+                infoControl.remove(model.index)
+            }
+        }
+    }
+
+    function askToReopen() {
+        if ((!process.is_process_alive() && !backend.is_debug()) || infoIndex !== 0 || !backend.getValue('GLOBAL', 'engine') === "zapret") {
+            return
+        }
+        if (page.width < 700) {
+            infoIndex = info_manager_bottomright.showWarning(backend.get_element_loc("process_reopen_needed_title"),0,qsTr(""),comp_action)
+        } else {
+            infoIndex = info_manager_bottomright.showWarning(backend.get_element_loc("process_reopen_needed"),0,qsTr(""),comp_action)
+        }
         
     }
 
@@ -1276,8 +1525,8 @@ ScrollablePage {
             checkBtn.enabled = true;
             console.log(success);
             if (success === 'True') {
-                pageLoader.sourceComponent = null;
-                pageLoader.sourceComponent = pageComponent;
+                
+                reloadWindow()
             } else {
                 checkBtn.enabled = true;
                 checkBtn.text = backend.get_element_loc("retry");
@@ -1286,10 +1535,177 @@ ScrollablePage {
                 mainLabel.text = backend.get_element_loc('component_not_installed_e');
             }
         }
+        function onInformation_requested(target, info) {
+            askBlacklistDialog.open()
+            if (target === "load_preset:zapret") {
+                askBlacklistFilesModel.clear()
+                for (var i = 0; i < info.length; i++) {
+                    askBlacklistFilesModel.append(info[i])
+                }
+                
+            }
+        }
     }
 
 }
 }
+}
+Component {
+    id: askBlacklistComponent
+    ColumnLayout {
+        id:rest
+        Layout.fillWidth: true
+        property var autocorrect: modelData? backend.get_load_preset_autocorrect_vars('zapret', modelData.blacklist_name) : ""
+        
+        FileDialog {
+            id: fileDialogOpenBlacklist
+            title: backend.get_element_loc("choose_file")
+            nameFilters: modelData ? modelData.type === 'blacklist' ? [
+                backend.get_element_loc("blacklist_files_tip")+" (*.txt)",
+            ] : [
+                backend.get_element_loc("bin_files_tip")+" (*.bin)",
+            ] : "All files (*)"
+            onAccepted: {
+                var filePath = selectedFile.toString().replace("file:///", "")
+
+                var _result = backend.apply_autocorrect('zapret', 
+                                                        modelData.blacklist_name, 
+                                                        filePath)
+                if (_result === 'True') {
+                    if (askBlacklistFilesModel.count <= 1) {
+                        askBlacklistDialog.close()
+                        
+                        reloadWindow()
+                    }
+                    for (var i = 0; i < askBlacklistFilesModel.count; i++) {
+                        if (askBlacklistFilesModel.get(i).blacklist_name === modelData.blacklist_name) {
+                            askBlacklistFilesModel.remove(i)
+                            break
+                        }
+                    }
+                } else {
+                    autocorrectLabel.text = backend.get_element_loc("autocorrect_manual_error") + "\n" + _result
+                    autocorrectIcon.source = FluentIcons.graph_IncidentTriangle
+                    autocorrectIcon.color = Theme.res.systemFillColorCaution
+                }
+            }
+        }
+
+        ColumnLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            spacing: 5
+            Label {
+                id:itemLabel
+                text: modelData ? modelData.blacklist_name : "template"
+                font: Typography.bodyStrong
+                Layout.fillWidth:true
+                wrapMode: Text.Wrap
+                height:20
+                Layout.maximumHeight:20
+                Layout.preferredWidth: parent.width
+            }
+            ColumnLayout {
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: Math.min(1000, parent.width)
+                    Layout.minimumWidth: 300
+                    Layout.maximumWidth: 1000
+                    Layout.alignment: Qt.AlignHCenter
+                    color: Theme.res.controlFillColorDefault
+                    border.color: Qt.rgba(0.67, 0.67, 0.67, 0.2)
+                    radius: 6
+                    Layout.preferredHeight:clmn.implicitHeight
+                    ColumnLayout{
+                        id:clmn
+                        RowLayout{
+                            Layout.leftMargin:10
+                            Layout.topMargin:10
+                            Layout.fillWidth: true
+                            Icon{
+                                id:autocorrectIcon
+                                Layout.preferredHeight:15
+                                Layout.preferredWidth:15
+                                source:autocorrect === ''? FluentIcons.graph_Cancel:FluentIcons.graph_CheckMark
+                                color:autocorrect === ''? Theme.res.systemFillColorCritical: Theme.res.systemFillColorSuccess
+                            }
+                            Label {
+                                id:autocorrectLabel
+                                text: autocorrect === ''? backend.get_element_loc("autocorrect_error") : backend.get_element_loc("autocorrect_success")
+                                wrapMode:Text.Wrap
+                                font:Typography.body
+                                Layout.fillWidth: true
+                            }
+                            
+                        }
+                        CopyableText {
+                            Layout.leftMargin:10
+                            Layout.topMargin:2
+                            text: autocorrect
+                            wrapMode: Text.Wrap
+                            Layout.fillWidth: true
+                            visible: autocorrect !== ''
+                        }
+                        RowLayout {
+                            Layout.leftMargin:10
+                            Layout.bottomMargin:10
+                            Layout.maximumWidth: 300
+                            Button {
+                                id:applyButton
+                                text: backend.get_element_loc("accept")
+                                visible: autocorrect !== ''
+                                highlighted: true
+                                onClicked: {
+                                    var _result = backend.apply_autocorrect('zapret', 
+                                                                       modelData.blacklist_name, 
+                                                                       autocorrect)
+                                    if (_result === 'True') {
+                                        if (askBlacklistFilesModel.count <= 1) {
+                                            askBlacklistDialog.close()
+                                            
+                                            reloadWindow()
+                                        }
+                                        for (var i = 0; i < askBlacklistFilesModel.count; i++) {
+                                            if (askBlacklistFilesModel.get(i).blacklist_name === modelData.blacklist_name) {
+                                                askBlacklistFilesModel.remove(i)
+                                                break
+                                            }
+                                        }
+                                        
+                                    } else {
+                                        autocorrectLabel.text = backend.get_element_loc("autocorrect_error") + "\n" + _result
+                                        autocorrectIcon.source = FluentIcons.graph_IncidentTriangle
+                                        autocorrectIcon.color = Theme.res.systemFillColorCaution
+                                        applyButton.text = backend.get_element_loc("retry")
+                                    }
+                                }
+                            }
+                            Button {
+                                text: backend.get_element_loc("open_file")
+                                visible: autocorrect !== ''
+                                icon.name: FluentIcons.graph_FolderOpen
+                                icon.height: 18
+                                icon.width: 18
+                                onClicked: {
+                                    backend.open_folder(autocorrect)
+                                }
+                            }
+                            Button {
+                                text: backend.get_element_loc("select_manually")
+                                icon.name: FluentIcons.graph_OpenFile
+                                icon.height: 18
+                                icon.width: 18
+                                onClicked: {
+                                    fileDialogOpenBlacklist.open()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        
+        }
+    }
 }
 Component.onCompleted:{
         if (window.title !== title){
@@ -1304,4 +1720,5 @@ Connections {
             }
         }
     }
+
 }

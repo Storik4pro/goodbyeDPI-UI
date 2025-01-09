@@ -1,6 +1,8 @@
 import hashlib
 import json
 import platform
+import random
+import string
 from typing import Literal
 import zipfile
 
@@ -31,7 +33,7 @@ from toasted import Button, Image, Progress, Text, Toast, ToastButtonStyle, Toas
 import winsound
 
 import requests
-from _data import GOODBYE_DPI_EXECUTABLE, ZAPRET_EXECUTABLE, ZAPRET_PATH, \
+from _data import GOODBYE_DPI_EXECUTABLE, PARAMETER_MAPPING, S_PARAMETER_MAPPING, S_VALUE_PARAMETERS, VALUE_PARAMETERS, ZAPRET_EXECUTABLE, ZAPRET_PATH, \
     GOODBYE_DPI_PATH, DEBUG, DIRECTORY, DEBUG_PATH, REPO_NAME, REPO_OWNER, CONFIGS_REPO_NAME, SETTINGS_FILE_PATH,\
     CONFIG_PATH, SPOOFDPI_EXECUTABLE, BYEDPI_EXECUTABLE, EXECUTABLES, COMPONENTS_URLS, text, settings
 
@@ -178,16 +180,13 @@ spoofdpi_logo = \
 ███████ ██████  ██    ██ ██    ██ █████   ██   ██ ██████  ██
      ██ ██      ██    ██ ██    ██ ██      ██   ██ ██      ██
 ███████ ██       ██████   ██████  ██      ██████  ██      ██"""
-def remove_ansi_sequences(text):
-    stage1 = re.sub(r'\w:\\[^ ]+', '', text)
-    print("") # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
+def remove_ansi_sequences(text:str):
+    text = text.replace("[?25l\u001b[2J\u001b[m\u001b[H", "");
+    text = text.replace("[4;1H", "\n");
+    text = re.sub(r'\u001b\]0;.*?\[\?25h', '', text)
+    text = re.sub(r'\[\?25l|\x1b\[1C|\x1b', '', text)
 
-    ansi_escape = re.compile(r'(?:\x1B[@-_][0-?]*[ -/]*[@-~])|\]0;')
-    stage2 = ansi_escape.sub('', stage1)
-    print("") # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
-    print("") # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
-    print("") # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
-    stage2 = stage2.replace("https://github.com/ValdikSS/GoodbyeDPI", "https://github.com/ValdikSS/GoodbyeDPI\n\n")
+    stage2 = text.replace("https://github.com/ValdikSS/GoodbyeDPI", "https://github.com/ValdikSS/GoodbyeDPI\n\n")
 
     if settings.settings['GLOBAL']['engine'] == "spoofdpi":
         stage2 = stage2.replace("•ADDR", "\n\n•ADDR")
@@ -261,6 +260,8 @@ class GoodbyedpiWorker(QThread):
                     except OSError as e:
                         print(e)
                         break
+                    except Exception as e:
+                        break
                 else:
                     break
 
@@ -306,14 +307,15 @@ class GoodbyedpiWorker(QThread):
 stop_flags = [
     "Error opening filter",
     "unknown option",
-    "hostlists load failed",
+    "failed",
     "must specify port filter",
     "ERROR:",
     "Component not installed correctly",
     "--debug=0|1|syslog|@<filename>",
     "error",
     "could not read",
-    "invalid value"
+    "invalid value",
+    "already running",
 ]
 
 class GoodbyedpiProcess(QObject):
@@ -903,7 +905,152 @@ def check_urls():
     
     return sites
 
+
+def get_parameter_mappings(engine_name):
+    parameter_mappings = {
+        'goodbyedpi': (PARAMETER_MAPPING, VALUE_PARAMETERS),
+        'zapret': (None, None),
+        'byedpi': (None, None),
+        'spoofdpi': (S_PARAMETER_MAPPING, S_VALUE_PARAMETERS),
+    }
+    return parameter_mappings.get(engine_name, ({}, {}))
+
+
+def convert_custom_params(command, parameter_mapping, value_parameters):
+    command = command.split(" ")
+    params = {}
+    custom_params = []
+    params[f"blacklist_value"] = ''
+    i = 0
+    while i < len(command):
+        cmd_param = command[i]
+        if cmd_param in parameter_mapping.values():
+            ini_param = list(parameter_mapping.keys())[list(parameter_mapping.values()).index(cmd_param)]
+            print(cmd_param, ini_param)
+            if ini_param == 'blacklist':
+                i += 1
+                params[f"{ini_param}_value"] += f',"{command[i]}"'
+            params[ini_param] = True
+            if ini_param in value_parameters:
+                i += 1
+                params[f"{ini_param}_value"] = command[i]
+        elif cmd_param in value_parameters.values():
+            ini_param = list(value_parameters.keys())[list(value_parameters.values()).index(cmd_param)]
+            i += 1
+            params[ini_param] = True
+            params[f"{ini_param}_value"] = command[i]
+        else:
+            custom_params.append(cmd_param)
+        i += 1
+    params['custom_parameters'] = ' '.join(custom_params)
+    return params
+
 # JSON
+def convert_bat_file(bat_file, output_folder, engine):
+    with open(bat_file, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+
+    variables = {}
+    command_lines = []
+    in_command = False
+
+    for line in lines:
+        line = line.strip()
+
+        if not line or line.startswith('::') or line.lower().startswith('rem'):
+            continue
+
+        var_match = re.match(r'set\s+(\w+)=([\s\S]+)', line, re.IGNORECASE)
+        if var_match:
+            var_name = var_match.group(1)
+            var_value = var_match.group(2)
+            var_value = var_value.replace('%~dp0', '')
+            var_value = var_value.strip('"')
+            variables[var_name.upper()] = var_value
+            continue
+
+        if line.lower().startswith('start'):
+            in_command = True
+            line = re.sub(
+                r'start\s+".*?"\s+((/min+\s+".*?")|(\S*))\s*\^?', 
+                '', 
+                line, 
+                flags=re.IGNORECASE
+                )
+            line = line.strip()
+            if line:
+                command_lines.append(line)
+            continue
+
+        if in_command:
+            if line.endswith('^'):
+                line = line[:-1].strip()
+                command_lines.append(line)
+            else:
+                command_lines.append(line)
+                in_command = False
+                continue
+
+    command = ' '.join(command_lines)
+
+    command = command.replace('^', '').replace('\n', '').strip()
+
+    command = command.replace('%~dp0', '').replace("POPD", '')
+
+    def replace_vars(match):
+        var_name = match.group(1)
+        var_value = variables.get(var_name.upper(), '')
+        return var_value
+
+    command = re.sub(r'%(\w+)%', replace_vars, command)
+
+    command = command.replace(r'\\"', '').replace('"', '')
+    command = command.replace("%~dp0..\\bin\\", "")
+
+    command = command.replace('=', ' ')
+
+    command = re.sub(r'\s+', ' ', command).strip()
+    
+    if command == '':
+        raise KeyError("Empty startup parameters. The file is damaged or not compatible")
+
+    parameter_mapping, value_parameters = get_parameter_mappings(engine.lower())
+    
+    if parameter_mapping and value_parameters:
+        json_data = convert_custom_params(command, parameter_mapping, value_parameters)
+    else :
+        json_data = {
+            "custom_parameters": command
+        }
+    
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    bat_dir = os.path.dirname(os.path.abspath(bat_file))
+    bat_name = os.path.splitext(os.path.basename(bat_file))[0]
+    json_file = os.path.join(output_folder, f"{bat_name}.json")
+
+    with open(json_file, 'w', encoding='utf-8') as f:
+        json.dump(json_data, f, ensure_ascii=False, indent=4)
+        
+    return json_file
+
+def check_json_file(file:str, component:str):
+    try:
+        with open(file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            custom_parameters = data.get('custom_parameters')
+            if custom_parameters is not None and custom_parameters != "":
+                return True
+            else:
+                raise KeyError(f"Unable to load {file}. JSON file not setup right")
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Unable to found config file {file}. File is not exist in current location")
+    except json.JSONDecodeError:
+        raise json.JSONDecodeError(f"Unable to found config file {file}. File encoding is incorrect")
+
+
+
 def get_preset_parameters(index:int|str, engine:str):
     filename = f"{index}.json"
     path = os.path.join((DEBUG_PATH if DEBUG else "") + CONFIG_PATH + "/" + engine.lower(), filename)
@@ -942,3 +1089,32 @@ def replace_system_folders_with_short_names(path):
     
     new_path = os.sep.join(new_path_parts)
     return new_path
+
+def pretty_path(text):
+    def random_string(length):
+        return ''
+    
+    def transliterate(char):
+        translit_table = {
+            'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D',
+            'Е': 'E', 'Ё': 'E', 'Ж': 'Zh', 'З': 'Z', 'И': 'I',
+            'Й': 'Y', 'К': 'K', 'Л': 'L', 'М': 'M', 'Н': 'N',
+            'О': 'O', 'П': 'P', 'Р': 'R', 'С': 'S', 'Т': 'T',
+            'У': 'U', 'Ф': 'F', 'Х': 'Kh', 'Ц': 'Ts', 'Ч': 'Ch',
+            'Ш': 'Sh', 'Щ': 'Shch', 'Ъ': '', 'Ы': 'Y', 'Ь': '',
+            'Э': 'E', 'Ю': 'Yu', 'Я': 'Ya', 
+            'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd',
+            'е': 'e', 'ё': 'e', 'ж': 'zh', 'з': 'z', 'и': 'i',
+            'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n',
+            'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't',
+            'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch',
+            'ш': 'sh', 'щ': 'shch', 'ъ': '', 'ы': 'y', 'ь': '',
+            'э': 'e', 'ю': 'yu', 'я': 'ya'
+        }
+        return translit_table.get(char, None)
+    result = re.sub(
+        r'[^0-9a-zA-Z:"><\/\\.\-_\s,=+]',
+        lambda x: transliterate(x.group()) or random_string(len(x.group())),
+        text
+    )
+    return result if result != '' else '_template'

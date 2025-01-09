@@ -38,8 +38,12 @@ Loader {
 
     FileDialog {
         id: fileDialogOpen
-        title: "Choose JSON file..."
-        nameFilters: ["JSON Files (*.json)"]
+        title: backend.get_element_loc("choose_file")
+        nameFilters: [
+            backend.get_element_loc("all_files_tip")+" (*.json; *.bat; *.cmd)",
+            backend.get_element_loc("json_files_tip")+" (*.json)",
+            backend.get_element_loc("bat_files_tip")+" (*.bat; *.cmd)",
+        ]
         onAccepted: {
             var filePath = selectedFile.toString().replace("file:///", "")
             var result = backend.load_preset('goodbyedpi', filePath)
@@ -738,12 +742,6 @@ ScrollablePage {
     }
 
     function blacklistFilesModelContains(filePath) {
-        var allowedCharsRegex = /^[0-9a-zA-Z:"\/\\.\-\_\s]*$/
-        console.log(allowedCharsRegex, filePath)
-        if (!allowedCharsRegex.test(filePath)) {
-            info_manager_bottomright.show(InfoBarType.Warning, backend.get_element_loc("warn_file"), 3000)
-            return true
-        }
         for (var i = 0; i < blacklistFilesModel.count; i++) {
             if (blacklistFilesModel.get(i).path === filePath) {
                 return true

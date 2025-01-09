@@ -4,7 +4,10 @@ import json
 import os
 import platform
 import random
+import re
 import shlex
+import shutil
+import string
 import subprocess
 import sys
 import time
@@ -16,7 +19,7 @@ from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 
 from logger import AppLogger
-from utils import ProgressToast, background_sound, change_setting, change_settings, check_version, check_winpty, create_xml, delete_file, download_blacklist, error_sound, extract_zip, get_component_download_url, get_latest_release, get_download_url, download_update, move_settings_file, open_custom_blacklist, open_folder, register_component, remove_xml, stop_servise, unregister_component
+from utils import ProgressToast, background_sound, change_setting, change_settings, check_version, check_winpty, convert_bat_file, create_xml, delete_file, download_blacklist, error_sound, extract_zip, get_component_download_url, get_latest_release, get_download_url, download_update, move_settings_file, open_custom_blacklist, open_folder, pretty_path, register_component, remove_xml, stop_servise, unregister_component
 from _data import BACKUP_SETTINGS_FILE_PATH, BLACKLIST_PROVIDERS, COMPONENTS_URLS, CONFIG_PATH, DEBUG_PATH, EXECUTABLES, LOG_LEVEL, PRESETS, PRESETS_DEFAULT, REPO_NAME, REPO_OWNER, SETTINGS_FILE_PATH, VERSION, Settings, settings, DEBUG, DIRECTORY, configs, text
 
 KEY = 'GOODBYEDPI'
@@ -31,11 +34,15 @@ class Backend(QObject):
     component_installing_finished = Signal(str)
     language_change = Signal()
     updates_checked = Signal(bool)
+    information_requested = Signal(str, 'QVariantList')
+    errorHappens = Signal(str, str)
 
     def __init__(self, first_run=False, parent: QObject | None = ...) -> None:
         super().__init__()
         self.first_run = first_run
         self.process_need_reload = False
+        self.last_load_folder = ""
+        self.last_preset_used = None
 
     @Slot(str, result=str)
     def get_element_loc(self, element_name) -> str:
@@ -88,15 +95,113 @@ class Backend(QObject):
     
     @Slot(str, str, result=bool)
     def load_preset(self, engine, path):
+        self.last_preset_used = configs[engine].configfile
+        self.last_load_folder = os.path.dirname(path)
+        
+        if path.endswith(".bat") or path.endswith(".cmd"):
+            try:
+                path = convert_bat_file(path, DEBUG_PATH+DIRECTORY+"converted", engine)
+            except Exception as ex:
+                logger.create_error_log(traceback.format_exc())
+                self.errorHappens.emit(f"{ex}", "ERR_CONVERT_FAILURE")
+                return False
+        
+        params = self.analyze_custom_parameters(_path=path)
+        lists_for_add = []
+        for param in params:
+            if not os.path.exists(DEBUG_PATH+DIRECTORY+f'data/{engine}/{param["blacklist_name"]}'):
+                lists_for_add.append({'blacklist_name':param["blacklist_name"], 'type':'blacklist'})     
+        
+        custom_params = self.analyze_custom_parameters(_path=path, _mode='custom_params_only')
+        
+        bins_for_add = re.findall(
+            r'(?:\s|^)(?:"|\')?((?:[^\s"\']+|(?<=["\'])[^"\']+)\.bin)(?:"|\')?(?=\s|$)', 
+            custom_params
+            )
+
+        for i, binfile in enumerate(bins_for_add):
+            if not os.path.exists(DEBUG_PATH+DIRECTORY+f'data/{engine}/{binfile}'):
+                lists_for_add.append({'blacklist_name':binfile, 'type':'bin'})                
+        
         print(">>>>>>>>>>>>>>>>>>>>>>>>\n\n\n"+path)
         try:
             change_setting('CONFIG', f'{engine.lower()}_config_path', path)
             configs[engine].configfile = path
             configs[engine].reload_config()
+            
+            if lists_for_add != []:
+                self.information_requested.emit(f"load_preset:{engine}", lists_for_add)
+                
             return True
-        except:
+        except Exception as ex:
+            self.errorHappens.emit(f"{ex}", "ERR_LOAD_FAILURE")
             change_setting('CONFIG', f'{engine.lower()}_config_path', "")
             return False
+          
+    @Slot(str, str, result=str)
+    def get_load_preset_autocorrect_vars(self, engine, blacklist):
+        if os.path.exists(DEBUG_PATH+DIRECTORY+f'data/{engine}/{blacklist}'):
+            return ""
+        
+        blacklist_clear = blacklist.split("\\")[-1]
+        if os.path.exists(DEBUG_PATH+DIRECTORY+f'data/{engine}/{blacklist_clear}'):
+            return os.path.join(engine, blacklist_clear)
+        
+        if self.last_load_folder and os.path.exists(os.path.join(self.last_load_folder, blacklist)):
+            return os.path.join(self.last_load_folder, blacklist)
+        
+        return ""    
+        
+    @Slot(str, str, str, result=str)
+    def apply_autocorrect(self, engine, old_blacklist_file, new_blacklist_file:str):
+        params = configs[engine].get_value("custom_parameters")
+        try:
+            convert_folder = convert_folder_name = ''
+            if os.path.dirname(new_blacklist_file) != \
+               os.path.join(DEBUG_PATH+DIRECTORY, 'data', engine) and \
+               (len(new_blacklist_file.split("\\")) < 2 or 
+                new_blacklist_file.split("\\")[-2] != engine):
+                
+                _filename = os.path.basename(
+                    configs[engine].configfile).split(".")[0].replace(" ", "_")
+                _filename = pretty_path(_filename)
+                
+                convert_folder_name = f'converted{_filename}'
+                
+                convert_folder =  os.path.join(DEBUG_PATH+DIRECTORY, 
+                                            'data', engine, convert_folder_name)
+                
+                if not os.path.exists(convert_folder): os.makedirs(convert_folder)
+                
+                shutil.copyfile(
+                    os.path.join(new_blacklist_file), 
+                    os.path.join(convert_folder, os.path.basename(new_blacklist_file))
+                    )
+                
+            configs[engine].set_value("custom_parameters", params.replace(
+                old_blacklist_file, 
+                os.path.join(
+                    convert_folder_name, 
+                    os.path.basename(new_blacklist_file))))
+            configs[engine].reload_config()
+            
+            return 'True'
+        except IOError as ex:
+            logger.create_error_log(traceback.format_exc())
+            return 'ERR_FILE_WRITE'
+        except Exception as ex:
+            logger.create_error_log(traceback.format_exc())
+            return 'ERR_UNKNOWN'
+    
+    @Slot(str)
+    def return_autocorrect_to_default(self, engine):
+        if self.last_preset_used:
+            change_setting('CONFIG', f'{engine.lower()}_config_path', self.last_preset_used)
+            configs[engine].configfile = self.last_preset_used
+            configs[engine].reload_config()
+            self.last_preset_used = None
+        else:
+            self.return_to_default(engine)    
         
     @Slot(str, str)
     def save_preset(self, engine, path):
@@ -110,21 +215,23 @@ class Backend(QObject):
         
 
     @Slot(str, bool, result='QVariantList')
-    def analyze_custom_parameters(self, filename, unique):
-        path = DEBUG_PATH+CONFIG_PATH+ "/zapret/" + filename + ".json"
+    def analyze_custom_parameters(self, filename=None, unique=True, _path=None, _mode='analyze'):
+        path = _path if _path else DEBUG_PATH+CONFIG_PATH+ "/zapret/" + filename + ".json"
         
-        if not os.path.exists(path) : path = DEBUG_PATH+CONFIG_PATH+ "/zapret/" + str(int(filename)-1) + ".json"
+        if not os.path.exists(path) and filename: path = DEBUG_PATH+CONFIG_PATH+ "/zapret/" + str(int(filename)-1) + ".json"
         with open(path, 'r', encoding='utf-8') as file:
             data = json.load(file)
         
         custom_params = data.get("custom_parameters", "")
+        
+        if _mode == 'custom_params_only': return custom_params
 
         windows = [window.strip() for window in custom_params.split('--new') if window.strip()]
 
         blacklists = {} 
 
         for window in windows:
-            tokens = shlex.split(window)
+            tokens = shlex.split(window, posix=False)
 
             i = 0
             found_blacklist = False
@@ -287,15 +394,21 @@ class Backend(QObject):
     
     @Slot(str, str, result=str)
     def get_from_config(self, config, key:str):
-        return str(configs[config.lower()].get_value(key.lower()))
+        _value = str(configs[config.lower()].get_value(key.lower()))
+        if _value != 'None': return _value
+        else: return "" 
         
     @Slot(str, str, result=int)
     def get_int_from_config(self, config, key:str):
-        return int(configs[config.lower()].get_value(key.lower()))
+        _value = int(configs[config.lower()].get_value(key.lower()))
+        if _value: return _value
+        else: return 0
     
     @Slot(str, str, result=bool)
     def get_bool_from_config(self, config, key:str):
-        return configs[config.lower()].get_value(key.lower())
+        _value = configs[config.lower()].get_value(key.lower())
+        if _value is not None: return _value
+        else: return False
         
     @Slot(str, str, str)
     def set_to_config(self, config, key:str, value:str):
@@ -472,6 +585,13 @@ class Backend(QObject):
             print(ex)
             return False
         return updates_availible
+    
+    @Slot(str)
+    def open_folder(self, folder_name):
+        if not os.path.exists(folder_name):
+            open_folder(os.path.join(DEBUG_PATH+DIRECTORY, 'data', folder_name))
+        else:
+            open_folder(folder_name)
 
     @Slot(str)
     def open_component_folder(self, component_name:str):

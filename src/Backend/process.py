@@ -4,17 +4,9 @@ from PySide6.QtCore import QProcess, Signal, QThread
 from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 
-from utils import GoodbyedpiProcess, change_setting, get_locale, get_preset_parameters, error_sound, stop_servise
+from utils import GoodbyedpiProcess, change_setting, get_locale, get_preset_parameters, error_sound, stop_servise, get_parameter_mappings
 from _data import EXECUTABLES, configs, settings, text, CONFIG_PATH, PARAMETER_MAPPING, VALUE_PARAMETERS, S_PARAMETER_MAPPING, S_VALUE_PARAMETERS
 
-def get_parameter_mappings(engine_name):
-    parameter_mappings = {
-        'goodbyedpi': (PARAMETER_MAPPING, VALUE_PARAMETERS),
-        'zapret': (None, None),
-        'byedpi': (None, None),
-        'spoofdpi': (S_PARAMETER_MAPPING, S_VALUE_PARAMETERS),
-    }
-    return parameter_mappings.get(engine_name, ({}, {}))
 
 def build_command_from_config(engine_name, parameter_mapping, value_parameters):
     command = []
