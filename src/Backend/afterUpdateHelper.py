@@ -6,7 +6,8 @@ import os
 import shutil
 from logger import AppLogger
 from quick_start import merge_blacklist, merge_settings
-from _data import BACKUP_SETTINGS_FILE_PATH, COMPONENTS_URLS, DEBUG_PATH, DIRECTORY, DEBUG, GOODBYE_DPI_PATH, LOG_LEVEL, SETTINGS_FILE_PATH, VERSION, settings
+from _data import BACKUP_SETTINGS_FILE_PATH, COMPONENTS_URLS, DEBUG_PATH, DIRECTORY,\
+    DEBUG, GOODBYE_DPI_PATH, LOG_LEVEL, SETTINGS_FILE_PATH, VERSION, settings, text
 from utils import get_component_download_url
 from .backend import DownloadComponent
 
@@ -134,6 +135,7 @@ class MovingSettingsWorker(QObject):
                     logger.create_error_log("The update could not be completed correctly. Your data may be lost.\n\n" +\
                                         f"Backup settings file {source_dir+'/settings/_settings.ini'} does not exist.")
                 settings.reload_settings()
+                text.reload_text()
                 
                 if total_files == 0:
                     self.finished.emit()
