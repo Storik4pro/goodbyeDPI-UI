@@ -168,6 +168,10 @@ class MovingSettingsWorker(QObject):
             except:
                 logger.raise_warning("The update could not be completed. Your data may be lost.\n\n"+traceback.format_exc())
         
+        if settings.settings['COMPONENTS']['goodbyedpi_server_version'] == '0.2.3rc3':
+            settings.settings['COMPONENTS']['goodbyedpi_server_version'] = 'test version - FWSNI support'
+            settings.reload_settings()
+        
         text.reload_text()
         self.finished.emit()
 
