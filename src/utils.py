@@ -181,20 +181,26 @@ spoofdpi_logo = \
      ██ ██      ██    ██ ██    ██ ██      ██   ██ ██      ██
 ███████ ██       ██████   ██████  ██      ██████  ██      ██"""
 def remove_ansi_sequences(text:str):
-    text = text.replace("[?25l\u001b[2J\u001b[m\u001b[H", "");
-    text = text.replace("[4;1H", "\n");
     text = re.sub(r'\u001b\]0;.*?\[\?25h', '', text)
-    text = re.sub(r'\[\?25l|\x1b\[1C|\x1b', '', text)
+    
+    stage1 = re.sub(r'\w:\\[^ ]+', '', text)
+    print("") # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
 
-    stage2 = text.replace("https://github.com/ValdikSS/GoodbyeDPI", "https://github.com/ValdikSS/GoodbyeDPI\n\n")
-
+    ansi_escape = re.compile(r'(?:\x1B[@-_][0-?]*[ -/]*[@-~])|\]0;')
+    stage2 = ansi_escape.sub('', stage1)
+    print("") # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
+    print("") # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
+    print("") # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
+    if settings.settings['GLOBAL']['engine'] == "goodbyeDPI": stage2.replace("GG", "G")
+    stage2 = stage2.replace("https://github.com/ValdikSS/GoodbyeDPI", "https://github.com/ValdikSS/GoodbyeDPI\n\n")
+    
     if settings.settings['GLOBAL']['engine'] == "spoofdpi":
         stage2 = stage2.replace("•ADDR", "\n\n•ADDR")
         stage2 = stage2.replace("to quit", "to quit\n\n")
         stage2 = stage2.replace("Press", "\nPress")
         stage2 = re.sub(r'█.*█', '', stage2, flags=re.DOTALL)
         print(stage2)
-        stage2 = spoofdpi_logo + stage2
+        
 
     return stage2
 
