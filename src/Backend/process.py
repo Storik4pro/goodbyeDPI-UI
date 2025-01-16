@@ -153,6 +153,7 @@ class Process(QObject):
     process_stopped = Signal(str)
     engine_changed = Signal(str)
     preset_changed = Signal()
+    clean_output = Signal()
 
     def __init__(self, parent=None):
         super().__init__()
@@ -199,6 +200,7 @@ class Process(QObject):
         self.engine = settings.settings['GLOBAL']['engine']
         self.engine_changed.emit(self.engine)
         self.preset_changed.emit()
+        self.clean_output.emit()
 
         self.output = ""
         try:

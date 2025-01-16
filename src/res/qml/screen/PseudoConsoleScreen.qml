@@ -250,7 +250,9 @@ ScrollablePage {
         function onProcess_started(){
             Qt.callLater(updateStatus, qsTr(backend.get_element_loc('pseudoconsole_success')).arg(execut))
             Qt.callLater(setIcon, "sucess")
-            output_str = ""
+        }
+        function onClean_output() {
+            clearOutput()
         }
         function onProcess_stopped() {
             var reason = arguments[0];
