@@ -74,9 +74,9 @@ Page {
                                 Layout.leftMargin: 15
                                 onClicked: {
                                     if (component === 'goodbyedpi'){
-                                        process.change_engine('goodbyeDPI')
+                                        change_engine('goodbyeDPI')
                                     } else {
-                                        process.change_engine(component)
+                                        change_engine(component)
                                     }
                                 }
                                 Component.onCompleted: {
@@ -370,6 +370,14 @@ Page {
                         }
                     }
                 }
+                function change_engine(componentName) {
+                    if (process.is_process_alive()) {
+                        process.stop_process()
+                        Qt.callLater(process.start_process)
+                    }
+                    process.change_engine(componentName)
+                }
+
                 function remove_component(componentName, button) {
                     for (var i = 0; i < buttonArray.length; i++) {
                         if (buttonArray[i].enabled !== true){
