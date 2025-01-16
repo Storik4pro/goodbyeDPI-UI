@@ -371,6 +371,7 @@ ScrollablePage {
             getting_ready = false
             progressBarDownload.visible = false
             if (success === 'True') {
+                mainLabel.text = backend.get_element_loc("installing")
                 process.stop_service()
                 patcher.get_ready_for_install()
                 Qt.callLater(backend._update)
