@@ -630,17 +630,15 @@ FramelessWindow {
             window.hide()
             windowState = false
             
+        } else if (backend.getValue("APPEARANCE_MODE", "quit_to") == "tray") {
+            system_tray = trayIconComponent.createObject(window)
+            updateIcon()
         }
         if (backend.check_updates()) {
             delayTimer.start()
         }
         updateIcon()
         backend.start_check_component_updates()
-
-        if (backend.getValue("APPEARANCE_MODE", "quit_to") == "tray") {
-            system_tray = trayIconComponent.createObject(window)
-            updateIcon()
-        }
         
     }
    
