@@ -30,31 +30,11 @@ FramelessWindow {
     windowEffect: Global.windowEffect
     autoDestroy: false
     property var processStarted: process.is_process_alive()
+    property var windowState: true
     initialItem: resolvedUrl("res/qml/screen/MainScreen.qml")
     appBar: AppBar{
-        id:appbar
-        property var color: Theme.darkMode ? '#FFFFFF': '#000000'
         implicitHeight: 48
         windowIcon: Item{}
-        action: RowLayout{
-            id:rwlay
-            IconButton{
-                id: btn_exit
-                visible:backend.getValue("APPEARANCE_MODE", "quit_to") === 'tray'
-                implicitWidth: 46
-                padding: 0
-                radius: 0
-                icon.width: 18
-                icon.height: 18
-                icon.color:appbar.color
-                icon.source: resolvedUrl("res/image/logout.png")
-                ToolTip.visible: hovered
-                ToolTip.text: backend.get_element_loc("quit_to_system")
-                ToolTip.delay: Theme.toolbarDelay
-                onClicked: exit()
-                
-            }
-        }
     }
     /*onNewInit:
         (argument)=>{
@@ -351,12 +331,14 @@ FramelessWindow {
                 P.MenuSeparator {}
                 P.MenuItem {
                     text: backend.get_element_loc("maximize")
+                    enabled:!windowState
                     font.bold: true
                     onTriggered: {
+                        windowState = true
                         window.show()
                         window.raise()
                         window.requestActivate()
-                        if (system_tray) {
+                        if (system_tray && backend.getValue("APPEARANCE_MODE", "quit_to") !== "tray") {
                             system_tray.destroy()
                         }
                     }
@@ -374,9 +356,10 @@ FramelessWindow {
             onActivated: (reason) => {
                 if (reason === P.SystemTrayIcon.Trigger) {
                     window.show()
+                    windowState = true
                     window.raise()
                     window.requestActivate()
-                    if (system_tray) {
+                    if (system_tray && backend.getValue("APPEARANCE_MODE", "quit_to") !== "tray") {
                         system_tray.destroy()
                     }
                 }
@@ -408,9 +391,13 @@ FramelessWindow {
     property var system_tray
 
     function trayHide() {
+        if (system_tray) {
+            system_tray.destroy()
+        }
         system_tray = trayIconComponent.createObject(window)
         updateIcon()
         window.hide()
+        windowState = false
         var qw = window.width - _width
         var qh = window.height - _height
 
@@ -485,23 +472,13 @@ FramelessWindow {
     }
 
     Connections{
-        target: Theme
-        function onDarkModeChanged(){
-            if (Theme.darkMode) {
-                appBar.color ="#FFFFFF"
-            } else {
-                appBar.color ="#000000"
-            }
-        }
-    }
-
-    Connections{
         target: process
         function onError_happens(){
             window.show()
+            windowState = true
             window.raise()
             window.requestActivate()
-            if (system_tray) {
+            if (system_tray && backend.getValue("APPEARANCE_MODE", "quit_to") !== "tray") {
                 system_tray.destroy()
             }
             WindowRouter.go("/pseudoconsole");
@@ -555,6 +532,7 @@ FramelessWindow {
         target:backend
         function onLanguage_change() {
             window.show()
+            windowState = true
             window.raise()
             window.requestActivate()
             if (system_tray) {
@@ -581,38 +559,42 @@ FramelessWindow {
         function onNotificationAction(notificationId, action) {
             if (notificationId === "#NOTF_FAI_pseudoconsoleOpen") {
                 if (action === "user_not_dismissed") {
+                    windowState = true
                     window.show()
                     window.raise()
                     window.requestActivate()
-                    if (system_tray) {
+                    if (system_tray && backend.getValue("APPEARANCE_MODE", "quit_to") !== "tray") {
                         system_tray.destroy()
                     }
                     WindowRouter.go("/pseudoconsole");
                 }
             } else if (notificationId === "#NOTF_MAXIMIZE") {
                 if (action === "user_not_dismissed") {
+                    windowState = true
                     window.show()
                     window.raise()
                     window.requestActivate()
-                    if (system_tray) {
+                    if (system_tray && backend.getValue("APPEARANCE_MODE", "quit_to") !== "tray") {
                         system_tray.destroy()
                     }
                 }
             } else if (notificationId === "#NOTF_UPDATE") {
                 if (action === "user_not_dismissed") {
+                    windowState = true
                     window.show()
                     window.raise()
                     window.requestActivate()
-                    if (system_tray) {
+                    if (system_tray && backend.getValue("APPEARANCE_MODE", "quit_to") !== "tray") {
                         system_tray.destroy()
                     }
                 }
             } else if (notificationId === "#NOTF_COMP_UPDATE") {
                 if (action === "user_not_dismissed") {
+                    windowState = true
                     window.show()
                     window.raise()
                     window.requestActivate()
-                    if (system_tray) {
+                    if (system_tray && backend.getValue("APPEARANCE_MODE", "quit_to") !== "tray") {
                         system_tray.destroy()
                     }
                 }
@@ -646,6 +628,7 @@ FramelessWindow {
             }
             system_tray = trayIconComponent.createObject(window)
             window.hide()
+            windowState = false
             
         }
         if (backend.check_updates()) {
@@ -653,6 +636,11 @@ FramelessWindow {
         }
         updateIcon()
         backend.start_check_component_updates()
+
+        if (backend.getValue("APPEARANCE_MODE", "quit_to") == "tray") {
+            system_tray = trayIconComponent.createObject(window)
+            updateIcon()
+        }
         
     }
    
