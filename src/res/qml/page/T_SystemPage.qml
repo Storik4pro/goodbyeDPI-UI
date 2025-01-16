@@ -343,14 +343,12 @@ ScrollablePage {
                     }
                     text: checked ? backend.get_element_loc("on_") : backend.get_element_loc("off")
                     checked: backend.getBool('GLOBAL', 'autorun')
-                    onCheckedChanged: {
-                        if (!isInitializing){
-                            backend.toggleBool('GLOBAL', 'autorun', checked)
-                            if (checked) {
-                                backend.add_to_autorun()
-                            } else {
-                                backend.remove_from_autorun()
-                            }
+                    onClicked: {
+                        backend.toggleBool('GLOBAL', 'autorun', checked)
+                        if (checked) {
+                            backend.add_to_autorun()
+                        } else {
+                            backend.remove_from_autorun()
                         }
                         isInitializing = false
                     }
@@ -406,10 +404,8 @@ ScrollablePage {
                     }
                     text: checked ? backend.get_element_loc("on_") : backend.get_element_loc("off")
                     checked: backend.getBool('GLOBAL', 'hide_to_tray')
-                    onCheckedChanged: {
-                        if (!isInitializing){
-                            backend.toggleBool('GLOBAL', 'hide_to_tray', checked)
-                        }
+                    onClicked: {
+                        backend.toggleBool('GLOBAL', 'hide_to_tray', checked)
                         isInitializing = false
                     }
                 }
