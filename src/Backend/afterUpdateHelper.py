@@ -170,7 +170,7 @@ class MovingSettingsWorker(QObject):
         
         if settings.settings['COMPONENTS']['goodbyedpi_server_version'] == '0.2.3rc3':
             settings.settings['COMPONENTS']['goodbyedpi_server_version'] = 'test version - FWSNI support'
-            settings.reload_settings()
+            settings.save_settings()
         
         text.reload_text()
         self.finished.emit()
