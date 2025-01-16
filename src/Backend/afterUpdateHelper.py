@@ -135,7 +135,7 @@ class MovingSettingsWorker(QObject):
                     logger.create_error_log("The update could not be completed correctly. Your data may be lost.\n\n" +\
                                         f"Backup settings file {source_dir+'/settings/_settings.ini'} does not exist.")
                 settings.reload_settings()
-                text.reload_text()
+                
                 
                 if total_files == 0:
                     self.finished.emit()
@@ -168,6 +168,7 @@ class MovingSettingsWorker(QObject):
             except:
                 logger.raise_warning("The update could not be completed. Your data may be lost.\n\n"+traceback.format_exc())
         
+        text.reload_text()
         self.finished.emit()
 
 class CleanupWorker(QObject):
