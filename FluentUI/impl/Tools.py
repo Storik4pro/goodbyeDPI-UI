@@ -6,8 +6,10 @@ from PySide6.QtQml import QmlSingleton, QmlNamedElement
 
 def windowBuildNumber() -> int:
     if sys.platform.startswith("win"):
-        regKey = QSettings("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
-                           QSettings.Format.NativeFormat)
+        regKey = QSettings(
+            "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
+            QSettings.Format.NativeFormat,
+        )
         if regKey.contains("CurrentBuildNumber"):
             buildNumber = int(str(regKey.value("CurrentBuildNumber")))
             return buildNumber
@@ -43,7 +45,10 @@ class __Tools(QObject):
         return Tools()
 
     def eventFilter(self, watched, event):
-        if event.type() == QEvent.Type.ApplicationPaletteChange or event.type() == QEvent.Type.ThemeChange:
+        if (
+            event.type() == QEvent.Type.ApplicationPaletteChange
+            or event.type() == QEvent.Type.ThemeChange
+        ):
             dark = getSystemDark()
             if self.__systemDark != dark:
                 self.__systemDark = dark
@@ -111,8 +116,8 @@ class __Tools(QObject):
 
     @Slot(QColor, float, result=QColor)
     def withOpacity(self, color: QColor, opacity: float) -> QColor:
-        alpha = int(opacity * 255) & 0xff
-        return QColor.fromRgba((alpha << 24) | (color.rgba() & 0xffffff))
+        alpha = int(opacity * 255) & 0xFF
+        return QColor.fromRgba((alpha << 24) | (color.rgba() & 0xFFFFFF))
 
     @Slot(result=int)
     def cursorScreenIndex(self) -> int:

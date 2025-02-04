@@ -6,12 +6,12 @@ QML_IMPORT_MAJOR_VERSION = 1
 
 
 class TreeItem:
-    def __init__(self, data: list, parent: 'TreeItem' = None):
+    def __init__(self, data: list, parent: "TreeItem" = None):
         self.item_data = data
         self.parent_item = parent
         self.child_items = []
 
-    def child(self, number: int) -> 'TreeItem':
+    def child(self, number: int) -> "TreeItem":
         if number < 0 or number >= len(self.child_items):
             return None
         return self.child_items[number]
@@ -129,13 +129,22 @@ class TreeModel(QAbstractItemModel):
 
         return self.root_item
 
-    def headerData(self, section: int, orientation: Qt.Orientation,
-                   role: int = Qt.ItemDataRole.DisplayRole):
-        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
+    def headerData(
+        self,
+        section: int,
+        orientation: Qt.Orientation,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ):
+        if (
+            orientation == Qt.Orientation.Horizontal
+            and role == Qt.ItemDataRole.DisplayRole
+        ):
             return self.root_item.data(section)
         return None
 
-    def index(self, row: int, column: int, parent: QModelIndex = QModelIndex()) -> QModelIndex:
+    def index(
+        self, row: int, column: int, parent: QModelIndex = QModelIndex()
+    ) -> QModelIndex:
         if parent.isValid() and parent.column() != 0:
             return QModelIndex()
         parent_item: TreeItem = self.get_item(parent)

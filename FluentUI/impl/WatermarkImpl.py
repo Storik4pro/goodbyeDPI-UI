@@ -1,5 +1,13 @@
 from PySide6.QtCore import Signal, Property, QRectF, QPoint, QSize
-from PySide6.QtGui import QColor, QPainter, QPainterPath, Qt, QLinearGradient, QFont, QFontMetricsF
+from PySide6.QtGui import (
+    QColor,
+    QPainter,
+    QPainterPath,
+    Qt,
+    QLinearGradient,
+    QFont,
+    QFontMetricsF,
+)
 from PySide6.QtQuick import QQuickPaintedItem
 from PySide6.QtQml import QmlElement
 
@@ -51,7 +59,10 @@ class WatermarkImpl(QQuickPaintedItem):
                 painter.save()
                 painter.translate(centerX, centerY)
                 painter.rotate(self.__rotate)
-                painter.drawText(QRectF(-fontWidth / 2.0, -fontHeight / 2.0, fontWidth, fontHeight), self.__text)
+                painter.drawText(
+                    QRectF(-fontWidth / 2.0, -fontHeight / 2.0, fontWidth, fontHeight),
+                    self.__text,
+                )
                 painter.restore()
 
     @Property(int, notify=textSizeChanged)

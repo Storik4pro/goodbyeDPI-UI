@@ -20,7 +20,7 @@ class __AppInfo(QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.__version = GlobalConfig.application_version
-        self.__locales = ['en_US', 'zh_CN']
+        self.__locales = ["en_US", "zh_CN"]
         self.__locale = SettingsHelper().getLocale()
         self.__translator = QTranslator()
 
@@ -65,7 +65,9 @@ class __AppInfo(QObject):
             engine.setBaseUrl("qrc:/qt/qml/GoodbyeDPI_UI/")
 
     def __init_translator(self):
-        if self.__translator.load(f":/qt/qml/GoodbyeDPI_UI/GoodbyeDPI_UI_{self.__locale}.qm"):
+        if self.__translator.load(
+            f":/qt/qml/GoodbyeDPI_UI/GoodbyeDPI_UI_{self.__locale}.qm"
+        ):
             QGuiApplication.installTranslator(self.__translator)
         QLocale.setDefault(QLocale(self.__locale))
 

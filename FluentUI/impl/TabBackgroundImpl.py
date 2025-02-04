@@ -1,5 +1,13 @@
 from PySide6.QtCore import Signal, Property, QRectF, QPointF, QSize
-from PySide6.QtGui import QColor, QPainter, QPainterPath, Qt, QLinearGradient, QPen, QBrush
+from PySide6.QtGui import (
+    QColor,
+    QPainter,
+    QPainterPath,
+    Qt,
+    QLinearGradient,
+    QPen,
+    QBrush,
+)
 from PySide6.QtQuick import QQuickPaintedItem
 from PySide6.QtQml import QmlElement
 
@@ -32,21 +40,50 @@ class TabBackgroundImpl(QQuickPaintedItem):
         painter.setBrush(QBrush(self.__color))
         path = QPainterPath()
         path.moveTo(self.__radius, self.__radius)
-        path.arcTo(QRectF(self.__radius, 0, 2 * self.__radius, 2 * self.__radius), 180, -90)
+        path.arcTo(
+            QRectF(self.__radius, 0, 2 * self.__radius, 2 * self.__radius), 180, -90
+        )
         path.lineTo(self.width() - self.__radius * 2, 0)
-        path.arcTo(QRectF(self.width() - 3 * self.__radius, 0, 2 * self.__radius, 2 * self.__radius), 90, -90)
+        path.arcTo(
+            QRectF(
+                self.width() - 3 * self.__radius,
+                0,
+                2 * self.__radius,
+                2 * self.__radius,
+            ),
+            90,
+            -90,
+        )
         path.lineTo(self.width() - self.__radius, self.height() - self.__radius)
-        path.arcTo(QRectF(self.width() - self.__radius, self.height() - 2 * self.__radius, 2 * self.__radius,
-                          2 * self.__radius), 180, 90)
+        path.arcTo(
+            QRectF(
+                self.width() - self.__radius,
+                self.height() - 2 * self.__radius,
+                2 * self.__radius,
+                2 * self.__radius,
+            ),
+            180,
+            90,
+        )
         path.lineTo(0, self.height())
-        path.arcTo(QRectF(-self.__radius, self.height() - 2 * self.__radius, 2 * self.__radius, 2 * self.__radius), -90,
-                   90)
+        path.arcTo(
+            QRectF(
+                -self.__radius,
+                self.height() - 2 * self.__radius,
+                2 * self.__radius,
+                2 * self.__radius,
+            ),
+            -90,
+            90,
+        )
         path.closeSubpath()
         painter.drawPath(path)
         pen.setColor(self.__color)
         pen.setWidth(2)
         painter.setPen(pen)
-        painter.drawLine(5, int(self.height()), int(self.width() - 5), int(self.height()))
+        painter.drawLine(
+            5, int(self.height()), int(self.width() - 5), int(self.height())
+        )
         painter.restore()
 
     @Property(QColor, notify=strokeColorChanged)

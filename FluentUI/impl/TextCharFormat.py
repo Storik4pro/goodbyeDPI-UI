@@ -34,4 +34,6 @@ class TextCharFormat(QObject, QTextCharFormat):
             self.foregroundChanged.emit()
 
     font = Property(QFont, getTextFont, setTextFont, notify=fontChanged)
-    foreground = Property(QColor, getForeground, setForeground, notify=foregroundChanged)
+    foreground = Property(
+        QColor, getForeground, setForeground, notify=foregroundChanged
+    )

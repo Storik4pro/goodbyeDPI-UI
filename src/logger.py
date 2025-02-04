@@ -3,7 +3,14 @@ import os
 import sys
 import threading
 
-from PySide6.QtCore import QDir, qInstallMessageHandler, QtMsgType, QStandardPaths, QDateTime, QSysInfo
+from PySide6.QtCore import (
+    QDir,
+    qInstallMessageHandler,
+    QtMsgType,
+    QStandardPaths,
+    QDateTime,
+    QSysInfo,
+)
 from _data import DEBUG_PATH
 
 __logging: logging.Logger
@@ -47,7 +54,7 @@ def __close_format():
     __logging.addHandler(__stdoutHandler)
 
 
-def __message_handler(msg_type, context, message:str):
+def __message_handler(msg_type, context, message: str):
     if message == "Retrying to obtain clipboard.":
         return
     global __logging
@@ -60,16 +67,18 @@ def __message_handler(msg_type, context, message:str):
     file_and_line_log_str = ""
     if context.file:
         str_file_tmp = context.file
-        ptr = str_file_tmp.rfind('/')
+        ptr = str_file_tmp.rfind("/")
         if ptr != -1:
-            str_file_tmp = str_file_tmp[ptr + 1:]
-        ptr_tmp = str_file_tmp.rfind('\\')
+            str_file_tmp = str_file_tmp[ptr + 1 :]
+        ptr_tmp = str_file_tmp.rfind("\\")
         if ptr_tmp != -1:
-            str_file_tmp = str_file_tmp[ptr_tmp + 1:]
+            str_file_tmp = str_file_tmp[ptr_tmp + 1 :]
         file_and_line_log_str = f"[{str_file_tmp}:{str(context.line)}]"
     level = __get_level_by_msg_type(msg_type)
-    final_message = (f"{QDateTime.currentDateTime().toString('yyyy/MM/dd hh:mm:ss.zzz')}[{logging.getLevelName(level)}]"
-                     f"{file_and_line_log_str}[{threading.get_ident()}] {message}")
+    final_message = (
+        f"{QDateTime.currentDateTime().toString('yyyy/MM/dd hh:mm:ss.zzz')}[{logging.getLevelName(level)}]"
+        f"{file_and_line_log_str}[{threading.get_ident()}] {message}"
+    )
     __logging.log(level, final_message)
     __open_format()
 
@@ -84,7 +93,12 @@ def setup(name, level=logging.DEBUG):
     __logging = logging.getLogger(name)
     __logging.setLevel(level)
     log_file_name = f"{name}_{QDateTime.currentDateTime().toString('yyyyMMdd')}.log"
-    log_dir_path = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation) + "/log"
+    log_dir_path = (
+        QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.AppLocalDataLocation
+        )
+        + "/log"
+    )
     log_dir = QDir(log_dir_path)
     if not log_dir.exists():
         log_dir.mkpath(log_dir_path)
@@ -93,7 +107,9 @@ def setup(name, level=logging.DEBUG):
     __stdoutHandler = logging.StreamHandler(sys.stdout)
     __formatFileHandler = logging.FileHandler(log_file_path)
     __formatStdoutHandler = logging.StreamHandler(sys.stdout)
-    fmt = __CustomFormatter("%(asctime)s[%(levelname)s][%(filename)s:%(lineno)s][%(threadId)d] %(message)s")
+    fmt = __CustomFormatter(
+        "%(asctime)s[%(levelname)s][%(filename)s:%(lineno)s][%(threadId)d] %(message)s"
+    )
     __formatFileHandler.setFormatter(fmt)
     __formatStdoutHandler.setFormatter(fmt)
     __logging.addHandler(__formatStdoutHandler)

@@ -1,8 +1,19 @@
 import ctypes
 import sys
 
-from PySide6.QtCore import Signal, Slot, Qt, QPoint, QEvent, QAbstractNativeEventFilter, Property, QRectF, QDateTime, \
-    QPointF, QSize
+from PySide6.QtCore import (
+    Signal,
+    Slot,
+    Qt,
+    QPoint,
+    QEvent,
+    QAbstractNativeEventFilter,
+    Property,
+    QRectF,
+    QDateTime,
+    QPointF,
+    QSize,
+)
 from PySide6.QtGui import QMouseEvent, QGuiApplication, QCursor, QWindow
 from PySide6.QtQml import QmlElement
 from PySide6.QtQuick import QQuickItem
@@ -13,10 +24,20 @@ if sys.platform.startswith("darwin"):
 from FluentUI.impl.Tools import Tools
 
 if sys.platform.startswith("win"):
-    from ctypes import POINTER, byref, c_bool, c_int, c_void_p, c_long, WinDLL, POINTER, Structure, c_uint, \
-        c_short
+    from ctypes import (
+        POINTER,
+        byref,
+        c_bool,
+        c_int,
+        c_void_p,
+        c_long,
+        WinDLL,
+        POINTER,
+        Structure,
+        c_uint,
+        c_short,
+    )
     from ctypes.wintypes import DWORD, HWND, MSG, RECT, UINT, POINT, RECTL, LPCVOID
-
 
     class MARGINS(Structure):
         _fields_ = [
@@ -26,25 +47,19 @@ if sys.platform.startswith("win"):
             ("cyBottomHeight", c_int),
         ]
 
-
     class PWINDOWPOS(Structure):
         _fields_ = [
-            ('hWnd', HWND),
-            ('hwndInsertAfter', HWND),
-            ('x', c_int),
-            ('y', c_int),
-            ('cx', c_int),
-            ('cy', c_int),
-            ('flags', UINT)
+            ("hWnd", HWND),
+            ("hwndInsertAfter", HWND),
+            ("x", c_int),
+            ("y", c_int),
+            ("cx", c_int),
+            ("cy", c_int),
+            ("flags", UINT),
         ]
-
 
     class NCCALCSIZE_PARAMS(Structure):
-        _fields_ = [
-            ('rgrc', RECT * 3),
-            ('lppos', POINTER(PWINDOWPOS))
-        ]
-
+        _fields_ = [("rgrc", RECT * 3), ("lppos", POINTER(PWINDOWPOS))]
 
     class MINMAXINFO(Structure):
         _fields_ = [
@@ -54,7 +69,6 @@ if sys.platform.startswith("win"):
             ("ptMinTrackSize", POINT),
             ("ptMaxTrackSize", POINT),
         ]
-
 
     LPNCCALCSIZE_PARAMS = POINTER(NCCALCSIZE_PARAMS)
     qtNativeEventType = b"windows_generic_MSG"
@@ -67,7 +81,15 @@ if sys.platform.startswith("win"):
     PostMessageW.argtypes = [c_void_p, c_uint, c_uint, c_long]
     PostMessageW.restype = c_bool
     TrackPopupMenu = user32.TrackPopupMenu
-    TrackPopupMenu.argtypes = [c_void_p, c_uint, c_int, c_int, c_int, c_void_p, c_void_p]
+    TrackPopupMenu.argtypes = [
+        c_void_p,
+        c_uint,
+        c_int,
+        c_int,
+        c_int,
+        c_void_p,
+        c_void_p,
+    ]
     TrackPopupMenu.restype = c_int
     EnableMenuItem = user32.EnableMenuItem
     EnableMenuItem.argtypes = [c_void_p, c_uint, c_uint]
@@ -110,41 +132,40 @@ if sys.platform.startswith("win"):
     DwmSetWindowAttribute.argtypes = [c_int, DWORD, LPCVOID, DWORD]
     DwmSetWindowAttribute.restype = c_long
 
-
     def LOWORD(dwValue):
-        return int(dwValue) & 0xffff
-
+        return int(dwValue) & 0xFFFF
 
     def HIWORD(dwValue):
-        return (int(dwValue) >> 16) & 0xffff
-
+        return (int(dwValue) >> 16) & 0xFFFF
 
     def GET_X_LPARAM(lp):
         return c_short(LOWORD(lp)).value
 
-
     def GET_Y_LPARAM(lp):
         return c_short(HIWORD(lp)).value
-
 
     def isCompositionEnabled():
         bResult = c_int(0)
         dwmapi.DwmIsCompositionEnabled(byref(bResult))
         return bool(bResult.value)
 
-
     def setWindowEffect(hwnd, effectType):
         margins = MARGINS(1, 1, 0, 1)
         if effectType == 1:
             DwmExtendFrameIntoClientArea(hwnd, byref(margins))
             system_backdrop_type = c_int(2)
-            DwmSetWindowAttribute(hwnd, 38, byref(system_backdrop_type), ctypes.sizeof(c_int))
+            DwmSetWindowAttribute(
+                hwnd, 38, byref(system_backdrop_type), ctypes.sizeof(c_int)
+            )
         elif effectType == 2:
             DwmExtendFrameIntoClientArea(hwnd, byref(margins))
             system_backdrop_type = c_int(3)
-            DwmSetWindowAttribute(hwnd, 38, byref(system_backdrop_type), ctypes.sizeof(c_int))
+            DwmSetWindowAttribute(
+                hwnd, 38, byref(system_backdrop_type), ctypes.sizeof(c_int)
+            )
         else:
             DwmExtendFrameIntoClientArea(hwnd, byref(margins))
+
 
 QML_IMPORT_NAME = "FluentUI.impl"
 QML_IMPORT_MAJOR_VERSION = 1
@@ -280,14 +301,22 @@ class Frameless(QQuickItem, QAbstractNativeEventFilter):
             hwnd = self.window().winId()
             style: DWORD = GetWindowLongPtrW(hwnd, -16)
             if self.__fixSize:
-                SetWindowLongPtrW(hwnd, -16, style | 0x00040000 | 0x00C00000 | 0x00020000)
+                SetWindowLongPtrW(
+                    hwnd, -16, style | 0x00040000 | 0x00C00000 | 0x00020000
+                )
             else:
-                SetWindowLongPtrW(hwnd, -16, style | 0x00010000 | 0x00040000 | 0x00C00000 | 0x00020000)
-            SetWindowPos(hwnd, None, 0, 0, 0, 0, 0x0004 | 0x0200 | 0x0002 | 0x0001 | 0x0020)
+                SetWindowLongPtrW(
+                    hwnd, -16, style | 0x00010000 | 0x00040000 | 0x00C00000 | 0x00020000
+                )
+            SetWindowPos(
+                hwnd, None, 0, 0, 0, 0, 0x0004 | 0x0200 | 0x0002 | 0x0001 | 0x0020
+            )
             if not self.window().property("__windowEffectDisabled"):
                 setWindowEffect(hwnd, self.__windowEffect)
             self.darkChanged.connect(self, lambda: self.__setWindowDark(self.__dark))
-            self.windowEffectChanged.connect(self, lambda: setWindowEffect(hwnd, self.__windowEffect))
+            self.windowEffectChanged.connect(
+                self, lambda: setWindowEffect(hwnd, self.__windowEffect)
+            )
         appBarHeight = 0
         if self.__appbar is not None:
             appBarHeight = self.__appbar.height()
@@ -299,7 +328,9 @@ class Frameless(QQuickItem, QAbstractNativeEventFilter):
             self.window().setMinimumHeight(self.window().minimumHeight() + appBarHeight)
             self.window().setMaximumHeight(self.window().maximumHeight() + appBarHeight)
         self.window().resize(w, h)
-        self.topmostChanged.connect(self, lambda: self.__setWindowTopmost(self.__topmost))
+        self.topmostChanged.connect(
+            self, lambda: self.__setWindowTopmost(self.__topmost)
+        )
         self.__setWindowTopmost(self.__topmost)
         self.__setWindowDark(self.__dark)
 
@@ -344,7 +375,11 @@ class Frameless(QQuickItem, QAbstractNativeEventFilter):
             top = nativeLocalPos.y < self.__margins
             bottom = nativeLocalPos.y > clientHeight - self.__margins
             result = 0
-            if not self.__fixSize and not self.__isFullScreen() and not self.__isMaximized():
+            if (
+                not self.__fixSize
+                and not self.__isFullScreen()
+                and not self.__isMaximized()
+            ):
                 if left and top:
                     result = 13
                 elif left and bottom:
@@ -370,15 +405,27 @@ class Frameless(QQuickItem, QAbstractNativeEventFilter):
             return False, 0
         elif self.__isWindows11OrGreater and (uMsg == 0x00A3 or uMsg == 0x00A1):
             if self.__hitMaximizeButton():
-                event = QMouseEvent(QEvent.Type.MouseButtonPress, QPoint(), QPoint(), Qt.MouseButton.LeftButton,
-                                    Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier)
+                event = QMouseEvent(
+                    QEvent.Type.MouseButtonPress,
+                    QPoint(),
+                    QPoint(),
+                    Qt.MouseButton.LeftButton,
+                    Qt.MouseButton.LeftButton,
+                    Qt.KeyboardModifier.NoModifier,
+                )
                 QGuiApplication.instance().sendEvent(self.__buttonMaximized, event)
                 self.__setMaximizePressed(True)
                 return True, 0
         elif self.__isWindows11OrGreater and (uMsg == 0x00A2 or uMsg == 0x00A5):
             if self.__hitMaximizeButton():
-                event = QMouseEvent(QEvent.Type.MouseButtonRelease, QPoint(), QPoint(), Qt.MouseButton.LeftButton,
-                                    Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier)
+                event = QMouseEvent(
+                    QEvent.Type.MouseButtonRelease,
+                    QPoint(),
+                    QPoint(),
+                    Qt.MouseButton.LeftButton,
+                    Qt.MouseButton.LeftButton,
+                    Qt.KeyboardModifier.NoModifier,
+                )
                 QGuiApplication.instance().sendEvent(self.__buttonMaximized, event)
                 self.__setMaximizePressed(False)
                 return True, 0
@@ -386,14 +433,18 @@ class Frameless(QQuickItem, QAbstractNativeEventFilter):
             if wParam == 2:
                 pos = self.window().position()
                 offset = self.window().mapFromGlobal(QCursor.pos())
-                self.__showSystemMenu(QPoint(pos.x() + offset.x(), pos.y() + offset.y()))
+                self.__showSystemMenu(
+                    QPoint(pos.x() + offset.x(), pos.y() + offset.y())
+                )
                 return True, 0
         elif uMsg == 0x0100 or uMsg == 0x0104:
             altPressed = (wParam == 0x12) or (GetKeyState(0x12) < 0)
             spacePressed = (wParam == 0x20) or (GetKeyState(0x20) < 0)
             if altPressed and spacePressed:
                 pos = self.window().position()
-                self.__showSystemMenu(QPoint(pos.x(), int(pos.y() + self.__appbar.height())))
+                self.__showSystemMenu(
+                    QPoint(pos.x(), int(pos.y() + self.__appbar.height()))
+                )
                 return True, 0
         return False, 0
 
@@ -412,7 +463,12 @@ class Frameless(QQuickItem, QAbstractNativeEventFilter):
             if not screen:
                 return
             origin = screen.geometry().topLeft()
-            nativePos = QPointF(QPointF(point - origin) * self.window().devicePixelRatio()).toPoint() + origin
+            nativePos = (
+                QPointF(
+                    QPointF(point - origin) * self.window().devicePixelRatio()
+                ).toPoint()
+                + origin
+            )
             hwnd = self.window().winId()
             hMenu = GetSystemMenu(hwnd, False)
             if self.__isMaximized() or self.__isFullScreen():
@@ -422,16 +478,26 @@ class Frameless(QQuickItem, QAbstractNativeEventFilter):
                 EnableMenuItem(hMenu, 0xF010, 0x00000000)
                 EnableMenuItem(hMenu, 0xF120, 0x00000003)
 
-            if (not self.__fixSize) and (not self.__isMaximized()) and (not self.__isFullScreen()):
+            if (
+                (not self.__fixSize)
+                and (not self.__isMaximized())
+                and (not self.__isFullScreen())
+            ):
                 EnableMenuItem(hMenu, 0xF000, 0x00000000)
                 EnableMenuItem(hMenu, 0xF030, 0x00000000)
             else:
                 EnableMenuItem(hMenu, 0xF000, 0x00000003)
                 EnableMenuItem(hMenu, 0xF030, 0x00000003)
             EnableMenuItem(hMenu, 0xF060, 0x00000000)
-            result = TrackPopupMenu(hMenu, (0x0100 | (0x0008 if QGuiApplication.isRightToLeft() else 0x0000)),
-                                    nativePos.x(),
-                                    nativePos.y(), 0, hwnd, 0)
+            result = TrackPopupMenu(
+                hMenu,
+                (0x0100 | (0x0008 if QGuiApplication.isRightToLeft() else 0x0000)),
+                nativePos.x(),
+                nativePos.y(),
+                0,
+                hwnd,
+                0,
+            )
             if result:
                 PostMessageW(hwnd, 0x0112, result, 0)
 
@@ -477,8 +543,11 @@ class Frameless(QQuickItem, QAbstractNativeEventFilter):
                     return False
                 mouse_event = QMouseEvent(event)
                 p = mouse_event.position().toPoint()
-                if self.__margins <= p.x() <= (self.window().width() - self.__margins) and self.__margins <= p.y() <= (
-                        self.window().height() - self.__margins):
+                if self.__margins <= p.x() <= (
+                    self.window().width() - self.__margins
+                ) and self.__margins <= p.y() <= (
+                    self.window().height() - self.__margins
+                ):
                     if self.__edges != 0:
                         self.__edges = 0
                         self.__updateCursor(self.__edges)
@@ -528,7 +597,9 @@ class Frameless(QQuickItem, QAbstractNativeEventFilter):
             if not item or not item.isVisible():
                 return False
             point = item.window().mapFromGlobal(QCursor.pos())
-            rect = QRectF(item.mapToItem(item.window().contentItem(), QPointF(0, 0)), item.size())
+            rect = QRectF(
+                item.mapToItem(item.window().contentItem(), QPointF(0, 0)), item.size()
+            )
             if rect.contains(point):
                 return True
         except RuntimeError:

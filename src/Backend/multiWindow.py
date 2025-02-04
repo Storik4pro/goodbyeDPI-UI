@@ -6,6 +6,7 @@ from toasted import ToastDismissReason
 from utils import show_error, show_message
 from _data import text
 
+
 class MultiWindow(QObject):
     multi_window_init = Signal(str)
     multi_window_close = Signal(str)
@@ -20,7 +21,7 @@ class MultiWindow(QObject):
         if not windowId in self.windows:
             self.windows.append(windowId)
             self.multi_window_init.emit(windowId)
-        else: 
+        else:
             self.multi_window_close.emit(windowId)
 
     @Slot(str)
@@ -34,4 +35,5 @@ class MultiWindow(QObject):
     def check_window_init(self, windowId):
         if windowId in self.windows:
             return True
-        else: return False
+        else:
+            return False

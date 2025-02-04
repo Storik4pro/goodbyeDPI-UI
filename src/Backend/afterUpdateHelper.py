@@ -6,35 +6,49 @@ import os
 import shutil
 from logger import AppLogger
 from quick_start import merge_blacklist, merge_settings
-from _data import BACKUP_SETTINGS_FILE_PATH, COMPONENTS_URLS, DEBUG_PATH, DIRECTORY,\
-    DEBUG, GOODBYE_DPI_PATH, LOG_LEVEL, SETTINGS_FILE_PATH, VERSION, settings, text
+from _data import (
+    BACKUP_SETTINGS_FILE_PATH,
+    COMPONENTS_URLS,
+    DEBUG_PATH,
+    DIRECTORY,
+    DEBUG,
+    GOODBYE_DPI_PATH,
+    LOG_LEVEL,
+    SETTINGS_FILE_PATH,
+    VERSION,
+    settings,
+    text,
+)
 from utils import get_component_download_url
 from .backend import DownloadComponent
 
-logger = AppLogger(VERSION, 'after_update', LOG_LEVEL if not DEBUG else logging.DEBUG)
+logger = AppLogger(VERSION, "after_update", LOG_LEVEL if not DEBUG else logging.DEBUG)
+
 
 class AfterUpdateHelper(QObject):
     progressIndeterminateVisibleChanged = Signal(bool)
     progressVisibleChanged = Signal(bool)
     progressValueChanged = Signal(int)
-    remainingTimeChanged = Signal('QVariantList')
+    remainingTimeChanged = Signal("QVariantList")
     updateMovingSettingsCompleted = Signal()
     updateCleanupStarted = Signal()
     updateCleanupCompleted = Signal()
     updateComponentsStarted = Signal()
     updateComponentsCompleted = Signal()
-    
+
     def __init__(self):
         super().__init__()
         self.worker_thread = None
         self.skip_components_update = False
-        
+
     @Slot()
     def open_logs(self):
-        os.startfile(DEBUG_PATH + DIRECTORY + 'update.log')
+        os.startfile(DEBUG_PATH + DIRECTORY + "update.log")
 
     @Slot(bool)
-    def startUpdateProcess(self, skip_components_update): # Add flag for skip components update
+    def startUpdateProcess(
+        self, skip_components_update
+    ):  # Add flag for skip components update
         self.startMovingSettings()
         self.skip_components_update = skip_components_update
 
@@ -74,29 +88,31 @@ class AfterUpdateHelper(QObject):
         self.updateCleanupCompleted.emit()
         self.worker_thread.quit()
         self.worker_thread.wait()
-        
+
         self.startUpdatingComponents()
 
     def startUpdatingComponents(self):
         self.updateComponentsStarted.emit()
-        
+
         if self.skip_components_update:
             self.updateComponentsCompleted.emit()
             return
-        
+
         self.worker_thread = QThread()
         self.worker = UpdateComponentsWorker()
         self.worker.moveToThread(self.worker_thread)
-        self.worker.progressIndeterminateVisibleChanged.connect(self.progressIndeterminateVisibleChanged)
+        self.worker.progressIndeterminateVisibleChanged.connect(
+            self.progressIndeterminateVisibleChanged
+        )
         self.worker.progressValueChanged.connect(self.progressValueChanged)
         self.worker.finished.connect(self.updateComponentsFinished)
         self.worker_thread.started.connect(self.worker.run)
         self.worker_thread.start()
-        
+
     @Slot()
     def exitApp(self):
         os._exit(0)
-        
+
     @Slot()
     def gotoMainWindow(self):
         self.updateComponentsCompleted.emit()
@@ -110,33 +126,40 @@ class AfterUpdateHelper(QObject):
         except:
             pass
 
+
 class MovingSettingsWorker(QObject):
     progressVisibleChanged = Signal(bool)
     progressValueChanged = Signal(int)
     finished = Signal()
 
     def run(self):
-        source_dir = DIRECTORY + '_internal/data' if not DEBUG else "E:/_component/data1"
-        dest_dir = DIRECTORY + 'data' if not DEBUG else "E:/_component/data"
+        source_dir = (
+            DIRECTORY + "_internal/data" if not DEBUG else "E:/_component/data1"
+        )
+        dest_dir = DIRECTORY + "data" if not DEBUG else "E:/_component/data"
         if os.path.exists(source_dir):
             try:
                 files_to_move = []
                 for root, dirs, files in os.walk(source_dir):
                     for file in files:
-                        if file.endswith('.txt'):
+                        if file.endswith(".txt"):
                             source_file = os.path.join(root, file)
                             relative_path = os.path.relpath(source_file, source_dir)
                             dest_file = os.path.join(dest_dir, relative_path)
                             files_to_move.append((source_file, dest_file))
 
                 total_files = len(files_to_move)
-                
-                if not merge_settings(source_dir+"/settings/_settings.ini", dest_dir+"/settings/settings.ini"):
-                    logger.create_error_log("The update could not be completed correctly. Your data may be lost.\n\n" +\
-                                        f"Backup settings file {source_dir+'/settings/_settings.ini'} does not exist.")
+
+                if not merge_settings(
+                    source_dir + "/settings/_settings.ini",
+                    dest_dir + "/settings/settings.ini",
+                ):
+                    logger.create_error_log(
+                        "The update could not be completed correctly. Your data may be lost.\n\n"
+                        + f"Backup settings file {source_dir+'/settings/_settings.ini'} does not exist."
+                    )
                 settings.reload_settings()
-                
-                
+
                 if total_files == 0:
                     self.finished.emit()
                     return
@@ -153,27 +176,38 @@ class MovingSettingsWorker(QObject):
                         progress = int((index + 1) / total_files * 100)
                         self.progressValueChanged.emit(progress)
                     except Exception as e:
-                        logger.create_error_log(f"Error moving file {source_file} to {dest_file}: {e}")
+                        logger.create_error_log(
+                            f"Error moving file {source_file} to {dest_file}: {e}"
+                        )
 
                 self.progressVisibleChanged.emit(False)
             except:
-                logger.raise_warning("The update could not be completed. Your data may be lost.\n\n"+traceback.format_exc())        
+                logger.raise_warning(
+                    "The update could not be completed. Your data may be lost.\n\n"
+                    + traceback.format_exc()
+                )
         else:
             try:
                 merge_settings(BACKUP_SETTINGS_FILE_PATH, SETTINGS_FILE_PATH)
                 merge_blacklist(GOODBYE_DPI_PATH)
                 settings.reload_settings()
 
-                settings.change_setting('GLOBAL', 'after_update', 'False')
+                settings.change_setting("GLOBAL", "after_update", "False")
             except:
-                logger.raise_warning("The update could not be completed. Your data may be lost.\n\n"+traceback.format_exc())
-        
-        if settings.settings['COMPONENTS']['goodbyedpi_server_version'] == '0.2.3rc3':
-            settings.settings['COMPONENTS']['goodbyedpi_server_version'] = 'test version - FWSNI support'
+                logger.raise_warning(
+                    "The update could not be completed. Your data may be lost.\n\n"
+                    + traceback.format_exc()
+                )
+
+        if settings.settings["COMPONENTS"]["goodbyedpi_server_version"] == "0.2.3rc3":
+            settings.settings["COMPONENTS"][
+                "goodbyedpi_server_version"
+            ] = "test version - FWSNI support"
             settings.save_settings()
-        
+
         text.reload_text()
         self.finished.emit()
+
 
 class CleanupWorker(QObject):
     progressVisibleChanged = Signal(bool)
@@ -183,9 +217,11 @@ class CleanupWorker(QObject):
 
     def run(self):
         items_to_delete = []
-        
-        inte_dir = DIRECTORY + '_internal' if not DEBUG else "E:/_component/_internal"
-        port_dir = DIRECTORY + '_portable.zip' if not DEBUG else "E:/_component/_portable.zip"
+
+        inte_dir = DIRECTORY + "_internal" if not DEBUG else "E:/_component/_internal"
+        port_dir = (
+            DIRECTORY + "_portable.zip" if not DEBUG else "E:/_component/_portable.zip"
+        )
 
         if os.path.exists(inte_dir):
             items_to_delete.append(inte_dir)
@@ -193,7 +229,7 @@ class CleanupWorker(QObject):
             items_to_delete.append(port_dir)
 
         total_items = 0
-        time_per_item = 0.01 
+        time_per_item = 0.01
         items_file_counts = {}
 
         for item in items_to_delete:
@@ -223,38 +259,50 @@ class CleanupWorker(QObject):
                             try:
                                 os.remove(file_path)
                                 files_deleted += 1
-                                self.update_progress(files_deleted, total_items, total_estimated_time)
+                                self.update_progress(
+                                    files_deleted, total_items, total_estimated_time
+                                )
                             except Exception as e:
-                                logger.create_error_log(f"Error deleting file {file_path}: {e}")
+                                logger.create_error_log(
+                                    f"Error deleting file {file_path}: {e}"
+                                )
                         for name in dirs:
                             dir_path = os.path.join(root, name)
                             try:
                                 os.rmdir(dir_path)
                                 files_deleted += 1
-                                self.update_progress(files_deleted, total_items, total_estimated_time)
+                                self.update_progress(
+                                    files_deleted, total_items, total_estimated_time
+                                )
                             except Exception as e:
-                                logger.create_error_log(f"Error deleting directory {dir_path}: {e}")
+                                logger.create_error_log(
+                                    f"Error deleting directory {dir_path}: {e}"
+                                )
                     try:
                         os.rmdir(item)
                         files_deleted += 1
-                        self.update_progress(files_deleted, total_items, total_estimated_time)
+                        self.update_progress(
+                            files_deleted, total_items, total_estimated_time
+                        )
                     except Exception as e:
                         logger.create_error_log(f"Error deleting directory {item}: {e}")
                 elif os.path.isfile(item):
                     os.remove(item)
                     files_deleted += 1
-                    self.update_progress(files_deleted, total_items, total_estimated_time)
+                    self.update_progress(
+                        files_deleted, total_items, total_estimated_time
+                    )
             except Exception as e:
                 logger.create_error_log(f"Error deleting {item}: {e}")
 
         self.progressVisibleChanged.emit(False)
-        self.remainingTimeChanged.emit(['', 0]) 
+        self.remainingTimeChanged.emit(["", 0])
         self.finished.emit()
 
     def update_progress(self, files_deleted, total_files, total_estimated_time):
         progress = int((files_deleted / total_files) * 100)
         self.progressValueChanged.emit(progress)
-        elapsed_time = files_deleted * 0.01 
+        elapsed_time = files_deleted * 0.01
         remaining_time = total_estimated_time - elapsed_time
         self.emitRemainingTime(remaining_time)
         time.sleep(0.01)
@@ -277,6 +325,7 @@ class CleanupWorker(QObject):
         total_files += 1
         return total_files
 
+
 class UpdateComponentsWorker(QObject):
     progressIndeterminateVisibleChanged = Signal(bool)
     progressValueChanged = Signal(int)
@@ -289,16 +338,16 @@ class UpdateComponentsWorker(QObject):
         self.current_component_index = 0
         self.qthreads = []
         self.workers = []
-        
+
     def check_updates(self):
         update_available = False
-        settings.settings['GLOBAL']["check_complete"] = 'True'
+        settings.settings["GLOBAL"]["check_complete"] = "True"
         urls = {}
         try:
             total_components = len(COMPONENTS_URLS)
             for i, component_name in enumerate(COMPONENTS_URLS):
                 c = component_name.lower()
-                if not settings.settings.getboolean('COMPONENTS', c):
+                if not settings.settings.getboolean("COMPONENTS", c):
                     continue
                 try:
                     pre_url = get_component_download_url(component_name)
@@ -308,22 +357,30 @@ class UpdateComponentsWorker(QObject):
                     print(url)
                     version = pre_url.split("|")[1]
 
-                    if settings.get_value("COMPONENTS", c+"_version").replace("v", "") != version:
-                        settings.settings["COMPONENTS"][c+"_server_version"] = version
+                    if (
+                        settings.get_value("COMPONENTS", c + "_version").replace(
+                            "v", ""
+                        )
+                        != version
+                    ):
+                        settings.settings["COMPONENTS"][c + "_server_version"] = version
                         urls[component_name] = pre_url
                 except Exception as ex:
                     print(ex)
-                    settings.settings['GLOBAL']["check_complete"] = "False"
+                    settings.settings["GLOBAL"]["check_complete"] = "False"
 
-                if settings.get_value("COMPONENTS", c+"_version").replace("v", "") != \
-                        settings.get_value("COMPONENTS", c+"_server_version").replace("v", ""):
+                if settings.get_value("COMPONENTS", c + "_version").replace(
+                    "v", ""
+                ) != settings.get_value("COMPONENTS", c + "_server_version").replace(
+                    "v", ""
+                ):
                     update_available = True
 
             settings.save_settings()
             return update_available, urls
         except Exception as ex:
             print(ex)
-            settings.settings['GLOBAL']["check_complete"] = 'False'
+            settings.settings["GLOBAL"]["check_complete"] = "False"
             settings.save_settings()
             return False, urls
 
@@ -339,10 +396,13 @@ class UpdateComponentsWorker(QObject):
         self.update_urls = urls
         for component_name in COMPONENTS_URLS:
             c = component_name.lower()
-            if not settings.settings.getboolean('COMPONENTS', c):
+            if not settings.settings.getboolean("COMPONENTS", c):
                 continue
-            if settings.get_value("COMPONENTS", c + "_version").replace("v", "") != \
-               settings.get_value("COMPONENTS", c + "_server_version").replace("v", ""):
+            if settings.get_value("COMPONENTS", c + "_version").replace(
+                "v", ""
+            ) != settings.get_value("COMPONENTS", c + "_server_version").replace(
+                "v", ""
+            ):
                 self.components_to_update.append(component_name)
 
         self.current_component_index = 0
@@ -385,6 +445,8 @@ class UpdateComponentsWorker(QObject):
 
     @Slot(str)
     def on_download_finished(self, result):
-        logger.create_debug_log(f"Download finished for component {self.components_to_update[self.current_component_index]} with result {result}")
+        logger.create_debug_log(
+            f"Download finished for component {self.components_to_update[self.current_component_index]} with result {result}"
+        )
         self.current_component_index += 1
         self.start_next_download()

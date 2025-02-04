@@ -13,8 +13,13 @@ class __SettingsHelper(QObject):
         super().__init__(parent)
         self.__settings = QSettings()
         ini_file_name = "FluentUI-Gallery.ini"
-        ini_file_path = QStandardPaths.writableLocation(
-            QStandardPaths.StandardLocation.AppLocalDataLocation) + "/" + ini_file_name
+        ini_file_path = (
+            QStandardPaths.writableLocation(
+                QStandardPaths.StandardLocation.AppLocalDataLocation
+            )
+            + "/"
+            + ini_file_name
+        )
         self.__settings = QSettings(ini_file_path, QSettings.Format.IniFormat)
 
     @staticmethod
@@ -40,7 +45,7 @@ class __SettingsHelper(QObject):
 
     @Slot(result=bool)
     def getUseSystemAppBar(self):
-        return bool(self.__get('useSystemAppBar', "false") == "true")
+        return bool(self.__get("useSystemAppBar", "false") == "true")
 
     @Slot(bool)
     def saveUseSystemAppBar(self, val: bool):

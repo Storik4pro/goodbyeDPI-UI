@@ -42,10 +42,16 @@ class ControlBackgroundImpl(QQuickPaintedItem):
         path.addRoundedRect(rect, self.__radius, self.__radius)
         painter.drawPath(path)
         outerRadius = int((1.0 - self.__borderWidth / self.height()) * self.__radius)
-        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_DestinationOut)
+        painter.setCompositionMode(
+            QPainter.CompositionMode.CompositionMode_DestinationOut
+        )
         painter.setBrush(Qt.GlobalColor.black)
-        innerRect = QRectF(self.__borderWidth, self.__borderWidth, self.width() - 2 * self.__borderWidth,
-                           self.height() - 2 * self.__borderWidth)
+        innerRect = QRectF(
+            self.__borderWidth,
+            self.__borderWidth,
+            self.width() - 2 * self.__borderWidth,
+            self.height() - 2 * self.__borderWidth,
+        )
         innerPath = QPainterPath()
         innerPath.addRoundedRect(innerRect, outerRadius, outerRadius)
         painter.drawPath(innerPath)

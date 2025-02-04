@@ -1,4 +1,12 @@
-from PySide6.QtCore import QAbstractListModel, QModelIndex, Qt, Signal, Property, Slot, QObject
+from PySide6.QtCore import (
+    QAbstractListModel,
+    QModelIndex,
+    Qt,
+    Signal,
+    Property,
+    Slot,
+    QObject,
+)
 from PySide6.QtQml import QmlElement
 
 QML_IMPORT_NAME = "FluentUI.Controls"
@@ -148,15 +156,19 @@ class TreeDataGridModel(QAbstractListModel):
         return len(self.__displayData)
 
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
-        if not index.isValid() or index.row() >= len(self.__displayData) or index.row() < 0:
+        if (
+            not index.isValid()
+            or index.row() >= len(self.__displayData)
+            or index.row() < 0
+        ):
             return None
         roleName = self.__roles[role]
         node = self.__displayData[index.row()]
-        if roleName == 'depth':
+        if roleName == "depth":
             return node.depth
-        elif roleName == 'expanded':
+        elif roleName == "expanded":
             return node.expanded
-        elif roleName == 'hasChildren':
+        elif roleName == "hasChildren":
             return node.hasChildren()
         else:
             return node.rowData[roleName]
@@ -261,7 +273,7 @@ class TreeDataGridModel(QAbstractListModel):
             return
         self.beginRemoveRows(QModelIndex(), row, row + count - 1)
         firstPart = self.__displayData[:row]
-        secondPart = self.__displayData[row + count:]
+        secondPart = self.__displayData[row + count :]
         self.__displayData.clear()
         self.__displayData.extend(firstPart)
         self.__displayData.extend(secondPart)
@@ -281,7 +293,9 @@ class TreeDataGridModel(QAbstractListModel):
 
     def __emitItemsChanged(self, index, count, roles):
         if count > 0:
-            self.dataChanged.emit(self.index(index), self.index(index + count - 1), roles)
+            self.dataChanged.emit(
+                self.index(index), self.index(index + count - 1), roles
+            )
 
     def __insertRole(self, name):
         if name not in self.__roles:

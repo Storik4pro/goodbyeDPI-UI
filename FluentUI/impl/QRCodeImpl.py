@@ -45,12 +45,14 @@ class QRCodeImpl(QQuickPaintedItem):
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_H,
             box_size=10,
-            border=0
+            border=0,
         )
         qr.add_data(self.__text)
         qr.make(fit=True)
-        qr_image = qr.make_image(fill_color=self.__color.name(QColor.NameFormat.HexRgb),
-                                 back_color=self.__backgroundColor.name(QColor.NameFormat.HexRgb))
+        qr_image = qr.make_image(
+            fill_color=self.__color.name(QColor.NameFormat.HexRgb),
+            back_color=self.__backgroundColor.name(QColor.NameFormat.HexRgb),
+        )
         image = ImageQt.toqimage(qr_image)
         painter.drawImage(QRect(0, 0, int(self.width()), int(self.height())), image)
         painter.restore()

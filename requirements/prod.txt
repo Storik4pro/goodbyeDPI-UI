@@ -1,0 +1,11 @@
+psutil==6.1.1
+requests==2.32.3
+toasted==0.2.0
+darkdetect==0.8.0
+customtkinter==5.2.2
+pywin32==308
+pystray==0.19.5
+pillow==10.2.0
+win32material==1.0.7
+PySide6==6.8.1.1
+pywinpty==2.0.14

@@ -43,7 +43,7 @@ class FileWatcher(QObject):
 
     def __bindFilePath(self, path: str):
         if path and path.startswith("file:///"):
-            query_index = path.find('?')
+            query_index = path.find("?")
             if query_index != -1:
                 path = path[:query_index]
             self.__watcher.addPath(path.replace("file:///", ""))

@@ -44,7 +44,9 @@ class DesktopCaptureItem(QQuickPaintedItem):
         width = 40
         height = 40
         ratio = self.window().devicePixelRatio()
-        self.target = self.__desktop.copy(int(x * ratio), int(y * ratio), int(width * ratio), int(height * ratio))
+        self.target = self.__desktop.copy(
+            int(x * ratio), int(y * ratio), int(width * ratio), int(height * ratio)
+        )
         color = self.__target.pixelColor(int(20 * ratio), int(20 * ratio))
         self.color = color
 
