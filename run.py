@@ -18,23 +18,23 @@ ATTENTION! Turn on DEBUG mode in the _data.py file before starting the applicati
 
 EXCLUDE_QT_FILES = """opengl32sw,qt6location,qt6webchannel,
   qt6webenginequick,qt6webenginequickdelegatesqml,qt6websockets,\\
-  qt6virtualkeyboard,qt6pdfquick,qt6pdf,qt6quicktimeline,qt6datavisualizationqml,
+  qt6virtualkeyboard,qt6pdfquick,qt6pdf,qt6quicktimeline,qt6datavisualizationqml,\\
   qt6datavisualization,qt6charts,\\
-  qt6chartsqml,qt6webenginecore,qt6quick3d,qt6quick3dassetimport,qt6quick3d,
+  qt6chartsqml,qt6webenginecore,qt6quick3d,qt6quick3dassetimport,qt6quick3d,\\
   qt6quick3dassetutils,qt6quick3deffects,\\
-  qt6quick3dhelpers,qt6quick3dparticleeffects,qt6quick3dparticles,qt6quick3druntimerender,
+  qt6quick3dhelpers,qt6quick3dparticleeffects,qt6quick3dparticles,qt6quick3druntimerender,\\
   qt6quick3d,qt6quick3dutils,\\
-  qt6graphs,qt6test,qt6texttospeech,'qt63danimation,qt63dcore,qt63dextras,qt63dinput,
+  qt6graphs,qt6test,qt6texttospeech,'qt63danimation,qt63dcore,qt63dextras,qt63dinput,\\
   qt63dlogic,\\
-  qt63dquick,qt63dquickanimation,qt63dquickextras,qt63dquickinput,qt63dquickrender,
+  qt63dquick,qt63dquickanimation,qt63dquickextras,qt63dquickinput,qt63dquickrender,\\
   qt63dquickscene2d,qt63drender,\\
-  qt63dquickrender,qt6quickcontrols2fusion,qt6quickcontrols2fusionstyleimpl,
+  qt63dquickrender,qt6quickcontrols2fusion,qt6quickcontrols2fusionstyleimpl,\\
   qt6quickcontrols2imagine,\\
-  qt6quickcontrols2imaginestyleimpl,qt6quickcontrols2universal,
+  qt6quickcontrols2imaginestyleimpl,qt6quickcontrols2universal,\\
   qt6quickcontrols2universalstyleimpl,\\
-  qt6quickcontrols2windowsstyleimpl,qt6quicktest,qt6remoteobjects,qt6remoteobjectsqml,
+  qt6quickcontrols2windowsstyleimpl,qt6quicktest,qt6remoteobjects,qt6remoteobjectsqml,\\
   qt6scxml,\\
-  qt6scxmlqml,qt6sensors,qt6sensorsquick,qt6spatialaudio,qt6sql,
+  qt6scxmlqml,qt6sensors,qt6sensorsquick,qt6spatialaudio,qt6sql,\\
   qt6statemachine,qt6statemachineqml"""
 
 if not os.path.exists("config.properties"):
@@ -154,4 +154,4 @@ if __name__ == "__main__":
         mapping["build_hotreload"] = 'ON'
     
     generate_python_file(Path(PATH, 'src', 'GlobalConfig.py'), mapping)
-    subprocess.run([sys.executable, Path(f'E:/ByeDPI/src/main.py'), *_args], env=environment(), cwd=PATH)
+    subprocess.run([sys.executable, Path(PATH, 'src', 'main.py'), *_args], env=environment(), cwd=PATH)
