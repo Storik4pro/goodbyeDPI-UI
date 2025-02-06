@@ -11,8 +11,6 @@ PATH = os.path.dirname(os.path.abspath(__file__))
 TOOL_DESCRIPTION = (
 """
 Starts the application with the specified arguments for debug.
-
-ATTENTION! Turn on DEBUG mode in the _data.py file before starting the application.
 """
 )
 
@@ -136,6 +134,8 @@ if __name__ == "__main__":
                         help="Enable manual input of arguments")
     parser.add_argument("-u", "--skip-uac-check", action="store_true", 
                         help="Skip UAC check (not recomended)")
+    parser.add_argument("-d", "--disable-debug", action="store_true", 
+                        help="Disable debug mode for application")
     args = parser.parse_args()
     
     _args = [' ']
@@ -148,6 +148,9 @@ if __name__ == "__main__":
         
     if not args.fast:
         subprocess.run([sys.executable, Path('update-resource.py')])
+        
+    if not args.disable_debug:
+        _args.append('--debug')
     
     mapping = dict()
     if args.reload:

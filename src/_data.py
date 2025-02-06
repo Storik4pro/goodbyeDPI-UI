@@ -8,10 +8,12 @@ import traceback
 import winreg
 from logger import AppLogger
 
-DEBUG = False
+state = getattr(sys, 'frozen', False)
+
+DEBUG = True if '--debug' in sys.argv[1:] and not state else False
 DEBUG_PATH = os.path.dirname(os.path.abspath(__file__)).replace("\src", "/") if DEBUG else ""
 
-if getattr(sys, 'frozen', False):
+if state:
     application_path = os.path.dirname(sys.executable)
 else:
     application_path = DEBUG_PATH
