@@ -152,3 +152,4 @@ tempfiles/versiondata_Storik4pro_goodbyeDPI-UI.json
 tempfiles/versiondata_ValdikSS_GoodbyeDPI.json
 tempfiles/versiondata_xvzc_SpoofDPI.json
 patch.cdpipatch
+src/Backend/proxyHelper.py
