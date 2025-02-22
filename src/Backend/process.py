@@ -1,11 +1,22 @@
 import os
-from PySide6.QtCore import QObject, Slot
-from PySide6.QtCore import QProcess, Signal, QThread
-from PySide6.QtGui import QGuiApplication, QIcon
-from PySide6.QtQml import QQmlApplicationEngine
 
-from utils import GoodbyedpiProcess, change_setting, get_locale, get_preset_parameters, error_sound, stop_servise, get_parameter_mappings
-from _data import EXECUTABLES, configs, settings, text, CONFIG_PATH, PARAMETER_MAPPING, VALUE_PARAMETERS, S_PARAMETER_MAPPING, S_VALUE_PARAMETERS
+from _data import (
+    CONFIG_PATH,
+    configs,
+    EXECUTABLES,
+    settings,
+    VALUE_PARAMETERS,
+)
+from PySide6.QtCore import QObject, Signal, Slot
+from utils import (
+    change_setting,
+    error_sound,
+    get_locale,
+    get_parameter_mappings,
+    get_preset_parameters,
+    GoodbyedpiProcess,
+    stop_servise,
+)
 
 
 def build_command_from_config(engine_name, parameter_mapping, value_parameters):
@@ -40,111 +51,138 @@ def build_command_from_config(engine_name, parameter_mapping, value_parameters):
                         command.append(cmd_param)
                         command.append(str(param_value))
 
-    if engine_name == 'goodbyedpi':
-        if 'blacklist_value' in params:
-            blacklist_value = params['blacklist_value']
+    if engine_name == "goodbyedpi":
+        if "blacklist_value" in params:
+            blacklist_value = params["blacklist_value"]
             if isinstance(blacklist_value, str):
                 blacklist_value = blacklist_value.strip()
             if blacklist_value:
                 blacklist_files = blacklist_value.split(",")
-                for filePath in blacklist_files:
-                    command.append('--blacklist')
-                    command.append(str(filePath).strip('"'))
+                for file_path in blacklist_files:
+                    command.append("--blacklist")
+                    command.append(str(file_path).strip('"'))
 
-    if 'custom_parameters' in params:
-        custom_params = params['custom_parameters']
+    if "custom_parameters" in params:
+        custom_params = params["custom_parameters"]
         if custom_params:
-            custom_params_list = [param.strip() for param in custom_params.split(' ') if param.strip()]
+            custom_params_list = [
+                param.strip() for param in custom_params.split(" ") if param.strip()
+            ]
             command.extend(custom_params_list)
 
     return command
 
+
 def check_args(preset):
-    engine = settings.settings['GLOBAL']['engine'].lower()
-    cfg = settings.settings['CONFIG'].get(f'{engine}_config_path', '')
+    engine = settings.settings["GLOBAL"]["engine"].lower()
+    cfg = settings.settings["CONFIG"].get(f"{engine}_config_path", "")
     if cfg != "" and os.path.exists(cfg) and configs[engine].configfile != cfg:
         configs[engine].configfile = cfg
     elif cfg == "" or not os.path.exists(cfg):
         configs[engine].configfile = CONFIG_PATH + f"/{engine}/user.json"
     configs[engine].reload_config()
 
-    
-    if engine == 'goodbyedpi':
-        advanced_mode_setting = settings.settings.getboolean('GLOBAL', 'use_advanced_mode')
+    if engine == "goodbyedpi":
+        advanced_mode_setting = settings.settings.getboolean(
+            "GLOBAL",
+            "use_advanced_mode",
+        )
         if advanced_mode_setting and preset != -1:
             advanced_mode_setting = False
     else:
-        advanced_mode_setting = settings.settings.getboolean(engine.upper(), 'use_advanced_mode')
-        
-    if advanced_mode_setting or engine == 'spoofdpi':
+        advanced_mode_setting = settings.settings.getboolean(
+            engine.upper(),
+            "use_advanced_mode",
+        )
+
+    if advanced_mode_setting or engine == "spoofdpi":  # noqa: R505
         parameter_mapping, value_parameters = get_parameter_mappings(engine)
         command = build_command_from_config(engine, parameter_mapping, value_parameters)
         return command
     else:
-        preset = int(settings.settings[engine.upper()].get('preset', -1)) if preset == -1 else preset
+        preset = (
+            int(settings.settings[engine.upper()].get("preset", -1))
+            if preset == -1
+            else preset
+        )
         command = get_preset_parameters(preset, engine)
 
-        if engine == 'goodbyedpi':
-            if settings.settings['GLOBAL'].get('change_dns') == 'True':
+        if engine == "goodbyedpi":
+            if settings.settings["GLOBAL"].get("change_dns") == "True":
                 dns_prompt = [
-                    VALUE_PARAMETERS['dns'], settings.settings['GOODBYEDPI']['dns_value'],
-                    VALUE_PARAMETERS['dns_port'], settings.settings['GOODBYEDPI']['dns_port_value'],
-                    VALUE_PARAMETERS['dnsv6'], settings.settings['GOODBYEDPI']['dnsv6_value'],
-                    VALUE_PARAMETERS['dnsv6_port'], settings.settings['GOODBYEDPI']['dnsv6_port_value']
+                    VALUE_PARAMETERS["dns"],
+                    settings.settings["GOODBYEDPI"]["dns_value"],
+                    VALUE_PARAMETERS["dns_port"],
+                    settings.settings["GOODBYEDPI"]["dns_port_value"],
+                    VALUE_PARAMETERS["dnsv6"],
+                    settings.settings["GOODBYEDPI"]["dnsv6_value"],
+                    VALUE_PARAMETERS["dnsv6_port"],
+                    settings.settings["GOODBYEDPI"]["dnsv6_port_value"],
                 ]
                 command.extend(dns_prompt)
-            if settings.settings['GOODBYEDPI'].get('use_blacklist') == 'True':
-                command.extend(['--blacklist', '..//russia-blacklist.txt'])
-            if settings.settings['GOODBYEDPI'].get('use_blacklist_custom') == 'True':
-                command.extend(['--blacklist', '..//custom_blacklist.txt'])
+            if settings.settings["GOODBYEDPI"].get("use_blacklist") == "True":
+                command.extend(["--blacklist", "..//russia-blacklist.txt"])
+            if settings.settings["GOODBYEDPI"].get("use_blacklist_custom") == "True":
+                command.extend(["--blacklist", "..//custom_blacklist.txt"])
         return command
-    
-def get_preset_name(engine, presetId):
+
+
+def get_preset_name(engine, preset_id):
     _additional = None
     additional = ""
-    if engine == 'goodbyeDPI':
-        if presetId == 9:
+    if engine == "goodbyeDPI":  # noqa: R505
+        if preset_id == 9:
             _additional = "default"
-        elif presetId == 10:
+        elif preset_id == 10:
             _additional = "recommended"
-        elif presetId == 11:
+        elif preset_id == 11:
             _additional = "alt"
-        
+
         if _additional:
-            additional = f" ({get_locale(_additional)})" 
-            
-        return f"{presetId}. "+ get_locale(f"preset_{presetId}") + additional
-    elif engine == 'zapret':
-        if presetId == 3:
+            additional = f" ({get_locale(_additional)})"
+
+        return f"{preset_id}. " + get_locale(f"preset_{preset_id}") + additional
+    elif engine == "zapret":
+        if preset_id == 3:
             _additional = "recommended"
-        elif presetId == 4:
+        elif preset_id == 4:
             _additional = "alt"
-        
+
         if _additional:
-            additional = f" ({get_locale(_additional)})" 
-        
-        return f"{presetId}. "+ get_locale(f"qpreset_{presetId}") + additional
-    
-    elif engine == 'byedpi':
-        return f"{presetId}. "+ "("+get_locale(f"default") + ")"
-    
-def get_engine_preset(engine:str):
-    if engine == 'goodbyeDPI':
-        advanced_mode_setting = settings.settings.getboolean('GLOBAL', 'use_advanced_mode')
+            additional = f" ({get_locale(_additional)})"
+
+        return f"{preset_id}. " + get_locale(f"qpreset_{preset_id}") + additional
+
+    elif engine == "byedpi":
+        return f"{preset_id}. " + "(" + get_locale("default") + ")"
+
+
+def get_engine_preset(engine: str):
+    if engine == "goodbyeDPI":
+        advanced_mode_setting = settings.settings.getboolean(
+            "GLOBAL",
+            "use_advanced_mode",
+        )
     else:
-        advanced_mode_setting = settings.settings.getboolean(engine.upper(), 'use_advanced_mode')
-    
-    cfg = settings.settings.get('CONFIG', f'{engine.lower()}_config_path')
+        advanced_mode_setting = settings.settings.getboolean(
+            engine.upper(),
+            "use_advanced_mode",
+        )
+
+    cfg = settings.settings.get("CONFIG", f"{engine.lower()}_config_path")
     if cfg != "" and os.path.exists(cfg) and advanced_mode_setting:
         return f"User config - \"{cfg.split('/')[-1]}\""
 
-    else:
-        if advanced_mode_setting or engine == 'spoofdpi':
-            return "Custom - \"user.json\""
-        elif not advanced_mode_setting:
-            return get_preset_name(engine, settings.settings.getint(f'{engine.upper()}', "preset"))
+    if advanced_mode_setting or engine == "spoofdpi":
+        return 'Custom - "user.json"'
+    if not advanced_mode_setting:
+        return get_preset_name(
+            engine,
+            settings.settings.getint(f"{engine.upper()}", "preset"),
+        )
     print(engine)
     return "UNKNOWN"
+
 
 class Process(QObject):
     output_added = Signal(str)
@@ -158,7 +196,7 @@ class Process(QObject):
     def __init__(self, parent=None):
         super().__init__()
         self.output = ""
-        self.engine = settings.settings['GLOBAL']['engine']
+        self.engine = settings.settings["GLOBAL"]["engine"]
         self.is_running = False
         self.process = GoodbyedpiProcess()
         self.process.output_signal.connect(self.output_added)
@@ -174,7 +212,7 @@ class Process(QObject):
     @Slot(result=str)
     def get_preset(self):
         return get_engine_preset(self.engine)
-    
+
     @Slot(str, result=str)
     def get_config_name(self, component):
         return configs[component].configfile
@@ -182,7 +220,7 @@ class Process(QObject):
     @Slot(result=str)
     def get_executable(self):
         return EXECUTABLES[self.engine]
-    
+
     @Slot(str)
     def change_engine(self, engine):
         change_setting("GLOBAL", "engine", engine)
@@ -197,7 +235,7 @@ class Process(QObject):
 
     @Slot(result=bool)
     def start_process(self):
-        self.engine = settings.settings['GLOBAL']['engine']
+        self.engine = settings.settings["GLOBAL"]["engine"]
         self.engine_changed.emit(self.engine)
         self.preset_changed.emit()
         self.clean_output.emit()
@@ -207,7 +245,9 @@ class Process(QObject):
             args = check_args(-1)
         except Exception as ex:
             error_sound()
-            self.handle_error(f"Internal error. Unable to start process. \nError information: \n{ex}")
+            self.handle_error(
+                f"Internal error. Unable to start process. \nError information: \n{ex}",
+            )
             return False
         print(args)
         self.is_running = True
@@ -216,15 +256,14 @@ class Process(QObject):
     @Slot(result=bool)
     def stop_process(self):
         self.is_running = False
-        result = self.process.stop_goodbyedpi()
-        return result
-    
+        return self.process.stop_goodbyedpi()
+
     @Slot()
     def stop_service(self):
         self.is_running = False
         self.process.stop_goodbyedpi()
         stop_servise()
-    
+
     @Slot(result=str)
     def get_output(self):
         return self.output
@@ -233,7 +272,7 @@ class Process(QObject):
         self.output += data
 
     def handle_process_started(self):
-        self.engine = settings.settings['GLOBAL']['engine']
+        self.engine = settings.settings["GLOBAL"]["engine"]
 
         self.engine_changed.emit(self.engine)
         self.preset_changed.emit()
@@ -250,5 +289,5 @@ class Process(QObject):
 
     def handle_error(self, error_message):
         self.is_running = False
-        self.output += ("\n\n[ERROR] " + error_message + "\n\n")
+        self.output += "\n\n[ERROR] " + error_message + "\n\n"
         self.error_happens.emit(error_message)

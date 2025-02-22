@@ -1,0 +1,32 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  flake8-check:
+    name: Flake8 Lint Check
+    runs-on: ubuntu-latest
+    container:
+      image: registry.gitlab.com/pipeline-components/flake8:latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Run Flake8
+        run: flake8 --verbose .
+
+  black-check:
+    name: Black Code Format Check
+    runs-on: ubuntu-latest
+    container:
+      image: registry.gitlab.com/pipeline-components/black:latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Run Black
+        run: black --check .

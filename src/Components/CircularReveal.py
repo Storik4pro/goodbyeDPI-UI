@@ -1,5 +1,16 @@
-from PySide6.QtCore import (Slot, Signal, Property, QPoint, QPropertyAnimation, QPointF, Qt, QSize, QEasingCurve,
-                            SIGNAL, SLOT)
+from PySide6.QtCore import (
+    Slot,
+    Signal,
+    Property,
+    QPoint,
+    QPropertyAnimation,
+    QPointF,
+    Qt,
+    QSize,
+    QEasingCurve,
+    SIGNAL,
+    SLOT,
+)
 from PySide6.QtGui import QPainter, QImage, QPainterPath
 from PySide6.QtQuick import QQuickPaintedItem, QQuickItem
 from PySide6.QtQml import QmlElement
@@ -71,7 +82,9 @@ class CircularReveal(QQuickPaintedItem):
         painter.drawImage(self.boundingRect(), self.__source)
         path = QPainterPath()
         path.moveTo(self.__center.x(), self.__center.y())
-        path.addEllipse(QPointF(self.__center.x(), self.__center.y()), self.__radius, self.__radius)
+        path.addEllipse(
+            QPointF(self.__center.x(), self.__center.y()), self.__radius, self.__radius
+        )
         painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Clear)
         rect_path = QPainterPath()
         rect_path.addRect(0, 0, self.width(), self.height())

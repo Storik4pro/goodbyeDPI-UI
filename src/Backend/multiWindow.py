@@ -1,10 +1,5 @@
-from PySide6.QtCore import QObject, Slot
-from PySide6.QtCore import QProcess, Signal, QThread
-from qasync import QEventLoop, asyncSlot
-from toasted import ToastDismissReason
+from PySide6.QtCore import QObject, Signal, Slot
 
-from utils import show_error, show_message
-from _data import text
 
 class MultiWindow(QObject):
     multi_window_init = Signal(str)
@@ -15,23 +10,23 @@ class MultiWindow(QObject):
         self.windows = []
 
     @Slot(str)
-    def init_window(self, windowId):
-        print("INIT", windowId)
-        if not windowId in self.windows:
-            self.windows.append(windowId)
-            self.multi_window_init.emit(windowId)
-        else: 
-            self.multi_window_close.emit(windowId)
+    def init_window(self, window_id):
+        print("INIT", window_id)
+        if window_id not in self.windows:
+            self.windows.append(window_id)
+            self.multi_window_init.emit(window_id)
+        else:
+            self.multi_window_close.emit(window_id)
 
     @Slot(str)
-    def close_window(self, windowId):
-        print(windowId, self.windows)
-        if windowId in self.windows:
-            self.windows.remove(windowId)
-            self.multi_window_close.emit(windowId)
+    def close_window(self, window_id):
+        print(window_id, self.windows)
+        if window_id in self.windows:
+            self.windows.remove(window_id)
+            self.multi_window_close.emit(window_id)
 
     @Slot(str, result=bool)
-    def check_window_init(self, windowId):
-        if windowId in self.windows:
+    def check_window_init(self, window_id):
+        if window_id in self.windows:
             return True
-        else: return False
+        return False

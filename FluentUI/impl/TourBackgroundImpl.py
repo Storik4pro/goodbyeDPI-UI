@@ -12,14 +12,34 @@ def drawRoundedRect(painter, rect, radius):
     path = QPainterPath()
     path.moveTo(rect.bottomRight() - QPointF(0, radius))
     path.lineTo(rect.topRight() + QPointF(0, radius))
-    path.arcTo(QRectF(QPointF(rect.topRight() - QPointF(radius * 2, 0)), QSize(radius * 2, radius * 2)), 0, 90)
+    path.arcTo(
+        QRectF(
+            QPointF(rect.topRight() - QPointF(radius * 2, 0)),
+            QSize(radius * 2, radius * 2),
+        ),
+        0,
+        90,
+    )
     path.lineTo(rect.topLeft() + QPointF(radius, 0))
     path.arcTo(QRectF(QPointF(rect.topLeft()), QSize(radius * 2, radius * 2)), 90, 90)
     path.lineTo(rect.bottomLeft() - QPointF(0, radius))
-    path.arcTo(QRectF(QPointF(rect.bottomLeft() - QPointF(0, radius * 2)), QSize(radius * 2, radius * 2)), 180, 90)
+    path.arcTo(
+        QRectF(
+            QPointF(rect.bottomLeft() - QPointF(0, radius * 2)),
+            QSize(radius * 2, radius * 2),
+        ),
+        180,
+        90,
+    )
     path.lineTo(rect.bottomRight() - QPointF(radius, 0))
-    path.arcTo(QRectF(QPointF(rect.bottomRight() - QPointF(radius * 2, radius * 2)), QSize(radius * 2, radius * 2)),
-               270, 90)
+    path.arcTo(
+        QRectF(
+            QPointF(rect.bottomRight() - QPointF(radius * 2, radius * 2)),
+            QSize(radius * 2, radius * 2),
+        ),
+        270,
+        90,
+    )
     painter.fillPath(path, Qt.GlobalColor.black)
 
 
@@ -49,7 +69,9 @@ class TourBackgroundImpl(QQuickPaintedItem):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         painter.fillRect(self.boundingRect(), self.__color)
         painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Clear)
-        targetRect = QRectF(self.__targetX, self.__targetY, self.__targetWidth, self.__targetHeight)
+        targetRect = QRectF(
+            self.__targetX, self.__targetY, self.__targetWidth, self.__targetHeight
+        )
         drawRoundedRect(painter, targetRect, 4)
         painter.restore()
 

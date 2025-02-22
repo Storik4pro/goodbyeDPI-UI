@@ -27,19 +27,44 @@ class RoundRectangle(QQuickPaintedItem):
         rect = self.boundingRect()
         path.moveTo(rect.bottomRight() - QPointF(0, self.__radius[2]))
         path.lineTo(rect.topRight() + QPointF(0, self.__radius[1]))
-        path.arcTo(QRectF(QPointF(rect.topRight() - QPointF(self.__radius[1] * 2, 0)),
-                          QSize(self.__radius[1] * 2, self.__radius[1] * 2)),
-                   0, 90)
+        path.arcTo(
+            QRectF(
+                QPointF(rect.topRight() - QPointF(self.__radius[1] * 2, 0)),
+                QSize(self.__radius[1] * 2, self.__radius[1] * 2),
+            ),
+            0,
+            90,
+        )
         path.lineTo(rect.topLeft() + QPointF(self.__radius[0], 0))
-        path.arcTo(QRectF(QPointF(rect.topLeft()), QSize(self.__radius[0] * 2, self.__radius[0] * 2)), 90, 90)
+        path.arcTo(
+            QRectF(
+                QPointF(rect.topLeft()),
+                QSize(self.__radius[0] * 2, self.__radius[0] * 2),
+            ),
+            90,
+            90,
+        )
         path.lineTo(rect.bottomLeft() - QPointF(0, self.__radius[3]))
-        path.arcTo(QRectF(QPointF(rect.bottomLeft() - QPointF(0, self.__radius[3] * 2)),
-                          QSize(self.__radius[3] * 2, self.__radius[3] * 2)),
-                   180, 90)
+        path.arcTo(
+            QRectF(
+                QPointF(rect.bottomLeft() - QPointF(0, self.__radius[3] * 2)),
+                QSize(self.__radius[3] * 2, self.__radius[3] * 2),
+            ),
+            180,
+            90,
+        )
         path.lineTo(rect.bottomRight() - QPointF(self.__radius[2], 0))
-        path.arcTo(QRectF(QPointF(rect.bottomRight() - QPointF(self.__radius[2] * 2, self.__radius[2] * 2)),
-                          QSize(self.__radius[2] * 2, self.__radius[2] * 2)),
-                   270, 90)
+        path.arcTo(
+            QRectF(
+                QPointF(
+                    rect.bottomRight()
+                    - QPointF(self.__radius[2] * 2, self.__radius[2] * 2)
+                ),
+                QSize(self.__radius[2] * 2, self.__radius[2] * 2),
+            ),
+            270,
+            90,
+        )
         painter.fillPath(path, self.__color)
         painter.restore()
 

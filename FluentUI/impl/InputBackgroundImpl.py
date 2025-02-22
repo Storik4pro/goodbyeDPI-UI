@@ -39,7 +39,9 @@ class InputBackgroundImpl(QQuickPaintedItem):
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         rect = QRectF(0, 0, self.width(), self.height())
-        gradient = QLinearGradient(0, self.height() - self.__gradientHeight, 0, self.height())
+        gradient = QLinearGradient(
+            0, self.height() - self.__gradientHeight, 0, self.height()
+        )
         gradient.setColorAt(0, self.__defaultColor)
         if self.__targetActiveFocus:
             gradient.setColorAt(0.01, self.__endColor)
@@ -49,11 +51,17 @@ class InputBackgroundImpl(QQuickPaintedItem):
         path = QPainterPath()
         path.addRoundedRect(rect, self.__radius, self.__radius)
         painter.drawPath(path)
-        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_DestinationOut)
+        painter.setCompositionMode(
+            QPainter.CompositionMode.CompositionMode_DestinationOut
+        )
         painter.setBrush(Qt.GlobalColor.black)
         outerRadius = int((1.0 - self.__borderWidth / self.height()) * self.__radius)
-        innerRect = QRectF(self.__borderWidth, self.__borderWidth, self.width() - 2 * self.__borderWidth,
-                           self.height() - 2 * self.__borderWidth - self.__offsetY)
+        innerRect = QRectF(
+            self.__borderWidth,
+            self.__borderWidth,
+            self.width() - 2 * self.__borderWidth,
+            self.height() - 2 * self.__borderWidth - self.__offsetY,
+        )
         innerPath = QPainterPath()
         innerPath.addRoundedRect(innerRect, outerRadius, outerRadius)
         painter.drawPath(innerPath)

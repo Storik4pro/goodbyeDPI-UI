@@ -1,18 +1,16 @@
 import argparse
 from configparser import ConfigParser
 import os
-import sys
+from pathlib import Path
 import string
 import subprocess
-from pathlib import Path
+import sys
 
 PATH = os.path.dirname(os.path.abspath(__file__))
 
-TOOL_DESCRIPTION = (
-"""
+TOOL_DESCRIPTION = """
 Starts the application with the specified arguments for debug.
 """
-)
 
 EXCLUDE_QT_FILES = """opengl32sw,qt6location,qt6webchannel,
   qt6webenginequick,qt6webenginequickdelegatesqml,qt6websockets,\\
@@ -37,7 +35,8 @@ EXCLUDE_QT_FILES = """opengl32sw,qt6location,qt6webchannel,
 
 if not os.path.exists("config.properties"):
     with open("config.properties", "w") as file:
-        file.write(f"""\
+        file.write(
+            f"""\
 [application]
 appId=
 appName=GoodbyeDPI_UI
@@ -49,11 +48,11 @@ version=0.0.0
 projectName=GoodbyeDPI_UI
 hotLoad=OFF
 excludeFiles={EXCLUDE_QT_FILES}
-""")
+""",
+        )
     print("Please fill in the config.properties file.")
     input("Press any key to exit ...")
     exit(1)
-
 
 
 def read_properties(file_path):
@@ -66,48 +65,64 @@ def read_properties(file_path):
             _properties[_key] = _value
     return _properties
 
+
 properties = read_properties("config.properties")
+
 
 def __path_separator():
     if sys.platform.startswith("darwin"):
         return ":"
     return ";"
 
+
 def environment():
     environ = os.environ.copy()
-    current = os.environ.get('PYTHONPATH', '')
+    current = os.environ.get("PYTHONPATH", "")
     work_path = str(Path().absolute())
-    if current != '':
+    if current != "":
         work_path = work_path + __path_separator() + current
     environ["PYTHONPATH"] = work_path
     return environ
 
+
 def uac_check():
     print("UAC check")
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         import ctypes
+
         if ctypes.windll.shell32.IsUserAnAdmin() == 0:
-            ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
+            ctypes.windll.shell32.ShellExecuteW(
+                None,
+                "runas",
+                sys.executable,
+                __file__,
+                None,
+                1,
+            )
             exit(0)
 
-def generate_python_file(output_file, mapping=None):
-    target = dict(
-        application_id=properties.get('appId', ''),
-        application_name=properties.get('appName', ''),
-        application_company=properties.get('company', ''),
-        application_copyright=properties.get('copyright', ''),
-        application_domain=properties.get('domain', ''),
-        application_version=properties.get('domain', ''),
-        build_name=properties.get('projectName', ''),
-        build_hotreload=properties.get('hotLoad', ''),
-        build_project_path=Path(PATH, "src")
-    )
-    if mapping is None:
-        mapping = dict()
-    for key, value in target.items():
-        if key in mapping:
-            target[key] = mapping[key]
-    template = string.Template("""\
+
+def generate_python_file(
+    output_file,
+    mapping=None,
+):  # ФУНКЦИЯ ПЕРЕПИСЫВАЛАСЬ, ЗДЕСЬ МОГУТ БЫТЬ ОШИБКИ
+    target = {
+        "application_id": properties.get("appId", ""),
+        "application_name": properties.get("appName", ""),
+        "application_company": properties.get("company", ""),
+        "application_copyright": properties.get("copyright", ""),
+        "application_domain": properties.get("domain", ""),
+        "application_version": properties.get("version", ""),
+        "build_name": properties.get("projectName", ""),
+        "build_hotreload": properties.get("hotLoad", ""),
+        "build_project_path": Path(PATH, "src"),
+    }
+
+    if mapping:
+        target.update(mapping)  # GOTO
+
+    template = string.Template(
+        """\
 application_id = "${application_id}"
 application_name = "${application_name}"
 application_company = "${application_company}"
@@ -117,44 +132,62 @@ application_version = "${application_version}"
 build_name = "${build_name}"
 build_hotreload = "${build_hotreload}"
 build_project_path = "${build_project_path}"
-""")
-    rendered_content = template.substitute(target)
-    with open(output_file, 'w', encoding='utf-8') as file:
-        file.write(rendered_content)
+""",
+    )
 
+    rendered_content = template.substitute(target)
+
+    with open(output_file, "w", encoding="utf-8") as file:
+        file.write(rendered_content)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=TOOL_DESCRIPTION)
-    parser.add_argument("-f", "--fast", action="store_true", 
-                        help="Run fast start application (disable update resources)")
-    parser.add_argument("-r", "--reload", action="store_true", 
-                        help="Enable hot reload for qml files")
-    parser.add_argument("-q", "--enable-manual-input", action="store_true", 
-                        help="Enable manual input of arguments")
-    parser.add_argument("-u", "--skip-uac-check", action="store_true", 
-                        help="Skip UAC check (not recomended)")
-    parser.add_argument("-d", "--disable-debug", action="store_true", 
-                        help="Disable debug mode for application")
+    parser.add_argument(
+        "-f",
+        "--fast",
+        action="store_true",
+        help="Run fast start application (disable update resources)",
+    )
+    parser.add_argument(
+        "-r",
+        "--reload",
+        action="store_true",
+        help="Enable hot reload for qml files",
+    )
+    parser.add_argument(
+        "-q",
+        "--enable-manual-input",
+        action="store_true",
+        help="Enable manual input of arguments",
+    )
+    parser.add_argument(
+        "-u",
+        "--skip-uac-check",
+        action="store_true",
+        help="Skip UAC check (not recomended)",
+    )
+
     args = parser.parse_args()
-    
-    _args = [' ']
-    
+
+    _args = [" "]
+
     if not args.skip_uac_check:
         uac_check()
-    
+
     if args.enable_manual_input:
-        _args = input("Put here args for check (e.g. --autorun) ->").split(' ')
-        
+        _args = input("Put here args for check (e.g. --autorun) ->").split(" ")
+
     if not args.fast:
-        subprocess.run([sys.executable, Path('update-resource.py')])
-        
-    if not args.disable_debug:
-        _args.append('--debug')
-    
-    mapping = dict()
+        subprocess.run([sys.executable, Path("update-resource.py")])
+
+    mapping = {}
     if args.reload:
-        mapping["build_hotreload"] = 'ON'
-    
-    generate_python_file(Path(PATH, 'src', 'GlobalConfig.py'), mapping)
-    subprocess.run([sys.executable, Path(PATH, 'src', 'main.py'), *_args], env=environment(), cwd=PATH)
+        mapping["build_hotreload"] = "ON"
+
+    generate_python_file(Path(PATH, "src", "GlobalConfig.py"), mapping)
+    subprocess.run(
+        [sys.executable, Path(PATH, "src", "main.py"), *_args],
+        env=environment(),
+        cwd=PATH,
+    )

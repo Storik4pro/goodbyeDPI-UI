@@ -1,5 +1,13 @@
-from PySide6.QtCore import QAbstractListModel, QModelIndex, Qt, Signal, Property, Slot, QItemSelectionModel, \
-    QItemSelection
+from PySide6.QtCore import (
+    QAbstractListModel,
+    QModelIndex,
+    Qt,
+    Signal,
+    Property,
+    Slot,
+    QItemSelectionModel,
+    QItemSelection,
+)
 from PySide6.QtQml import QmlElement, QJSValue
 
 QML_IMPORT_NAME = "FluentUI.Controls"
@@ -46,7 +54,11 @@ class DataGridModel(QAbstractListModel):
         return len(self.__sourceData)
 
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
-        if not index.isValid() or index.row() >= len(self.__sourceData) or index.row() < 0:
+        if (
+            not index.isValid()
+            or index.row() >= len(self.__sourceData)
+            or index.row() < 0
+        ):
             return None
         return self.__sourceData[index.row()].get(self.__roles[role])
 
@@ -72,7 +84,11 @@ class DataGridModel(QAbstractListModel):
         if isinstance(data, list):
             if data:
                 self.__updateRoles(data[0])
-                self.beginInsertRows(QModelIndex(), len(self.__sourceData), len(self.__sourceData) + len(data) - 1)
+                self.beginInsertRows(
+                    QModelIndex(),
+                    len(self.__sourceData),
+                    len(self.__sourceData) + len(data) - 1,
+                )
                 self.__sourceData.extend(data)
                 self.endInsertRows()
                 self.countChanged.emit()
@@ -87,10 +103,22 @@ class DataGridModel(QAbstractListModel):
 
     @Slot(int, int, int, result=bool)
     def move(self, from_, to_, n):
-        if from_ < 0 or from_ >= self.rowCount() or to_ < 0 or to_ >= self.rowCount() or n < 0 or (
-                from_ + n) > self.rowCount():
+        if (
+            from_ < 0
+            or from_ >= self.rowCount()
+            or to_ < 0
+            or to_ >= self.rowCount()
+            or n < 0
+            or (from_ + n) > self.rowCount()
+        ):
             return False
-        self.beginMoveRows(QModelIndex(), from_, from_ + n - 1, QModelIndex(), to_ + n if to_ > from_ else to_)
+        self.beginMoveRows(
+            QModelIndex(),
+            from_,
+            from_ + n - 1,
+            QModelIndex(),
+            to_ + n if to_ > from_ else to_,
+        )
         if from_ > to_:
             tfrom = from_
             tto = to_
@@ -114,7 +142,7 @@ class DataGridModel(QAbstractListModel):
         if index < 0 or index + count > self.rowCount() or count <= 0:
             return False
         self.beginRemoveRows(QModelIndex(), index, index + count - 1)
-        del self.__sourceData[index:index + count]
+        del self.__sourceData[index : index + count]
         self.endRemoveRows()
         return True
 
@@ -162,12 +190,17 @@ class DataGridModel(QAbstractListModel):
         top_left = self.index(startRow, 0)
         bottom_right = self.index(endRow, 0)
         selection = QItemSelection(top_left, bottom_right)
-        selectionModel.select(selection,
-                              QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+        selectionModel.select(
+            selection,
+            QItemSelectionModel.SelectionFlag.Select
+            | QItemSelectionModel.SelectionFlag.Rows,
+        )
 
     def __emitItemsChanged(self, index, count, roles):
         if count > 0:
-            self.dataChanged.emit(self.index(index), self.index(index + count - 1), roles)
+            self.dataChanged.emit(
+                self.index(index), self.index(index + count - 1), roles
+            )
 
     def __insertRole(self, name):
         if name not in self.__roles:

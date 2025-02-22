@@ -1,6 +1,14 @@
 from enum import IntFlag
 
-from PySide6.QtCore import QFlag, QObject, Signal, Property, QByteArray, QFile, QSettings
+from PySide6.QtCore import (
+    QFlag,
+    QObject,
+    Signal,
+    Property,
+    QByteArray,
+    QFile,
+    QSettings,
+)
 from PySide6.QtGui import QColor
 from PySide6.QtQml import QmlAttached, QmlElement, QmlAnonymous, QJSValue
 import os
@@ -43,16 +51,24 @@ def initGlobalConfig():
     global FluentUI_config
     FluentUI_config = GlobalConfig()
     settings = getSettings("FluentUI")
-    radius_value = resolveSetting("QT_QUICK_CONTROLS_FLUENTUI_RADIUS", settings, "Radius")
+    radius_value = resolveSetting(
+        "QT_QUICK_CONTROLS_FLUENTUI_RADIUS", settings, "Radius"
+    )
     if radius_value:
         FluentUI_config.radius = int(radius_value.toStdString())
-    primary_color_value = resolveSetting("QT_QUICK_CONTROLS_FLUENTUI_PRIMARYCOLOR", settings, "PrimaryColor")
+    primary_color_value = resolveSetting(
+        "QT_QUICK_CONTROLS_FLUENTUI_PRIMARYCOLOR", settings, "PrimaryColor"
+    )
     if primary_color_value:
         FluentUI_config.primaryColor = primary_color_value.toStdString()
-    highlight_move_value = resolveSetting("QT_QUICK_CONTROLS_FLUENTUI_HIGHLIGHTMOVE", settings, "HighlightMove")
+    highlight_move_value = resolveSetting(
+        "QT_QUICK_CONTROLS_FLUENTUI_HIGHLIGHTMOVE", settings, "HighlightMove"
+    )
     if highlight_move_value:
         FluentUI_config.highlightMoveDuration = int(highlight_move_value.toStdString())
-    min_height_value = resolveSetting("QT_QUICK_CONTROLS_FLUENTUI_MINIMUMHEIGHT", settings, "MinimumHeight")
+    min_height_value = resolveSetting(
+        "QT_QUICK_CONTROLS_FLUENTUI_MINIMUMHEIGHT", settings, "MinimumHeight"
+    )
     if min_height_value:
         FluentUI_config.minimumHeight = int(min_height_value.toStdString())
 

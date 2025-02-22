@@ -3,18 +3,25 @@ import os
 import sys
 import threading
 
-from PySide6.QtCore import QDir, qInstallMessageHandler, QtMsgType, QStandardPaths, QDateTime, QSysInfo
 from _data import DEBUG_PATH
+from PySide6.QtCore import (
+    QDateTime,
+    QDir,
+    qInstallMessageHandler,
+    QStandardPaths,
+    QSysInfo,
+    QtMsgType,
+)
 
-__logging: logging.Logger
-__fileHandler: logging.FileHandler
-__formatFileHandler: logging.FileHandler
-__stdoutHandler: logging.StreamHandler
-__formatStdoutHandler: logging.StreamHandler
+__logging: logging.Logger  # noqa: N816
+__fileHandler: logging.FileHandler  # noqa: N816
+__formatFileHandler: logging.FileHandler  # noqa: N816
+__stdoutHandler: logging.StreamHandler  # noqa: N816
+__formatStdoutHandler: logging.StreamHandler  # noqa: N816
 
 
 class __CustomFormatter(logging.Formatter):
-    def format(self, record):
+    def format(self, record):  # noqa: A003
         record.threadId = threading.get_ident()
         return super().format(record)
 
@@ -47,7 +54,7 @@ def __close_format():
     __logging.addHandler(__stdoutHandler)
 
 
-def __message_handler(msg_type, context, message:str):
+def __message_handler(msg_type, context, message: str):
     if message == "Retrying to obtain clipboard.":
         return
     global __logging
@@ -60,16 +67,18 @@ def __message_handler(msg_type, context, message:str):
     file_and_line_log_str = ""
     if context.file:
         str_file_tmp = context.file
-        ptr = str_file_tmp.rfind('/')
+        ptr = str_file_tmp.rfind("/")
         if ptr != -1:
-            str_file_tmp = str_file_tmp[ptr + 1:]
-        ptr_tmp = str_file_tmp.rfind('\\')
+            str_file_tmp = str_file_tmp[ptr + 1 :]
+        ptr_tmp = str_file_tmp.rfind("\\")
         if ptr_tmp != -1:
-            str_file_tmp = str_file_tmp[ptr_tmp + 1:]
+            str_file_tmp = str_file_tmp[ptr_tmp + 1 :]
         file_and_line_log_str = f"[{str_file_tmp}:{str(context.line)}]"
     level = __get_level_by_msg_type(msg_type)
-    final_message = (f"{QDateTime.currentDateTime().toString('yyyy/MM/dd hh:mm:ss.zzz')}[{logging.getLevelName(level)}]"
-                     f"{file_and_line_log_str}[{threading.get_ident()}] {message}")
+    final_message = (
+        f"{QDateTime.currentDateTime().toString('yyyy/MM/dd hh:mm:ss.zzz')}[{logging.getLevelName(level)}]"
+        f"{file_and_line_log_str}[{threading.get_ident()}] {message}"
+    )
     __logging.log(level, final_message)
     __open_format()
 
@@ -84,7 +93,12 @@ def setup(name, level=logging.DEBUG):
     __logging = logging.getLogger(name)
     __logging.setLevel(level)
     log_file_name = f"{name}_{QDateTime.currentDateTime().toString('yyyyMMdd')}.log"
-    log_dir_path = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation) + "/log"
+    log_dir_path = (
+        QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.AppLocalDataLocation,
+        )
+        + "/log"
+    )
     log_dir = QDir(log_dir_path)
     if not log_dir.exists():
         log_dir.mkpath(log_dir_path)
@@ -93,24 +107,26 @@ def setup(name, level=logging.DEBUG):
     __stdoutHandler = logging.StreamHandler(sys.stdout)
     __formatFileHandler = logging.FileHandler(log_file_path)
     __formatStdoutHandler = logging.StreamHandler(sys.stdout)
-    fmt = __CustomFormatter("%(asctime)s[%(levelname)s][%(filename)s:%(lineno)s][%(threadId)d] %(message)s")
+    fmt = __CustomFormatter(
+        "%(asctime)s[%(levelname)s][%(filename)s:%(lineno)s][%(threadId)d] %(message)s",
+    )
     __formatFileHandler.setFormatter(fmt)
     __formatStdoutHandler.setFormatter(fmt)
     __logging.addHandler(__formatStdoutHandler)
     __logging.addHandler(__formatFileHandler)
     qInstallMessageHandler(__message_handler)
-    __logging.info(f"===================================================")
+    __logging.info("===================================================")
     __logging.info(f"[AppName] {name}")
     __logging.info(f"[AppPath] {sys.argv[0]}")
     __logging.info(f"[ProcessId] {os.getpid()}")
-    __logging.info(f"[DeviceInfo]")
+    __logging.info("[DeviceInfo]")
     __logging.info(f"  [DeviceId] {QSysInfo.machineUniqueId().toStdString()}")
     __logging.info(f"  [Manufacturer] {QSysInfo.productVersion()}")
     __logging.info(f"  [CPU_ABI] {QSysInfo.currentCpuArchitecture()}")
     __logging.info(f"[LOG_LEVEL] {logging.getLevelName(level)}")
     __logging.info(f"[LOG_PATH] {log_file_path}")
-    __logging.info(f"===================================================")
+    __logging.info("===================================================")
 
 
 def logger():
-    return __logging
+    return __logging  # noqa: F821
