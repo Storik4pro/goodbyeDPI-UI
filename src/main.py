@@ -12,28 +12,23 @@ try:
 
     from qasync import QEventLoop
     from _data import (
-        BACKUP_SETTINGS_FILE_PATH,
         BYEDPI_EXECUTABLE,
         DEBUG,
         DIRECTORY,
-        GOODBYE_DPI_PATH,
         LOG_LEVEL,
-        SETTINGS_FILE_PATH,
         SPOOFDPI_EXECUTABLE,
         VERSION,
         ZAPRET_EXECUTABLE,
         settings,
         text,
     )
-    import resource_rc
-    from PySide6.QtCore import QProcess
-    from PySide6.QtGui import QGuiApplication, QIcon
-    from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
 
+    from PySide6.QtGui import QGuiApplication, QIcon
+    from PySide6.QtQml import QQmlApplicationEngine
+    import logger_main
     from FluentUI import FluentUIPlugin
-    import Logger
+
     import GlobalConfig
-    from Components import CircularReveal
     from AppInfo import AppInfo
     from Backend import (
         Backend,
@@ -50,35 +45,30 @@ try:
         check_app_is_runned,
         chk_directory,
         first_run_actions,
-        kill_update,
-        merge_settings,
-        merge_blacklist,
-        rename_update_exe,
-        merge_settings_to_json,
     )
 
-    logger = AppLogger(VERSION, "goodbyeDPI", LOG_LEVEL if not DEBUG else logging.DEBUG)
-except:
+    logs = AppLogger(VERSION, "goodbyeDPI", LOG_LEVEL if not DEBUG else logging.DEBUG)
+except Exception:
     import traceback
 
-    logger = AppLogger("-x-", "goodbyeDPI", logging.CRITICAL)
-    logger.raise_critical(traceback.format_exc())
+    logs = AppLogger("-x-", "goodbyeDPI", logging.CRITICAL)
+    logs.raise_critical(traceback.format_exc())
 
 try:
 
     def is_admin():
         try:
             return ctypes.windll.shell32.IsUserAnAdmin()
-        except:
+        except Exception:
             return False
 
     def run_app(first_run):
         backend = Backend(first_run)
         process = Process()
         toast = Toast()
-        multiWindow = MultiWindow()
-        goodCheck = GoodCheckHelper()
-        afterUpdate = AfterUpdateHelper()
+        multi_window = MultiWindow()
+        good_check = GoodCheckHelper()
+        after_update = AfterUpdateHelper()
         patcher = Patcher()
         print(sys.argv)
         os.environ["QT_QUICK_CONTROLS_STYLE"] = "FluentUI"
@@ -87,7 +77,7 @@ try:
         QGuiApplication.setApplicationName(GlobalConfig.application_name)
         QGuiApplication.setApplicationDisplayName(GlobalConfig.application_name)
         QGuiApplication.setApplicationVersion(GlobalConfig.application_version)
-        Logger.setup("GoodbyeDPI_UI", level=LOG_LEVEL if not DEBUG else logging.DEBUG)
+        logger_main.setup("GoodbyeDPI_UI", level=LOG_LEVEL if not DEBUG else logging.DEBUG)
         app = QGuiApplication(sys.argv)
         engine = QQmlApplicationEngine()
 
@@ -95,9 +85,9 @@ try:
         engine.rootContext().setContextProperty("process", process)
         engine.rootContext().setContextProperty("toast", toast)
         engine.rootContext().setContextProperty("appArguments", sys.argv)
-        engine.rootContext().setContextProperty("multiWindow", multiWindow)
-        engine.rootContext().setContextProperty("goodCheck", goodCheck)
-        engine.rootContext().setContextProperty("updateHelper", afterUpdate)
+        engine.rootContext().setContextProperty("multiWindow", multi_window)
+        engine.rootContext().setContextProperty("goodCheck", good_check)
+        engine.rootContext().setContextProperty("updateHelper", after_update)
         engine.rootContext().setContextProperty("patcher", patcher)
 
         engine.addImportPath(":/qt/qml")
@@ -129,7 +119,7 @@ try:
                 "",
                 ["after-update", "autorun", "after-patching", "after-failed-update"],
             )
-        except getopt.GetoptError as err:
+        except getopt.GetoptError:
             pass
 
         autorun = "False"
@@ -148,14 +138,14 @@ try:
             pompt += name + value
 
         if not is_admin() and not DEBUG:
-            logger.raise_warning(text.inAppText["run_as_admin"])
+            logs.raise_warning(text.inAppText["run_as_admin"])
             sys.exit(-1)
 
-        logger.create_debug_log("Getting ready for start application.")
+        logs.create_debug_log("Getting ready for start application.")
 
         # ==> Getting ready
 
-        check_app_is_runned(logger)
+        check_app_is_runned(logs)
 
         if settings.settings["GLOBAL"]["hide_to_tray"] == "True":
             autorun = "True"
@@ -179,23 +169,23 @@ try:
 
                 for component, executable in components_to_check.items():
                     component_path = os.path.join(
-                        DIRECTORY, "data", component, executable
+                        DIRECTORY, "data", component, executable,
                     )
                     if config.getboolean(
-                        "COMPONENTS", component
+                        "COMPONENTS", component,
                     ) and not os.path.exists(component_path):
                         settings.change_setting("COMPONENTS", component, "False")
-                        logger.create_info_log(
-                            f"Component {component} will be unregistered, because {executable} not exist"
+                        logs.create_info_log(
+                            f"Component {component} will be unregistered, because {executable} not exist",
                         )
 
                 # check after update actions
                 if not settings.settings.getboolean("GLOBAL", "update_complete"):
-                    after_update_actions(logger)
+                    after_update_actions(logs)
 
             settings.save_settings()
-        except:
-            logger.raise_critical(traceback.format_exc())
+        except Exception:
+            logs.raise_critical(traceback.format_exc())
 
         # ==> Running Qt
         try:
@@ -203,10 +193,10 @@ try:
         except SystemExit:
             pass
 
-        logger.cleanup_logs()
-except SystemExit as ex:
+        logs.cleanup_logs()
+except SystemExit:
     pass
-except:
+except Exception:
     import traceback
 
-    logger.raise_critical(traceback.format_exc())
+    logs.raise_critical(traceback.format_exc())

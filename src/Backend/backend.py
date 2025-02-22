@@ -7,20 +7,33 @@ import random
 import re
 import shlex
 import shutil
-import string
 import subprocess
 import sys
 import time
 import traceback
 
+from _data import (
+    BACKUP_SETTINGS_FILE_PATH,
+    BLACKLIST_PROVIDERS,
+    COMPONENTS_URLS,
+    CONFIG_PATH,
+    configs,
+    DEBUG,
+    DEBUG_PATH,
+    DIRECTORY,
+    EXECUTABLES,
+    LOG_LEVEL,
+    PRESETS,
+    PRESETS_DEFAULT,
+    Settings,
+    settings,
+    SETTINGS_FILE_PATH,
+    text,
+    VERSION,
+)
 from PySide6.QtCore import QObject, Slot
-from PySide6.QtCore import QProcess, Signal, QThread
-from PySide6.QtGui import QGuiApplication, QIcon
-from PySide6.QtQml import QQmlApplicationEngine
-
-from logger import AppLogger
+from PySide6.QtCore import QThread, Signal
 from utils import (
-    ProgressToast,
     background_sound,
     change_setting,
     change_settings,
@@ -30,42 +43,25 @@ from utils import (
     create_xml,
     delete_file,
     download_blacklist,
+    download_update,
     error_sound,
     extract_zip,
     get_component_download_url,
-    get_latest_release,
     get_download_url,
-    download_update,
+    get_latest_release,
     move_settings_file,
     open_custom_blacklist,
     open_folder,
     pretty_path,
+    ProgressToast,
     register_component,
     remove_xml,
     stop_servise,
     unregister_component,
 )
-from _data import (
-    BACKUP_SETTINGS_FILE_PATH,
-    BLACKLIST_PROVIDERS,
-    COMPONENTS_URLS,
-    CONFIG_PATH,
-    DEBUG_PATH,
-    EXECUTABLES,
-    LOG_LEVEL,
-    PRESETS,
-    PRESETS_DEFAULT,
-    REPO_NAME,
-    REPO_OWNER,
-    SETTINGS_FILE_PATH,
-    VERSION,
-    Settings,
-    settings,
-    DEBUG,
-    DIRECTORY,
-    configs,
-    text,
-)
+
+from logger import AppLogger
+
 
 KEY = "GOODBYEDPI"
 PATH = "GoodbyeDPI_UI"
@@ -81,7 +77,7 @@ class Backend(QObject):
     language_change = Signal()
     updates_checked = Signal(bool)
     information_requested = Signal(str, "QVariantList")
-    errorHappens = Signal(str, str)
+    errorHappens = Signal(str, str)  # noqa: N815
 
     def __init__(self, first_run=False, parent: QObject | None = ...) -> None:
         super().__init__()
@@ -98,7 +94,7 @@ class Backend(QObject):
                 .replace("{executable}", "%1")
                 .replace("<br>", "\n")
             )
-        except:
+        except Exception:
             return "<globallocalize." + element_name + ">"
 
     @Slot(result=bool)
@@ -109,18 +105,15 @@ class Backend(QObject):
     def get_fact(self):
         if not self.first_run:
             facts = tuple(self.get_element_loc(f"fact{i}") for i in range(1, 19))
-            random_fact = random.choice(facts)
-        else:
-            random_fact = self.get_element_loc("first_run_tip")
-
-        return random_fact
+            return random.choice(facts)
+        return self.get_element_loc("first_run_tip")
 
     @Slot(result=bool)
     def get_first_run(self):
         return self.first_run
 
     @Slot(result=list)
-    def getComponentsList(self):
+    def getComponentsList(self):  # noqa: N802
         return [
             {
                 "key": "/goodbyedpi",
@@ -152,7 +145,7 @@ class Backend(QObject):
         if path.endswith(".bat") or path.endswith(".cmd"):
             try:
                 path = convert_bat_file(
-                    path, DEBUG_PATH + DIRECTORY + "converted", engine
+                    path, DEBUG_PATH + DIRECTORY + "converted", engine,
                 )
             except Exception as ex:
                 logger.create_error_log(traceback.format_exc())
@@ -163,14 +156,14 @@ class Backend(QObject):
         lists_for_add = []
         for param in params:
             if not os.path.exists(
-                DEBUG_PATH + DIRECTORY + f'data/{engine}/{param["blacklist_name"]}'
+                DEBUG_PATH + DIRECTORY + f'data/{engine}/{param["blacklist_name"]}',
             ):
                 lists_for_add.append(
-                    {"blacklist_name": param["blacklist_name"], "type": "blacklist"}
+                    {"blacklist_name": param["blacklist_name"], "type": "blacklist"},
                 )
 
         custom_params = self.analyze_custom_parameters(
-            _path=path, _mode="custom_params_only"
+            _path=path, _mode="custom_params_only",
         )
 
         bins_for_add = re.findall(
@@ -207,7 +200,7 @@ class Backend(QObject):
             return os.path.join(engine, blacklist_clear)
 
         if self.last_load_folder and os.path.exists(
-            os.path.join(self.last_load_folder, blacklist)
+            os.path.join(self.last_load_folder, blacklist),
         ):
             return os.path.join(self.last_load_folder, blacklist)
 
@@ -219,7 +212,7 @@ class Backend(QObject):
         try:
             convert_folder = convert_folder_name = ""
             if os.path.dirname(new_blacklist_file) != os.path.join(
-                DEBUG_PATH + DIRECTORY, "data", engine
+                DEBUG_PATH + DIRECTORY, "data", engine,
             ) and (
                 len(new_blacklist_file.split("\\")) < 2
                 or new_blacklist_file.split("\\")[-2] != engine
@@ -235,7 +228,7 @@ class Backend(QObject):
                 convert_folder_name = f"converted{_filename}"
 
                 convert_folder = os.path.join(
-                    DEBUG_PATH + DIRECTORY, "data", engine, convert_folder_name
+                    DEBUG_PATH + DIRECTORY, "data", engine, convert_folder_name,
                 )
 
                 if not os.path.exists(convert_folder):
@@ -251,17 +244,17 @@ class Backend(QObject):
                 params.replace(
                     old_blacklist_file,
                     os.path.join(
-                        convert_folder_name, os.path.basename(new_blacklist_file)
+                        convert_folder_name, os.path.basename(new_blacklist_file),
                     ),
                 ),
             )
             configs[engine].reload_config()
 
             return "True"
-        except IOError as ex:
+        except IOError:
             logger.create_error_log(traceback.format_exc())
             return "ERR_FILE_WRITE"
-        except Exception as ex:
+        except Exception:
             logger.create_error_log(traceback.format_exc())
             return "ERR_UNKNOWN"
 
@@ -269,7 +262,7 @@ class Backend(QObject):
     def return_autocorrect_to_default(self, engine):
         if self.last_preset_used:
             change_setting(
-                "CONFIG", f"{engine.lower()}_config_path", self.last_preset_used
+                "CONFIG", f"{engine.lower()}_config_path", self.last_preset_used,
             )
             configs[engine].configfile = self.last_preset_used
             configs[engine].reload_config()
@@ -289,7 +282,7 @@ class Backend(QObject):
 
     @Slot(str, bool, result="QVariantList")
     def analyze_custom_parameters(
-        self, filename=None, unique=True, _path=None, _mode="analyze"
+        self, filename=None, unique=True, _path=None, _mode="analyze",
     ):
         path = (
             _path
@@ -391,7 +384,7 @@ class Backend(QObject):
                 continue
         unique_entries = []
         for idx, ((blacklist_name, blacklist_type), data) in enumerate(
-            blacklists.items()
+            blacklists.items(),
         ):
             data["componentId"] = idx
             unique_entries.append(data)
@@ -425,10 +418,10 @@ class Backend(QObject):
         background_sound()
 
     @Slot(str, str, result=str)
-    def getBackupValue(self, group, key):
+    def getBackupValue(self, group, key):  # noqa: N802
         try:
             return Settings(BACKUP_SETTINGS_FILE_PATH).get_value(group, key)
-        except:
+        except Exception:
             return settings.get_value(group, key)
 
     @Slot(result=str)
@@ -436,39 +429,38 @@ class Backend(QObject):
         return VERSION
 
     @Slot(result=str)
-    def getDnsV4(self):
+    def getDnsV4(self):  # noqa: N802
         return settings.settings[KEY]["dns_value"]
 
     @Slot(result=str)
-    def getPortV4(self):
+    def getPortV4(self):  # noqa: N802
         return settings.settings[KEY]["dns_port_value"]
 
     @Slot(result=str)
-    def getDnsV6(self):
+    def getDnsV6(self):  # noqa: N802
         return settings.settings[KEY]["dnsv6_value"]
 
     @Slot(result=str)
-    def getPortV6(self):
+    def getPortV6(self):  # noqa: N802
         return settings.settings[KEY]["dnsv6_port_value"]
 
     @Slot(result=int)
-    def getPreset(self):
-        value = int(settings.settings[KEY]["preset"])
-        return value
+    def getPreset(self):  # noqa: N802
+        return int(settings.settings[KEY]["preset"])
 
     @Slot(str, str, bool)
-    def toggleBool(self, key, setting, value):
+    def toggleBool(self, key, setting, value):  # noqa: N802
         change_setting(key, setting, str(value))
 
     @Slot()
-    def changeLanguage(self):
+    def changeLanguage(self):  # noqa: N802
         if text.selectLanguage != settings.settings["GLOBAL"]["language"]:
             settings.reload_settings()
             text.reload_text()
             self.language_change.emit()
 
     @Slot(str, str, result=bool)
-    def getBool(self, key, setting):
+    def getBool(self, key, setting):  # noqa: N802
         if setting == "":
             return False
         sett = settings.settings[key][setting]
@@ -477,11 +469,11 @@ class Backend(QObject):
         return True if sett == "True" else False
 
     @Slot(str, str, str)
-    def changeValue(self, key, setting, value):
+    def changeValue(self, key, setting, value):  # noqa: N802
         change_setting(key, setting, str(value))
 
     @Slot(str, str, result=str)
-    def getValue(self, key, setting):
+    def getValue(self, key, setting):  # noqa: N802
         return settings.settings[key][setting]
 
     @Slot(str, str, result=str)
@@ -489,24 +481,21 @@ class Backend(QObject):
         _value = str(configs[config.lower()].get_value(key.lower()))
         if _value != "None":
             return _value
-        else:
-            return ""
+        return ""
 
     @Slot(str, str, result=int)
     def get_int_from_config(self, config, key: str):
         _value = int(configs[config.lower()].get_value(key.lower()))
         if _value:
             return _value
-        else:
-            return 0
+        return 0
 
     @Slot(str, str, result=bool)
     def get_bool_from_config(self, config, key: str):
         _value = configs[config.lower()].get_value(key.lower())
         if _value is not None:
             return _value
-        else:
-            return False
+        return False
 
     @Slot(str, str, str)
     def set_to_config(self, config, key: str, value: str):
@@ -520,7 +509,7 @@ class Backend(QObject):
         configs[config.lower()].set_value(key.lower(), value)
 
     @Slot(str, str, result=int)
-    def getInt(self, key, setting):
+    def getInt(self, key, setting):  # noqa: N802
         return int(settings.settings[key][setting])
 
     @Slot()
@@ -547,11 +536,11 @@ class Backend(QObject):
                 + DIRECTORY
                 + f"data/{component}/russia-blacklist.txt",
             )
-        except Exception as ex:
+        except Exception:
             logger.raise_warning(traceback.format_exc())
 
     @Slot(str, str, str, str)
-    def update_dns(self, currentDnsV4, currentPortV4, currentDnsV6, currentPortV6):
+    def update_dns(self, currentDnsV4, currentPortV4, currentDnsV6, currentPortV6):  # noqa: N803
         print(currentDnsV4, currentPortV4, currentDnsV6, currentPortV6)
         change_settings(
             "GOODBYEDPI",
@@ -580,7 +569,7 @@ class Backend(QObject):
 
     # Opening Utils
     @Slot(result=str)
-    def get_GDPI_version(self):
+    def get_GDPI_version(self):  # noqa: N802
         return check_version()
 
     @Slot()
@@ -610,7 +599,7 @@ class Backend(QObject):
                 "/f",
             ]
 
-            result = subprocess.run(
+            subprocess.run(
                 command,
                 check=True,
                 stdout=subprocess.PIPE,
@@ -631,7 +620,7 @@ class Backend(QObject):
         except subprocess.CalledProcessError as ex:
             error_output = str(ex.stdout.decode("cp866", errors="replace"))
             logger.raise_warning(text.inAppText["autorun_error"] + "\n" + error_output)
-        except Exception as ex:
+        except Exception:
             error_output = traceback.format_exc()
             logger.raise_warning(error_output)
 
@@ -642,7 +631,7 @@ class Backend(QObject):
 
             command = f'schtasks /delete /tn "{task_name}" /f'
 
-            result = subprocess.run(
+            subprocess.run(
                 command,
                 check=True,
                 stdout=subprocess.PIPE,
@@ -662,7 +651,7 @@ class Backend(QObject):
             error_output = str(ex.stdout.decode("cp866", errors="replace"))
             logger.raise_warning(text.inAppText["autorun_error"] + "\n" + error_output)
 
-        except Exception as ex:
+        except Exception:
             error_output = traceback.format_exc()
             logger.raise_warning(error_output)
 
@@ -671,17 +660,17 @@ class Backend(QObject):
         if not DEBUG:
             move_settings_file(SETTINGS_FILE_PATH, BACKUP_SETTINGS_FILE_PATH)
             subprocess.Popen(
-                f'update.exe -directory-to-unpack "'
+                'update.exe -directory-to-unpack "'
                 + DIRECTORY.replace("_internal/", "")
                 + '" -directory-to-zip "'
                 + DIRECTORY
                 + "_portable.zip"
                 + '" -localize '
-                + settings.settings["GLOBAL"]["language"]
+                + settings.settings["GLOBAL"]["language"],
             )
 
     @Slot()
-    def changeMode(self):
+    def changeMode(self):  # noqa: N802
         if settings.settings["APPEARANCE_MODE"]["mode"] == "dark":
             ch = "light"
         else:
@@ -725,8 +714,8 @@ class Backend(QObject):
     def open_component_folder(self, component_name: str):
         open_folder(
             (DIRECTORY if not DEBUG else DEBUG_PATH)
-            + f"data/"
-            + ("goodbyeDPI" if component_name == "goodbyedpi" else component_name)
+            + "data/"
+            + ("goodbyeDPI" if component_name == "goodbyedpi" else component_name),
         )
 
     @Slot(str, result=list)
@@ -747,7 +736,7 @@ class Backend(QObject):
         for file_name in json_files:
             number = int(file_name[:-5])
             description = self.get_element_loc(PRESETS[component_name].format(i=number))
-            if not "<globallocalize." in description:
+            if "<globallocalize." not in description:
                 if d1 == description:
                     n += 1
                     description += (
@@ -760,13 +749,13 @@ class Backend(QObject):
                 standard_presets.append(f"{number}. {description}")
             else:
                 loaded_presets.append(
-                    f"{number}. {self.get_element_loc('loaded_tip')} {number}"
+                    f"{number}. {self.get_element_loc('loaded_tip')} {number}",
                 )
             d1 = description.split(" (")[0]
 
         if standard_presets:
             presets_list.append(
-                f"<separator>{self.get_element_loc('standart').upper()}"
+                f"<separator>{self.get_element_loc('standart').upper()}",
             )
             presets_list.extend(standard_presets)
 
@@ -807,7 +796,7 @@ class Backend(QObject):
             (
                 "E:/_component/"
                 if DEBUG
-                else settings.settings["GLOBAL"]["work_directory"] + f"data"
+                else settings.settings["GLOBAL"]["work_directory"] + "data"
             ),
             component_name,
         )
@@ -828,7 +817,7 @@ class Backend(QObject):
 
     @Slot(str, bool)
     def download_component(
-        self, component_name: str, process_need_reload: bool = False
+        self, component_name: str, process_need_reload: bool = False,
     ):
         self.process_need_reload = process_need_reload
 
@@ -897,9 +886,9 @@ class UpdateCheckerWorker(QObject):
                 if not settings.settings.getboolean("COMPONENTS", c):
                     continue
                 if settings.get_value("COMPONENTS", c + "_version").replace(
-                    "v", ""
+                    "v", "",
                 ) != settings.get_value("COMPONENTS", c + "_server_version").replace(
-                    "v", ""
+                    "v", "",
                 ):
                     update_available = True
                     continue
@@ -913,7 +902,7 @@ class UpdateCheckerWorker(QObject):
 
                     if (
                         settings.get_value("COMPONENTS", c + "_version").replace(
-                            "v", ""
+                            "v", "",
                         )
                         != version
                     ):
@@ -923,9 +912,9 @@ class UpdateCheckerWorker(QObject):
                     settings.settings["GLOBAL"]["check_complete"] = "False"
 
                 if settings.get_value("COMPONENTS", c + "_version").replace(
-                    "v", ""
+                    "v", "",
                 ) != settings.get_value("COMPONENTS", c + "_server_version").replace(
-                    "v", ""
+                    "v", "",
                 ):
                     update_available = True
 
@@ -933,15 +922,15 @@ class UpdateCheckerWorker(QObject):
 
             settings.save_settings()
             self.finished.emit(update_available)
-        except Exception as ex:
+        except Exception:
             settings.settings["GLOBAL"]["check_complete"] = "False"
             settings.save_settings()
             self.finished.emit(False)
 
 
 class DownloadWorker(QObject):
-    workFinished = Signal()
-    resultReady = Signal(str)
+    workFinished = Signal()  # noqa: N815
+    resultReady = Signal(str)  # noqa: N815
 
     def __init__(self):
         super().__init__()
@@ -967,9 +956,9 @@ class DownloadWorker(QObject):
 
 
 class UpdateDownloadWorker(QObject):
-    progressChanged = Signal(float)
-    downloadFinished = Signal(str)
-    workFinished = Signal()
+    progressChanged = Signal(float)  # noqa: N815
+    downloadFinished = Signal(str)  # noqa: N815
+    workFinished = Signal()  # noqa: N815
 
     def __init__(self):
         super().__init__()
@@ -1003,15 +992,15 @@ class UpdateDownloadWorker(QObject):
             return "ERR_CONNECTION_LOST"
         except IOError:
             return "ERR_FILE_WRITE"
-        except Exception as ex:
+        except Exception:
             return "ERR_UNKNOWN"
 
         return "True"
 
 
 class DownloadComponent(QObject):
-    downloadFinished = Signal(str)
-    workFinished = Signal()
+    downloadFinished = Signal(str)  # noqa: N815
+    workFinished = Signal()  # noqa: N815
 
     def __init__(self, component_name: str, url: str = None) -> None:
         super().__init__()
@@ -1036,7 +1025,7 @@ class DownloadComponent(QObject):
             if "ERR" in url:
                 return url
             version = self.url.split("|")[1]
-        except Exception as ex:
+        except Exception:
             return "ERR_INVALID_SERVER_RESPONSE"
 
         filename = (
@@ -1104,7 +1093,7 @@ class DownloadComponent(QObject):
             return "ERR_CONNECTION_LOST"
         except IOError:
             return "ERR_FILE_WRITE"
-        except Exception as ex:
+        except Exception:
             return "ERR_UNKNOWN"
 
         return "True"

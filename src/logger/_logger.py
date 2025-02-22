@@ -35,7 +35,7 @@ class AppLogger:
         os.makedirs(self.logs_folder, exist_ok=True)
         try:
             logging.basicConfig(filename=self.log_file_path, level=log_level)
-        except:
+        except Exception:
             pass
 
     def create_logs(self, text):

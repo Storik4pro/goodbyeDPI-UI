@@ -1,30 +1,23 @@
+import glob
 import os
 import shutil
-import subprocess
-import threading
-from PySide6.QtCore import QObject, Slot
-from PySide6.QtCore import (
-    QProcess,
-    Signal,
-    QThread,
-    QFileSystemWatcher,
-    QTimer,
-    QProcessEnvironment,
+
+
+from _data import (
+    configs,
+    DEBUG_PATH,
+    DIRECTORY,
+    GOODCHECK_PATH,
+    Settings,
 )
 import psutil
-import glob
-from utils import start_process
-from _data import (
-    DIRECTORY,
-    configs,
-    settings,
-    Settings,
-    GOODBYE_DPI_PATH,
-    ZAPRET_PATH,
-    GOODCHECK_PATH,
-    DEBUG_PATH,
-    DEBUG,
+from PySide6.QtCore import (
+    QFileSystemWatcher,
+    QTimer,
+    Signal,
 )
+from PySide6.QtCore import QObject, Slot
+from utils import start_process
 
 ENGINE = {"GoodbyeDPI": "gdpi", "Zapret": "zapret"}
 
@@ -36,7 +29,7 @@ CHECKLISTS = [
     "twitter",
 ]
 
-goodbyeDPI_strategies = [
+goodbyeDPI_strategies = [  # noqa: N816
     "[basic functionality test]",
     "[IPv4] - [e1 + e2 + e4] - [LONG]",
     "[IPv4] - [e1 + e2 + e4] - [SHORT]",
@@ -71,7 +64,7 @@ class GoodCheckHelper(QObject):
     def __init__(self):
         super().__init__()
         self.settings = Settings(
-            GOODCHECK_PATH + "/config.ini", space_around_delimiters=False
+            GOODCHECK_PATH + "/config.ini", space_around_delimiters=False,
         )
         self.process = None
         self.log_watcher = QFileSystemWatcher()
@@ -84,7 +77,7 @@ class GoodCheckHelper(QObject):
     @Slot(int)
     def open_goodcheck_file(self, file):
         os.startfile(
-            DEBUG_PATH + f"{GOODCHECK_PATH}/CheckLists/{CHECKLISTS[file] + '.txt'}"
+            DEBUG_PATH + f"{GOODCHECK_PATH}/CheckLists/{CHECKLISTS[file] + '.txt'}",
         )
 
     @Slot(str, str, str)
@@ -104,13 +97,13 @@ class GoodCheckHelper(QObject):
     @Slot()
     def start(self):
         self.settings.change_setting(
-            "GoodbyeDPI", "GoodbyeDPIFolder", "..\\\\goodbyeDPI"
+            "GoodbyeDPI", "GoodbyeDPIFolder", "..\\\\goodbyeDPI",
         )
         self.settings.change_setting(
-            "GoodbyeDPI", "GoodbyeDPIExecutableName", "gdpi.exe"
+            "GoodbyeDPI", "GoodbyeDPIExecutableName", "gdpi.exe",
         )
         self.settings.change_setting(
-            "GoodbyeDPI", "GoodbyeDPIServiceNames", "goodbyedpi"
+            "GoodbyeDPI", "GoodbyeDPIServiceNames", "goodbyedpi",
         )
         self.settings.change_setting("Zapret", "ZapretFolder", "..\\\\zapret")
         self.settings.change_setting("ByeDPI", "ByeDPIFolder", "..\\\\byedpi")
@@ -125,7 +118,7 @@ class GoodCheckHelper(QObject):
         configs["goodcheck"].reload_config()
 
         log_pattern = os.path.join(
-            GOODCHECK_PATH + "/Logs", "logfile_GoodCheckGoGo_*.log"
+            GOODCHECK_PATH + "/Logs", "logfile_GoodCheckGoGo_*.log",
         )
         for log_file in glob.glob(log_pattern):
             try:
@@ -168,7 +161,7 @@ class GoodCheckHelper(QObject):
 
     def find_new_log_file(self):
         log_pattern = os.path.join(
-            GOODCHECK_PATH + "/Logs", "logfile_GoodCheckGoGo_*.log"
+            GOODCHECK_PATH + "/Logs", "logfile_GoodCheckGoGo_*.log",
         )
         log_files = glob.glob(log_pattern)
         if log_files:

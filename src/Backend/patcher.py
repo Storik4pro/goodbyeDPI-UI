@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import shutil
@@ -5,27 +6,25 @@ import tempfile
 import time
 import traceback
 from typing import Literal
-from PySide6.QtCore import QObject, Slot, Signal, QThread
-from PySide6.QtGui import QGuiApplication, QIcon
-from PySide6.QtQml import QQmlApplicationEngine
 import zipfile
-import json
-import requests
 
-from _data import DEBUG, DEBUG_PATH, DIRECTORY, VERSION, settings
-from logger import AppLogger
+from _data import DEBUG, DEBUG_PATH, DIRECTORY, settings, VERSION
+from PySide6.QtCore import QObject, QThread, Signal, Slot
+import requests
 from utils import change_setting, download_update, get_download_url, get_latest_release
+
+from logger import AppLogger
 
 logger = AppLogger(VERSION, "patcher")
 
 
 class Patcher(QObject):
-    errorHappens = Signal(str)
-    downloadProgress = Signal(float)
-    downloadFinished = Signal(str)
-    workFinished = Signal()
-    patcherWorkFinished = Signal()
-    preparationProgress = Signal()
+    errorHappens = Signal(str)  # noqa: N815
+    downloadProgress = Signal(float)  # noqa: N815
+    downloadFinished = Signal(str)  # noqa: N815
+    workFinished = Signal()  # noqa: N815
+    patcherWorkFinished = Signal()  # noqa: N815
+    preparationProgress = Signal()  # noqa: N815
 
     def __init__(self):
         super().__init__()
@@ -78,7 +77,7 @@ class Patcher(QObject):
             shutil.rmtree(f"{DIRECTORY}unpacked_patch")
 
     @Slot(float)
-    def progressChanged(self, progress: float):
+    def progressChanged(self, progress: float):  # noqa: N802
         self.state = "progress"
 
     @Slot()
@@ -93,16 +92,15 @@ class Patcher(QObject):
     def is_getting_ready(self):
         if self.state == "preparation":
             return True
-        else:
-            return False
+        return False
 
 
 class PatchDownloadWorker(QObject):
     error = Signal(str)
-    progressChanged = Signal(float)
-    downloadFinished = Signal(str)
-    workFinished = Signal()
-    preparationProgress = Signal()
+    progressChanged = Signal(float)  # noqa: N815
+    downloadFinished = Signal(str)  # noqa: N815
+    workFinished = Signal()  # noqa: N815
+    preparationProgress = Signal()  # noqa: N815
 
     def __init__(self, local_file_path=None):
         super().__init__()
@@ -116,8 +114,7 @@ class PatchDownloadWorker(QObject):
             success = self._process_patch(self.local_file_path, mode="manual")
             self.workFinished.emit()
             return
-        else:
-            success = self._download_update()
+        success = self._download_update()
         self.downloadFinished.emit(success)
 
     def _download_update(self):
@@ -151,10 +148,10 @@ class PatchDownloadWorker(QObject):
             return self._process_patch(directory)
         except requests.ConnectionError:
             return "ERR_CONNECTION_LOST"
-        except IOError as ex:
+        except IOError:
             logger.create_error_log(traceback.format_exc())
             return "ERR_FILE_WRITE"
-        except Exception as ex:
+        except Exception:
             return "ERR_UNKNOWN"
 
     def _process_patch(self, patch_file, mode: Literal["manual", "auto"] = "auto"):
@@ -174,12 +171,12 @@ class PatchDownloadWorker(QObject):
                 return "True"
 
             requirements_path = os.path.join(temp_dir, "requirements.json")
-            goodbyeDPI_UI_path = os.path.join(temp_dir, "goodbyeDPI UI")
+            goodbyeDPI_UI_path = os.path.join(temp_dir, "goodbyeDPI UI")  # noqa: N806
 
             self.preparationProgress.emit()
 
             if not os.path.exists(requirements_path) or not os.path.exists(
-                goodbyeDPI_UI_path
+                goodbyeDPI_UI_path,
             ):
                 shutil.rmtree(temp_dir)
                 self.error.emit("ERR_INVALID_PATCH")
@@ -201,14 +198,14 @@ class PatchDownloadWorker(QObject):
                 dependency_patch_path = os.path.join(temp_dir, os.path.basename(url))
                 try:
                     self._download_and_process_dependency(url, dependency_patch_path)
-                except Exception as ex:
+                except Exception:
                     shutil.rmtree(temp_dir)
                     self.error.emit("ERR_PATCH_REQUROEMENTS_DOWNLOAD")
                     return "ERR_PATCH_REQUROEMENTS_DOWNLOAD"
 
             self.processed_patches.append(temp_dir)
 
-        except Exception as ex:
+        except Exception:
             shutil.rmtree(temp_dir)
             self.error.emit("ERR_INVALID_PATCH")
             return "ERR_INVALID_PATCH"
@@ -235,7 +232,7 @@ class PatchDownloadWorker(QObject):
 
     def _download_and_process_dependency(self, url, dependency_patch_path):
         download_update(
-            url, dependency_patch_path, self.progressChanged, debug_check=False
+            url, dependency_patch_path, self.progressChanged, debug_check=False,
         )
 
         self._process_patch(dependency_patch_path)
@@ -243,12 +240,11 @@ class PatchDownloadWorker(QObject):
     def _apply_patch(self, patch_dir):
         self.preparationProgress.emit()
 
-        goodbyeDPI_UI_path = f"{DIRECTORY}unpacked_patch/goodbyeDPI UI"
-        changed_files = []
+        goodbyeDPI_UI_path = f"{DIRECTORY}unpacked_patch/goodbyeDPI UI"  # noqa: N806
 
         for i, patch_url in enumerate(self.processed_patches):
             if not os.path.exists(
-                os.path.join(DEBUG_PATH + DIRECTORY, patch_url, "goodbyeDPI UI")
+                os.path.join(DEBUG_PATH + DIRECTORY, patch_url, "goodbyeDPI UI"),
             ):
                 shutil.move(patch_url, goodbyeDPI_UI_path)
             else:
@@ -261,7 +257,7 @@ class PatchDownloadWorker(QObject):
                         os.makedirs(target_dir)
                     for file in files:
                         shutil.move(
-                            os.path.join(root, file), os.path.join(target_dir, file)
+                            os.path.join(root, file), os.path.join(target_dir, file),
                         )
 
         old_directory = os.path.join(DIRECTORY, ".old")
@@ -273,10 +269,10 @@ class PatchDownloadWorker(QObject):
         for root, _, files in os.walk(goodbyeDPI_UI_path):
             for file in files:
                 source_path = os.path.relpath(
-                    os.path.join(root, file), goodbyeDPI_UI_path
+                    os.path.join(root, file), goodbyeDPI_UI_path,
                 )
                 target_path = os.path.join(
-                    old_directory, os.path.relpath(root, goodbyeDPI_UI_path), file
+                    old_directory, os.path.relpath(root, goodbyeDPI_UI_path), file,
                 )
 
                 _file = os.path.join(DEBUG_PATH + DIRECTORY, source_path)
@@ -291,7 +287,7 @@ class PatchDownloadWorker(QObject):
                             os.makedirs(target_dir)
 
                     shutil.copy(
-                        os.path.join(DEBUG_PATH + DIRECTORY, source_path), target_path
+                        os.path.join(DEBUG_PATH + DIRECTORY, source_path), target_path,
                     )
 
         zip_file_path = os.path.join(patch_dir, "..", "_portable.zip")
@@ -300,12 +296,12 @@ class PatchDownloadWorker(QObject):
 
         self.preparationProgress.emit()
         shutil.make_archive(
-            zip_file_path.replace(".zip", ""), "zip", f"{DIRECTORY}unpacked_patch"
+            zip_file_path.replace(".zip", ""), "zip", f"{DIRECTORY}unpacked_patch",
         )
         try:
             for i, patch_url in enumerate(self.processed_patches):
                 shutil.rmtree(self.processed_patches[i])
-        except Exception as ex:
+        except Exception:
             logger.create_error_log(traceback.format_exc())
         self.processed_patches.clear()
 

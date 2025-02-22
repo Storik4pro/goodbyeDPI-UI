@@ -1,10 +1,58 @@
+# Standard Library imports (sorted alphabetically)
+import asyncio
+import configparser
+import ctypes
+from datetime import datetime
 import hashlib
 import json
+import os
 import platform
-import random
-import string
+import queue
+import re
+import shutil
+import subprocess
+import tempfile
+import threading
+import time
 from typing import Literal
+import winsound
 import zipfile
+
+# Third Party imports (sorted alphabetically)
+from _data import (
+    COMPONENTS_URLS,
+    CONFIG_PATH,
+    CONFIGS_REPO_NAME,
+    DEBUG,
+    DEBUG_PATH,
+    DIRECTORY,
+    EXECUTABLES,
+    GOODBYE_DPI_EXECUTABLE,
+    GOODBYE_DPI_PATH,
+    PARAMETER_MAPPING,
+    REPO_NAME,
+    REPO_OWNER,
+    S_PARAMETER_MAPPING,
+    S_VALUE_PARAMETERS,
+    settings,
+    SETTINGS_FILE_PATH,
+    text,
+    VALUE_PARAMETERS,
+)
+import psutil
+from PySide6.QtCore import QObject, Slot
+from PySide6.QtCore import QThread, Signal
+import requests
+from toasted import (
+    Button,
+    Image,
+    Progress,
+    Text,
+    Toast,
+    ToastButtonStyle,
+    ToastImagePlacement,
+)
+import winreg
 
 
 def check_winpty():
@@ -15,61 +63,9 @@ def check_winpty():
 
 winpty_support = check_winpty()
 
-import asyncio
-import configparser
-from datetime import datetime
-import os
-import queue
-import re
-import shutil
-import ctypes
-import subprocess
-import tempfile
-import threading
-import time
-import winreg
-import psutil
-from PySide6.QtCore import QObject, Slot
-from PySide6.QtCore import QProcess, Signal, QThread
 
 if winpty_support:
     import winpty
-from toasted import (
-    Button,
-    Image,
-    Progress,
-    Text,
-    Toast,
-    ToastButtonStyle,
-    ToastImagePlacement,
-)
-import winsound
-
-import requests
-from _data import (
-    GOODBYE_DPI_EXECUTABLE,
-    PARAMETER_MAPPING,
-    S_PARAMETER_MAPPING,
-    S_VALUE_PARAMETERS,
-    VALUE_PARAMETERS,
-    ZAPRET_EXECUTABLE,
-    ZAPRET_PATH,
-    GOODBYE_DPI_PATH,
-    DEBUG,
-    DIRECTORY,
-    DEBUG_PATH,
-    REPO_NAME,
-    REPO_OWNER,
-    CONFIGS_REPO_NAME,
-    SETTINGS_FILE_PATH,
-    CONFIG_PATH,
-    SPOOFDPI_EXECUTABLE,
-    BYEDPI_EXECUTABLE,
-    EXECUTABLES,
-    COMPONENTS_URLS,
-    text,
-    settings,
-)
 
 
 def error_sound():
@@ -81,28 +77,25 @@ def background_sound():
 
 
 # PC test
-def is_weak_pc():
+def is_weak_pc():  # ФУНКЦИЯ ПЕРЕПИСЫВАЛАСЬ
     cpu_freq = psutil.cpu_freq().max
     cpu_cores = psutil.cpu_count(logical=False)
     total_memory_gb = psutil.virtual_memory().total / (1024**3)
 
-    LOW_CPU_FREQ = 2000
-    LOW_CPU_CORES = 2
-    LOW_MEMORY_GB = 4
+    low_cpu_freq = 2000
+    low_cpu_cores = 2
+    low_memory_gb = 4
 
-    weak_cpu = cpu_freq < LOW_CPU_FREQ or cpu_cores <= LOW_CPU_CORES
-    weak_memory = total_memory_gb <= LOW_MEMORY_GB
+    weak_cpu = cpu_freq < low_cpu_freq or cpu_cores <= low_cpu_cores
+    weak_memory = total_memory_gb <= low_memory_gb
 
-    if weak_cpu or weak_memory:
-        return True
-    else:
-        return False
+    return weak_cpu or weak_memory
 
 
 def get_locale(element):
     try:
         return text.inAppText[element]
-    except:
+    except Exception:
         return f"locale:{element}"
 
 
@@ -111,7 +104,7 @@ def get_locale(element):
 
 class ProgressToast:
     def __init__(
-        self, app_id: str, title, description, filename="sample_file.txt"
+        self, app_id: str, title, description, filename="sample_file.txt",
     ) -> None:
         self.toast = Toast(
             app_id=app_id,
@@ -138,7 +131,7 @@ class ProgressToast:
     def start_toast(self, value, status):
         if self.notification_thread is None or not self.notification_thread.is_alive():
             self.notification_thread = threading.Thread(
-                target=lambda: asyncio.run(self.update_toast_tread(value, status))
+                target=lambda: asyncio.run(self.update_toast_tread(value, status)),
             )
             self.notification_thread.start()
 
@@ -152,44 +145,43 @@ class ProgressToast:
             self.toast.elements[0].content = title
 
 
-async def show_message(app_id: str, title, description):
+async def show_message(app_id: str, title, description):   # ФУНКЦИЯ ПЕРЕПИСЫВАЛАСЬ
     toast = Toast(app_id=app_id)
     toast.elements = [
         Text(title),
         Text(description),
     ]
-    result = await toast.show()
-    return result
+    return await toast.show()
 
 
-async def show_error(app_id: str, title, description, btnText, btnText2):
+async def show_error(app_id: str, title, description, btn_text, btn_text2):  # ФУНКЦИЯ ПЕРЕПИСЫВАЛАСЬ
     toast = Toast(app_id=app_id)
     elements = [
         Image(
-            f"file:///{(DIRECTORY if not DEBUG else DEBUG_PATH)+'/data/warning.png'}?foreground=#FFFFFF&background=#F7630C&padding=40",
+            f"file:///{(DIRECTORY if not DEBUG else DEBUG_PATH)+'/data/warning.png'}\
+                ?foreground=#FFFFFF&background=#F7630C&padding=40",
             placement=ToastImagePlacement.LOGO,
         ),
         Text(title),
         Text(description),
-        Button(btnText, arguments="accept", style=ToastButtonStyle.CRITICAL),
+        Button(btn_text, arguments="accept", style=ToastButtonStyle.CRITICAL),
     ]
-    if btnText2:
+    if btn_text2:
         elements.append(
             Button(
-                btnText2,
+                btn_text2,
                 arguments="call2",
-            )
+            ),
         )
     toast.elements = elements
 
-    result = await toast.show()
-    return result
+    return await toast.show()
 
 
 def register_app():
     if not Toast.is_registered_app_id("GoodbyeDPI_app"):
         Toast.register_app_id(
-            "GoodbyeDPI_app", "GoodbyeDPI UI", icon_uri=DIRECTORY + "data\icon.png"
+            "GoodbyeDPI_app", "GoodbyeDPI UI", icon_uri=DIRECTORY + "data\icon.png",  # noqa: W605
         )
 
 
@@ -204,17 +196,17 @@ def install_font(font_path):
 
         reg_path = r"Software\Microsoft\Windows NT\CurrentVersion\Fonts"
         with winreg.OpenKey(
-            winreg.HKEY_LOCAL_MACHINE, reg_path, 0, winreg.KEY_SET_VALUE
+            winreg.HKEY_LOCAL_MACHINE, reg_path, 0, winreg.KEY_SET_VALUE,
         ) as reg_key:
             winreg.SetValueEx(
-                reg_key, "Nunito SemiBold (TrueType)", 0, winreg.REG_SZ, font_name
+                reg_key, "Nunito SemiBold (TrueType)", 0, winreg.REG_SZ, font_name,
             )
 
         ctypes.windll.gdi32.AddFontResourceW(dest_path)
         ctypes.windll.user32.SendMessageW(0xFFFF, 0x001D, 0, 0)
 
         return True
-    except Exception as e:
+    except Exception:
         return False
 
 
@@ -232,20 +224,20 @@ def remove_ansi_sequences(text: str):
 
     stage1 = re.sub(r"\w:\\[^ ]+", "", text)
     print(
-        ""
+        "",
     )  # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
 
     ansi_escape = re.compile(r"(?:\x1B[@-_][0-?]*[ -/]*[@-~])|\]0;")
     stage2 = ansi_escape.sub("", stage1)
     print(
-        ""
+        "",
     )  # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
     print(
-        ""
+        "",
     )  # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
     print(
-        ""
-    )  # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE
+        "",
+    )  # SYKA BLYAD EBANIY HYU!!! Without this print the code does not work DO NOT DELETE OGROMNI CHLEN
     if settings.settings["GLOBAL"]["engine"] == "goodbyeDPI":
         stage2.replace("GG", "G")
     stage2 = stage2.replace(
@@ -322,7 +314,7 @@ class GoodbyedpiWorker(QThread):
                     except OSError as e:
                         print(e)
                         break
-                    except Exception as e:
+                    except Exception:
                         break
                 else:
                     break
@@ -339,7 +331,7 @@ class GoodbyedpiWorker(QThread):
         if self.pty_process:
             try:
                 self.pty_process.close(True)
-            except:
+            except Exception:
                 pass
             self.pty_process = None
         execut = EXECUTABLES[self.engine]
@@ -357,12 +349,12 @@ class GoodbyedpiWorker(QThread):
         if self.pty_process:
             try:
                 self.pty_process.close(True)
-            except:
+            except Exception:
                 pass
         if self.proc:
             try:
                 self.proc.terminate()
-            except:
+            except Exception:
                 pass
         self.wait()
 
@@ -408,8 +400,7 @@ class GoodbyedpiProcess(QObject):
             self.error = False
             self.stop = False
             return True
-        else:
-            return False
+        return False
 
     @Slot()
     def stop_goodbyedpi(self):
@@ -430,7 +421,6 @@ class GoodbyedpiProcess(QObject):
         return True
 
     def handle_output(self, data):
-        execut = EXECUTABLES[settings.settings["GLOBAL"]["engine"]]
         if not self.error and not self.stop:
             self.output_signal.emit(data)
         if (
@@ -486,17 +476,17 @@ def start_process(*args, **kwargs):
         path,
         *args,
     ]
-    process = subprocess.Popen(
-        _args, cwd=cwd, creationflags=subprocess.CREATE_NO_WINDOW
+
+    return subprocess.Popen(
+        _args, cwd=cwd, creationflags=subprocess.CREATE_NO_WINDOW,
     )
-    return process
 
 
 def stop_servise():
     try:
         subprocess.run(["sc", "stop", "WinDivert"], check=True)
         subprocess.run(["sc", "delete", "WinDivert"], check=True)
-    except Exception as e:
+    except Exception:
         pass
 
 
@@ -573,7 +563,7 @@ def check_mica():
 
 
 # update
-def save_version_data_to_cache(owner, name, object="prg", url="releases/latest"):
+def save_version_data_to_cache(owner, name, obj="prg", url="releases/latest"):
     url = f"https://api.github.com/repos/{owner}/{name}/{url}"
     response = requests.get(url)
 
@@ -586,12 +576,12 @@ def save_version_data_to_cache(owner, name, object="prg", url="releases/latest")
         os.makedirs(f"{DIRECTORY}tempfiles")
 
     with open(
-        f"{DIRECTORY}tempfiles/versiondata_{owner}_{name}.json", "w", encoding="utf-8"
+        f"{DIRECTORY}tempfiles/versiondata_{owner}_{name}.json", "w", encoding="utf-8",
     ) as file:
         json.dump(data, file, indent=2, ensure_ascii=False)
 
     settings.change_setting(
-        "CACHE", f"{object}_update_check_time", datetime.now().strftime("%d.%m.%Y")
+        "CACHE", f"{obj}_update_check_time", datetime.now().strftime("%d.%m.%Y"),
     )
     settings.save_settings()
 
@@ -599,18 +589,17 @@ def save_version_data_to_cache(owner, name, object="prg", url="releases/latest")
 
 
 def get_latest_release(reason: Literal["auto", "manual"] = "auto"):
-    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/releases/latest"
 
     if (
         settings.get_value("CACHE", "prg_update_check_time")
         != datetime.now().strftime("%d.%m.%Y")
         or not os.path.exists(
-            f"{DIRECTORY}tempfiles/versiondata_{REPO_OWNER}_{REPO_NAME}.json"
+            f"{DIRECTORY}tempfiles/versiondata_{REPO_OWNER}_{REPO_NAME}.json",
         )
         or reason == "manual"
     ):
-        code = save_version_data_to_cache(REPO_OWNER, REPO_NAME, object="prg")
-        if code != True:
+        code = save_version_data_to_cache(REPO_OWNER, REPO_NAME, obj="prg")
+        if not code:
             return code
 
     with open(
@@ -620,19 +609,17 @@ def get_latest_release(reason: Literal["auto", "manual"] = "auto"):
     ) as file:
         data = json.load(file)
 
-    latest_version = data["tag_name"]
-
-    return latest_version
+    return data["tag_name"]
 
 
-def get_release_info(version):
+def get_release_info(version):  # ФУНКЦИЯ ПЕРЕПИСЫВАЛАСЬ
     if settings.get_value("CACHE", "prg_update_check_time") != datetime.now().strftime(
-        "%d.%m.%Y"
+        "%d.%m.%Y",
     ) or not os.path.exists(
-        f"{DIRECTORY}tempfiles/versiondata_{REPO_OWNER}_{REPO_NAME}.json"
+        f"{DIRECTORY}tempfiles/versiondata_{REPO_OWNER}_{REPO_NAME}.json",
     ):
-        code = save_version_data_to_cache(REPO_OWNER, REPO_NAME, object="prg")
-        if code != True:
+        code = save_version_data_to_cache(REPO_OWNER, REPO_NAME, obj="prg")
+        if not code:
             return code
 
     with open(
@@ -640,9 +627,7 @@ def get_release_info(version):
         "r",
         encoding="utf-8",
     ) as file:
-        data = json.load(file)
-
-    return data
+        return json.load(file)
 
 
 def get_download_url(version, filetype=".zip"):
@@ -651,7 +636,7 @@ def get_download_url(version, filetype=".zip"):
     try:
         data = get_release_info(version)
 
-        if type(data) == str and "ERR" in data:
+        if isinstance(data, str) and ("ERR" in data):
             return data
 
         download_url = None
@@ -667,7 +652,7 @@ def get_download_url(version, filetype=".zip"):
         return download_url
     except requests.ConnectionError:
         return "ERR_CONNECTION_LOST"
-    except Exception as ex:
+    except Exception:
         return "ERR_UNKNOWN"
 
 
@@ -697,24 +682,23 @@ def download_update(url, directory, signal=None, debug_check=True):
         shutil.copyfile(url, directory)
 
 
-def get_component_download_url(component_name: str):
+def get_component_download_url(component_name: str):  # ФУНЦИЯ ПЕРЕПИСЫВАЛАСЬ
     component_addres = COMPONENTS_URLS[component_name]
     repo = component_addres.split("/")[1]
     owner = component_addres.split("/")[0]
-    component_url = f"https://api.github.com/repos/{component_addres}/releases"
     try:
         if settings.get_value(
-            "CACHE", f"component_{component_name.lower()}_update_check_time"
+            "CACHE", f"component_{component_name.lower()}_update_check_time",
         ) != datetime.now().strftime("%d.%m.%Y") or not os.path.exists(
-            f"{DIRECTORY}tempfiles/versiondata_{owner}_{repo}.json"
+            f"{DIRECTORY}tempfiles/versiondata_{owner}_{repo}.json",
         ):
             code = save_version_data_to_cache(
                 owner,
                 repo,
-                object=f"component_{component_name.lower()}",
+                obj=f"component_{component_name.lower()}",
                 url="releases",
             )
-            if code != True:
+            if not code:
                 return code
 
         with open(
@@ -732,23 +716,17 @@ def get_component_download_url(component_name: str):
 
         if component_name == "goodbyeDPI" and version == "0.2.3rc3":
             return f"ERR_LATEST_VERSION_ALREADY_INSTALLED|{version}"
-        pre_download_url = (
-            f"https://api.github.com/repos/{component_addres}/releases/tags/{version}"
-        )
 
         download_url = None
 
         for asset in latest_release["assets"]:
             if asset["name"].endswith(".zip"):
-                if component_name == "byedpi":
-                    if "x86_64-w64" in asset["name"]:
-                        download_url = asset["browser_download_url"]
-                        break
+                # For "byedpi", only select if "x86_64-w64" is in the asset name.
+                if component_name == "byedpi" and "x86_64-w64" not in asset["name"]:
                     continue
-                else:
-                    download_url = asset["browser_download_url"]
+                download_url = asset["browser_download_url"]
                 break
-            elif asset["name"].endswith(".exe"):
+            if asset["name"].endswith(".exe"):
                 download_url = asset["browser_download_url"]
                 break
 
@@ -757,7 +735,7 @@ def get_component_download_url(component_name: str):
 
         return download_url + "|" + version
 
-    except Exception as ex:
+    except Exception:
         return "ERR_UNKNOWN"
 
 
@@ -768,7 +746,6 @@ def extract_zip(zip_file, zip_folder_to_unpack, extract_to, files_to_skip=[]):
 
         with zipfile.ZipFile(zip_file, "r") as zip_ref:
             members = zip_ref.infolist()
-            total_files = len(members)
             extracted_files = 0
 
             index = 0
@@ -798,7 +775,7 @@ def extract_zip(zip_file, zip_folder_to_unpack, extract_to, files_to_skip=[]):
                         os.makedirs(destination_dir)
 
                     if relative_path.endswith(".txt") and os.path.exists(
-                        destination_path
+                        destination_path,
                     ):
                         index += 1
                         continue
@@ -809,20 +786,18 @@ def extract_zip(zip_file, zip_folder_to_unpack, extract_to, files_to_skip=[]):
                     else:
                         try:
                             with zip_ref.open(member) as source, open(
-                                destination_path, "wb"
+                                destination_path, "wb",
                             ) as target:
                                 shutil.copyfileobj(source, target)
                         except OSError as pe:
                             print(pe.errno)
                             if "13" in str(pe.errno):
                                 return "ERR_PERMISSION_DENIED"
-                            else:
-                                return "ERR_FILE_UNPACKING"
-                        except Exception as ex:
+                            return "ERR_FILE_UNPACKING"
+                        except Exception:
                             return "ERR_FILE_UNPACKING"
 
                     extracted_files += 1
-                    progress = extracted_files / total_files
                 index += 1
 
     except Exception as ex:
@@ -836,8 +811,8 @@ def download_files_from_github(remote_dir, local_dir):
 
     skip_files = [
         "custom_blacklist.txt",
-        f"list-discord.txt",
-        f"list-youtube.txt",
+        "list-discord.txt",
+        "list-youtube.txt",
         "youtube.txt",
         "myhostlist.txt",
         "russia-blacklist.txt",
@@ -875,8 +850,8 @@ def download_files_from_github(remote_dir, local_dir):
                 else:
                     continue
 
-        return
-    except Exception as ex:
+        return None
+    except Exception:
         return "ERR_CONFIG_DOWNLOAD_UNKNOWN"
 
 
@@ -888,12 +863,12 @@ def delete_file(file_path):
             shutil.rmtree(file_path)
         else:
             return "ERR_FILE_NOT_FOUND"
-        return
+        return None
     except FileNotFoundError:
         return "ERR_FILE_NOT_FOUND"
     except PermissionError:
         return "ERR_PERMISSION_DENIED"
-    except Exception as e:
+    except Exception:
         return "ERR_CLEANUP_FILES"
 
 
@@ -908,7 +883,7 @@ def register_component(component_name: str, version):
         else f"E:/_component/{component_name}"
     )
     result = download_files_from_github(
-        remote_dir=f"{component_name.lower()}/", local_dir=component_directory
+        remote_dir=f"{component_name.lower()}/", local_dir=component_directory,
     )
     if result:
         return result
@@ -919,7 +894,7 @@ def register_component(component_name: str, version):
         else f"E:/_component/{component_name}/config"
     )
     result = download_files_from_github(
-        remote_dir=f"{component_name.lower()}/configs", local_dir=config_component_path
+        remote_dir=f"{component_name.lower()}/configs", local_dir=config_component_path,
     )
     if result:
         return result
@@ -932,13 +907,14 @@ def register_component(component_name: str, version):
             [f"{component_name.lower()}_server_version", version],
         ],
     )
+    return None
 
 
 def unregister_component(component_name: str):
     if component_name == "goodbyeDPI":
         return "ERR_CANNOT_REMOVE_COMPONENT"
     if settings.settings["GLOBAL"]["engine"] == component_name:
-        change_setting("GLOBAL", f"engine", "goodbyeDPI")
+        change_setting("GLOBAL", "engine", "goodbyeDPI")
     change_setting("COMPONENTS", f"{component_name.lower()}", "False")
     return "True"
 
@@ -955,7 +931,7 @@ def is_process_running(process_name):
 # autorun
 
 
-def create_xml(author, executable, arguments):
+def create_xml(author, executable, arguments):  # ФУНКЦИЯ ПЕРЕПИСЫВАЛАСЬ
     user_domain = os.environ.get("USERDOMAIN", "")
     user_name = os.environ.get("USERNAME", "")
     current_user = f"{user_domain}\\{user_name}" if user_domain else user_name
@@ -1007,11 +983,10 @@ def create_xml(author, executable, arguments):
   </Task>
   """
     with tempfile.NamedTemporaryFile(
-        "w", encoding="utf-16", suffix=".xml", delete=False
+        "w", encoding="utf-16", suffix=".xml", delete=False,
     ) as temp_xml:
         temp_xml.write(xml_content)
-        temp_xml_path = temp_xml.name
-    return temp_xml_path
+        return temp_xml.name
 
 
 def remove_xml(path):
@@ -1022,7 +997,7 @@ def remove_xml(path):
 
 hash_gdpi_64_023rc32 = "afa7f66231b9cec7237e738b622c0181"
 hash_gdpi_64_023testbuild = "4d060be292eb50783c0d8022d4bf246c"
-hash_gdpi_64_testbuild_by_Decavoid = "c25b01de6d5471f3b7337122049827f6"
+hash_gdpi_64_testbuild_by_Decavoid = "c25b01de6d5471f3b7337122049827f6"  # noqa: N816
 
 
 def calculate_hash(file_path, algorithm="md5"):
@@ -1040,9 +1015,9 @@ def check_version(gdpi_exe_fullpath=GOODBYE_DPI_PATH + "\\x86_64\\goodbyedpi.exe
 
     if hash_value == hash_gdpi_64_023testbuild:
         return "test version - FWSNI support"
-    elif hash_value == hash_gdpi_64_testbuild_by_Decavoid:
+    if hash_value == hash_gdpi_64_testbuild_by_Decavoid:
         return "test version (Decavoid) - FWSNI support"
-    elif hash_value == hash_gdpi_64_023rc32:
+    if hash_value == hash_gdpi_64_023rc32:
         return "0.2.3-rc3-2"
 
     return "UNKNOWN VERSION (FWSNI support enabled)"
@@ -1051,13 +1026,12 @@ def check_version(gdpi_exe_fullpath=GOODBYE_DPI_PATH + "\\x86_64\\goodbyedpi.exe
 def sni_support():
     if "FWSNI support" in check_version():
         return True
-    else:
-        return False
+    return False
 
 
 def check_urls():
     with open(
-        f"{(DEBUG_PATH if DEBUG else '') + GOODBYE_DPI_PATH}/custom_blacklist.txt", "r"
+        f"{(DEBUG_PATH if DEBUG else '') + GOODBYE_DPI_PATH}/custom_blacklist.txt", "r",
     ) as file:
         urls = file.read().splitlines()
 
@@ -1076,7 +1050,7 @@ def check_urls():
                 sites.append("https://" + url)
             print(str(ex), ex)
             continue
-        except Exception as ex:
+        except Exception:
             continue
 
     return sites
@@ -1096,7 +1070,7 @@ def convert_custom_params(command, parameter_mapping, value_parameters):
     command = command.split(" ")
     params = {}
     custom_params = []
-    params[f"blacklist_value"] = ""
+    params["blacklist_value"] = ""
     i = 0
     while i < len(command):
         cmd_param = command[i]
@@ -1180,8 +1154,7 @@ def convert_bat_file(bat_file, output_folder, engine):
 
     def replace_vars(match):
         var_name = match.group(1)
-        var_value = variables.get(var_name.upper(), "")
-        return var_value
+        return variables.get(var_name.upper(), "")
 
     command = re.sub(r"%(\w+)%", replace_vars, command)
 
@@ -1194,7 +1167,7 @@ def convert_bat_file(bat_file, output_folder, engine):
 
     if command == "":
         raise KeyError(
-            "Empty startup parameters. The file is damaged or not compatible"
+            "Empty startup parameters. The file is damaged or not compatible",
         )
 
     parameter_mapping, value_parameters = get_parameter_mappings(engine.lower())
@@ -1207,7 +1180,6 @@ def convert_bat_file(bat_file, output_folder, engine):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
-    bat_dir = os.path.dirname(os.path.abspath(bat_file))
     bat_name = os.path.splitext(os.path.basename(bat_file))[0]
     json_file = os.path.join(output_folder, f"{bat_name}.json")
 
@@ -1224,22 +1196,21 @@ def check_json_file(file: str, component: str):
             custom_parameters = data.get("custom_parameters")
             if custom_parameters is not None and custom_parameters != "":
                 return True
-            else:
-                raise KeyError(f"Unable to load {file}. JSON file not setup right")
+            raise KeyError(f"Unable to load {file}. JSON file not setup right")
     except FileNotFoundError:
         raise FileNotFoundError(
-            f"Unable to found config file {file}. File is not exist in current location"
+            f"Unable to found config file {file}. File is not exist in current location",
         )
     except json.JSONDecodeError:
         raise json.JSONDecodeError(
-            f"Unable to found config file {file}. File encoding is incorrect"
+            f"Unable to found config file {file}. File encoding is incorrect",
         )
 
 
 def get_preset_parameters(index: int | str, engine: str):
     filename = f"{index}.json"
     path = os.path.join(
-        (DEBUG_PATH if DEBUG else "") + CONFIG_PATH + "/" + engine.lower(), filename
+        (DEBUG_PATH if DEBUG else "") + CONFIG_PATH + "/" + engine.lower(), filename,
     )
     try:
         with open(path, "r", encoding="utf-8") as file:
@@ -1247,15 +1218,14 @@ def get_preset_parameters(index: int | str, engine: str):
             custom_parameters = data.get("custom_parameters")
             if custom_parameters is not None:
                 return str(custom_parameters).split()
-            else:
-                raise KeyError(f"Unable to load {filename}. JSON file not setup right")
+            raise KeyError(f"Unable to load {filename}. JSON file not setup right")
     except FileNotFoundError:
         raise FileNotFoundError(
-            f"Unable to found config file {filename}. File is not exist in current location {path}"
+            f"Unable to found config file {filename}. File is not exist in current location {path}",
         )
     except json.JSONDecodeError:
         raise json.JSONDecodeError(
-            f"Unable to found config file {filename}. File encoding is incorrect"
+            f"Unable to found config file {filename}. File encoding is incorrect",
         )
 
 
@@ -1279,8 +1249,7 @@ def replace_system_folders_with_short_names(path):
         else:
             new_path_parts.append(part)
 
-    new_path = os.sep.join(new_path_parts)
-    return new_path
+    return os.sep.join(new_path_parts)
 
 
 def pretty_path(text):

@@ -3,25 +3,25 @@ import os
 import sys
 import threading
 
+from _data import DEBUG_PATH
 from PySide6.QtCore import (
+    QDateTime,
     QDir,
     qInstallMessageHandler,
-    QtMsgType,
     QStandardPaths,
-    QDateTime,
     QSysInfo,
+    QtMsgType,
 )
-from _data import DEBUG_PATH
 
-__logging: logging.Logger
-__fileHandler: logging.FileHandler
-__formatFileHandler: logging.FileHandler
-__stdoutHandler: logging.StreamHandler
-__formatStdoutHandler: logging.StreamHandler
+__logging: logging.Logger  # noqa: N816
+__fileHandler: logging.FileHandler  # noqa: N816
+__formatFileHandler: logging.FileHandler  # noqa: N816
+__stdoutHandler: logging.StreamHandler  # noqa: N816
+__formatStdoutHandler: logging.StreamHandler  # noqa: N816
 
 
 class __CustomFormatter(logging.Formatter):
-    def format(self, record):
+    def format(self, record):   # noqa: A003
         record.threadId = threading.get_ident()
         return super().format(record)
 
@@ -95,7 +95,7 @@ def setup(name, level=logging.DEBUG):
     log_file_name = f"{name}_{QDateTime.currentDateTime().toString('yyyyMMdd')}.log"
     log_dir_path = (
         QStandardPaths.writableLocation(
-            QStandardPaths.StandardLocation.AppLocalDataLocation
+            QStandardPaths.StandardLocation.AppLocalDataLocation,
         )
         + "/log"
     )
@@ -108,25 +108,25 @@ def setup(name, level=logging.DEBUG):
     __formatFileHandler = logging.FileHandler(log_file_path)
     __formatStdoutHandler = logging.StreamHandler(sys.stdout)
     fmt = __CustomFormatter(
-        "%(asctime)s[%(levelname)s][%(filename)s:%(lineno)s][%(threadId)d] %(message)s"
+        "%(asctime)s[%(levelname)s][%(filename)s:%(lineno)s][%(threadId)d] %(message)s",
     )
     __formatFileHandler.setFormatter(fmt)
     __formatStdoutHandler.setFormatter(fmt)
     __logging.addHandler(__formatStdoutHandler)
     __logging.addHandler(__formatFileHandler)
     qInstallMessageHandler(__message_handler)
-    __logging.info(f"===================================================")
+    __logging.info("===================================================")
     __logging.info(f"[AppName] {name}")
     __logging.info(f"[AppPath] {sys.argv[0]}")
     __logging.info(f"[ProcessId] {os.getpid()}")
-    __logging.info(f"[DeviceInfo]")
+    __logging.info("[DeviceInfo]")
     __logging.info(f"  [DeviceId] {QSysInfo.machineUniqueId().toStdString()}")
     __logging.info(f"  [Manufacturer] {QSysInfo.productVersion()}")
     __logging.info(f"  [CPU_ABI] {QSysInfo.currentCpuArchitecture()}")
     __logging.info(f"[LOG_LEVEL] {logging.getLevelName(level)}")
     __logging.info(f"[LOG_PATH] {log_file_path}")
-    __logging.info(f"===================================================")
+    __logging.info("===================================================")
 
 
 def logger():
-    return __logging
+    return __logging  # noqa: F821

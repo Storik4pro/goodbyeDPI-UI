@@ -1,10 +1,10 @@
 import argparse
 from configparser import ConfigParser
 import os
-import sys
+from pathlib import Path
 import string
 import subprocess
-from pathlib import Path
+import sys
 
 PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -16,23 +16,23 @@ ATTENTION! Turn on DEBUG mode in the _data.py file before starting the applicati
 
 EXCLUDE_QT_FILES = """opengl32sw,qt6location,qt6webchannel,
   qt6webenginequick,qt6webenginequickdelegatesqml,qt6websockets,\\
-  qt6virtualkeyboard,qt6pdfquick,qt6pdf,qt6quicktimeline,qt6datavisualizationqml,
+  qt6virtualkeyboard,qt6pdfquick,qt6pdf,qt6quicktimeline,qt6datavisualizationqml,\\
   qt6datavisualization,qt6charts,\\
-  qt6chartsqml,qt6webenginecore,qt6quick3d,qt6quick3dassetimport,qt6quick3d,
+  qt6chartsqml,qt6webenginecore,qt6quick3d,qt6quick3dassetimport,qt6quick3d,\\
   qt6quick3dassetutils,qt6quick3deffects,\\
-  qt6quick3dhelpers,qt6quick3dparticleeffects,qt6quick3dparticles,qt6quick3druntimerender,
+  qt6quick3dhelpers,qt6quick3dparticleeffects,qt6quick3dparticles,qt6quick3druntimerender,\\
   qt6quick3d,qt6quick3dutils,\\
-  qt6graphs,qt6test,qt6texttospeech,'qt63danimation,qt63dcore,qt63dextras,qt63dinput,
+  qt6graphs,qt6test,qt6texttospeech,'qt63danimation,qt63dcore,qt63dextras,qt63dinput,\\
   qt63dlogic,\\
-  qt63dquick,qt63dquickanimation,qt63dquickextras,qt63dquickinput,qt63dquickrender,
+  qt63dquick,qt63dquickanimation,qt63dquickextras,qt63dquickinput,qt63dquickrender,\\
   qt63dquickscene2d,qt63drender,\\
-  qt63dquickrender,qt6quickcontrols2fusion,qt6quickcontrols2fusionstyleimpl,
+  qt63dquickrender,qt6quickcontrols2fusion,qt6quickcontrols2fusionstyleimpl,\\
   qt6quickcontrols2imagine,\\
-  qt6quickcontrols2imaginestyleimpl,qt6quickcontrols2universal,
+  qt6quickcontrols2imaginestyleimpl,qt6quickcontrols2universal,\\
   qt6quickcontrols2universalstyleimpl,\\
-  qt6quickcontrols2windowsstyleimpl,qt6quicktest,qt6remoteobjects,qt6remoteobjectsqml,
+  qt6quickcontrols2windowsstyleimpl,qt6quicktest,qt6remoteobjects,qt6remoteobjectsqml,\\
   qt6scxml,\\
-  qt6scxmlqml,qt6sensors,qt6sensorsquick,qt6spatialaudio,qt6sql,
+  qt6scxmlqml,qt6sensors,qt6sensorsquick,qt6spatialaudio,qt6sql,\\
   qt6statemachine,qt6statemachineqml"""
 
 if not os.path.exists("config.properties"):
@@ -50,7 +50,7 @@ version=0.0.0
 projectName=GoodbyeDPI_UI
 hotLoad=OFF
 excludeFiles={EXCLUDE_QT_FILES}
-"""
+""",
         )
     print("Please fill in the config.properties file.")
     input("Press any key to exit ...")
@@ -94,28 +94,27 @@ def uac_check():
 
         if ctypes.windll.shell32.IsUserAnAdmin() == 0:
             ctypes.windll.shell32.ShellExecuteW(
-                None, "runas", sys.executable, __file__, None, 1
+                None, "runas", sys.executable, __file__, None, 1,
             )
             exit(0)
 
 
-def generate_python_file(output_file, mapping=None):
-    target = dict(
-        application_id=properties.get("appId", ""),
-        application_name=properties.get("appName", ""),
-        application_company=properties.get("company", ""),
-        application_copyright=properties.get("copyright", ""),
-        application_domain=properties.get("domain", ""),
-        application_version=properties.get("domain", ""),
-        build_name=properties.get("projectName", ""),
-        build_hotreload=properties.get("hotLoad", ""),
-        build_project_path=Path(PATH, "src"),
-    )
-    if mapping is None:
-        mapping = dict()
-    for key, value in target.items():
-        if key in mapping:
-            target[key] = mapping[key]
+def generate_python_file(output_file, mapping=None):  # ФУНКЦИЯ ПЕРЕПИСЫВАЛАСЬ, ЗДЕСЬ МОГУТ БЫТЬ ОШИБКИ
+    target = {
+        "application_id": properties.get("appId", ""),
+        "application_name": properties.get("appName", ""),
+        "application_company": properties.get("company", ""),
+        "application_copyright": properties.get("copyright", ""),
+        "application_domain": properties.get("domain", ""),
+        "application_version": properties.get("version", ""),
+        "build_name": properties.get("projectName", ""),
+        "build_hotreload": properties.get("hotLoad", ""),
+        "build_project_path": Path(PATH, "src"),
+    }
+
+    if mapping:
+        target.update(mapping)  # GOTO
+
     template = string.Template(
         """\
 application_id = "${application_id}"
@@ -127,9 +126,11 @@ application_version = "${application_version}"
 build_name = "${build_name}"
 build_hotreload = "${build_hotreload}"
 build_project_path = "${build_project_path}"
-"""
+""",
     )
+
     rendered_content = template.substitute(target)
+
     with open(output_file, "w", encoding="utf-8") as file:
         file.write(rendered_content)
 
@@ -143,7 +144,7 @@ if __name__ == "__main__":
         help="Run fast start application (disable update resources)",
     )
     parser.add_argument(
-        "-r", "--reload", action="store_true", help="Enable hot reload for qml files"
+        "-r", "--reload", action="store_true", help="Enable hot reload for qml files",
     )
     parser.add_argument(
         "-q",
@@ -170,13 +171,13 @@ if __name__ == "__main__":
     if not args.fast:
         subprocess.run([sys.executable, Path("update-resource.py")])
 
-    mapping = dict()
+    mapping = {}
     if args.reload:
         mapping["build_hotreload"] = "ON"
 
     generate_python_file(Path(PATH, "src", "GlobalConfig.py"), mapping)
     subprocess.run(
-        [sys.executable, Path(f"E:/ByeDPI/src/main.py"), *_args],
+        [sys.executable, Path(PATH, "src", "main.py"), *_args],
         env=environment(),
         cwd=PATH,
     )

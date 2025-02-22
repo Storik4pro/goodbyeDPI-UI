@@ -5,12 +5,14 @@ import os
 import shutil
 import sys
 import traceback
+
 import winreg
+
 from logger import AppLogger
 
 DEBUG = True
 DEBUG_PATH = (
-    os.path.dirname(os.path.abspath(__file__)).replace("\src", "/") if DEBUG else ""
+    os.path.dirname(os.path.abspath(__file__)).replace("\src", "/") if DEBUG else ""  # noqa: W605
 )
 
 if getattr(sys, "frozen", False):
@@ -166,7 +168,7 @@ class Settings:
     def save_settings(self):
         with open(self.settingsfile, "w", encoding=self.encoding) as configfile:
             self.settings.write(
-                configfile, space_around_delimiters=self.space_around_delimiters
+                configfile, space_around_delimiters=self.space_around_delimiters,
             )
 
         self.reload_settings()
@@ -182,7 +184,7 @@ class Settings:
 try:
     logger.create_logs(f'Importing application settings from "{SETTINGS_FILE_PATH}"')
     settings = Settings()
-except Exception as ex:
+except Exception:
     error_message = traceback.format_exc()
     logger.raise_critical(error_message)
 
@@ -204,7 +206,7 @@ class Text:
 try:
     logger.create_logs(f'Importing application localize from "{LOCALE_FILE_PATH}"')
     text = Text(settings.settings["GLOBAL"]["language"])
-except Exception as ex:
+except Exception:
     error_message = traceback.format_exc()
     logger.raise_critical(error_message)
 
@@ -241,7 +243,7 @@ try:
 
     for component in components:
         src = os.path.join(
-            "_internal", "data", "settings", "presets", component, "user.json"
+            "_internal", "data", "settings", "presets", component, "user.json",
         )
 
         if not os.path.exists(src):
@@ -256,12 +258,12 @@ try:
         logger.create_info_log(f"Copied {src} to {dst}")
 
     goodbyedpi_config_path = os.path.join(
-        settings.settings["CONFIG"]["goodbyedpi_config_path"]
+        settings.settings["CONFIG"]["goodbyedpi_config_path"],
     )
     zapret_config_path = os.path.join(settings.settings["CONFIG"]["zapret_config_path"])
     byedpi_config_path = os.path.join(settings.settings["CONFIG"]["byedpi_config_path"])
     spoofdpi_config_path = os.path.join(
-        settings.settings["CONFIG"]["spoofdpi_config_path"]
+        settings.settings["CONFIG"]["spoofdpi_config_path"],
     )
 
     configs = {
@@ -269,26 +271,26 @@ try:
             CONFIG_PATH + "/goodbyedpi/user.json"
             if goodbyedpi_config_path == ""
             or not os.path.exists(goodbyedpi_config_path)
-            else goodbyedpi_config_path
+            else goodbyedpi_config_path,
         ),
         "zapret": UserConfig(
             CONFIG_PATH + "/zapret/user.json"
             if zapret_config_path == "" or not os.path.exists(zapret_config_path)
-            else zapret_config_path
+            else zapret_config_path,
         ),
         "byedpi": UserConfig(
             CONFIG_PATH + "/byedpi/user.json"
             if byedpi_config_path == "" or not os.path.exists(byedpi_config_path)
-            else byedpi_config_path
+            else byedpi_config_path,
         ),
         "spoofdpi": UserConfig(
             CONFIG_PATH + "/spoofdpi/user.json"
             if spoofdpi_config_path == "" or not os.path.exists(spoofdpi_config_path)
-            else spoofdpi_config_path
+            else spoofdpi_config_path,
         ),
         "goodcheck": UserConfig(CONFIG_PATH + "/goodbyedpi/goodcheck.json"),
     }
-except:
+except Exception:
     error_message = traceback.format_exc()
     logger.raise_warning(error_message)
 
@@ -297,19 +299,18 @@ def get_log_level():
     log_lvl = settings.settings["GLOBAL"]["log_level"]
     if log_lvl == "critical":
         return logging.CRITICAL
-    elif log_lvl == "error":
+    if log_lvl == "error":
         return logging.ERROR
-    elif log_lvl == "warnings":
+    if log_lvl == "warnings":
         return logging.WARNING
-    else:
-        return logging.DEBUG
+    return logging.DEBUG
 
 
 try:
     LOG_LEVEL = get_log_level()
-except:
+except Exception:
     error_message = traceback.format_exc()
     logger.raise_critical(error_message)
 
-logger.create_logs(f"Importing complete without errors.")
+logger.create_logs("Importing complete without errors.")
 logger.cleanup_logs()

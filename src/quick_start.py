@@ -1,22 +1,24 @@
-import os
 import configparser
+import json
+import os
 import sys
 from tkinter import messagebox
 import traceback
-import psutil
-import json
 
-from utils import install_font, is_process_running, is_weak_pc, register_app
-from logger import AppLogger
 from _data import (
+    CONFIG_PATH,
     DEBUG,
     DIRECTORY,
-    CONFIG_PATH,
-    SETTINGS_FILE_PATH,
-    ZAPRET_PATH,
     settings,
+    SETTINGS_FILE_PATH,
     text,
+    ZAPRET_PATH,
 )
+import psutil
+from utils import is_process_running, is_weak_pc, register_app
+
+
+from logger import AppLogger
 
 
 def check_app_is_runned(logger: AppLogger):
@@ -35,7 +37,7 @@ def check_app_is_runned(logger: AppLogger):
                     existing_app.wait()
                 except psutil.NoSuchProcess:
                     logger.create_debug_log(traceback.format_exc())
-                except:
+                except Exception:
                     logger.create_error_log(traceback.format_exc())
             else:
                 sys.exit(0)
@@ -67,9 +69,9 @@ def first_run_actions():
 def after_update_actions(logger: AppLogger):
     try:
         kill_update()
-        update_result = rename_update_exe()
+        _ = rename_update_exe()
         settings.change_setting("GLOBAL", "update_complete", "True")
-    except:
+    except Exception:
         logger.create_error_log(traceback.format_exc())
         settings.change_setting("GLOBAL", "update_complete", "False")
 
@@ -77,7 +79,7 @@ def after_update_actions(logger: AppLogger):
 def chk_directory():
     if (
         settings.settings["GLOBAL"]["work_directory"] != DIRECTORY
-        and not "System32" in DIRECTORY
+        and "System32" not in DIRECTORY
     ):
         settings.change_setting("GLOBAL", "work_directory", DIRECTORY)
 
@@ -143,7 +145,7 @@ def rename_update_exe():
     temp_update_path = DIRECTORY.replace("_internal/", "") + "_update.exe"
 
     if not os.path.exists(temp_update_path):
-        return
+        return None
 
     if os.path.exists(update_path):
         os.remove(update_path)
@@ -151,8 +153,7 @@ def rename_update_exe():
     if os.path.exists(temp_update_path):
         os.rename(temp_update_path, update_path)
         return True
-    else:
-        return False
+    return False
 
 
 def merge_settings_to_json():
@@ -182,7 +183,7 @@ def merge_settings_to_json():
                 keys_to_delete.append(key)
 
         for key in keys_to_delete:
-            if not key in copy_data:
+            if key not in copy_data:
                 del settings.settings["GOODBYEDPI"][key]
 
         json_file = f"{CONFIG_PATH}/goodbyedpi/user.json"

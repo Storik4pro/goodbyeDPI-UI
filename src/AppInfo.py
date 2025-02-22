@@ -1,21 +1,22 @@
-from PySide6.QtCore import QObject, Signal, Property, QTranslator, QLocale
-from PySide6.QtQml import QmlNamedElement, QmlSingleton, QQmlApplicationEngine
-from PySide6.QtGui import QGuiApplication
 import GlobalConfig
+from PySide6.QtCore import Property, QLocale, QObject, QTranslator, Signal
+from PySide6.QtGui import QGuiApplication
+from PySide6.QtQml import QmlNamedElement, QmlSingleton, QQmlApplicationEngine
+
+from Helper.SettingsHelper import SettingsHelper
+
 
 QML_IMPORT_NAME = "GoodbyeDPI_UI"
 QML_IMPORT_MAJOR_VERSION = 1
 QML_IMPORT_MINOR_VERSION = 0
 
-from Helper.SettingsHelper import SettingsHelper
-
 
 @QmlNamedElement("AppInfo")
 @QmlSingleton
 class __AppInfo(QObject):
-    versionChanged = Signal()
-    localeChanged = Signal()
-    localesChanged = Signal()
+    version_changed = Signal()
+    locale_changed = Signal()
+    locales_changed = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -24,7 +25,7 @@ class __AppInfo(QObject):
         self.__locale = SettingsHelper().getLocale()
         self.__translator = QTranslator()
 
-    @Property(str, notify=versionChanged)
+    @Property(str, notify=version_changed)
     def version(self):
         return self.__version
 
@@ -33,9 +34,9 @@ class __AppInfo(QObject):
         if self.__version == value:
             return
         self.__version = value
-        self.versionChanged.emit()
+        self.version_changed.emit()
 
-    @Property(str, notify=localeChanged)
+    @Property(str, notify=locale_changed)
     def locale(self):
         return self.__locale
 
@@ -44,9 +45,9 @@ class __AppInfo(QObject):
         if self.__locale == value:
             return
         self.__locale = value
-        self.localeChanged.emit()
+        self.locale_changed.emit()
 
-    @Property(list, notify=localesChanged)
+    @Property(list, notify=locales_changed)
     def locales(self):
         return self.__locales
 
@@ -55,7 +56,7 @@ class __AppInfo(QObject):
         if self.__locales == value:
             return
         self.__locales = value
-        self.localesChanged.emit()
+        self.locales_changed.emit()
 
     def init(self, engine: QQmlApplicationEngine):
         self.__init_translator()
@@ -66,17 +67,17 @@ class __AppInfo(QObject):
 
     def __init_translator(self):
         if self.__translator.load(
-            f":/qt/qml/GoodbyeDPI_UI/GoodbyeDPI_UI_{self.__locale}.qm"
+            f":/qt/qml/GoodbyeDPI_UI/GoodbyeDPI_UI_{self.__locale}.qm",
         ):
             QGuiApplication.installTranslator(self.__translator)
         QLocale.setDefault(QLocale(self.__locale))
 
 
-__appInfo = None
+__appInfo = None  # noqa: N816
 
 
-def AppInfo():
+def AppInfo():  # noqa: N802
     global __appInfo
     if __appInfo is None:
         __appInfo = __AppInfo()
-    return __appInfo
+    return __appInfo  # noqa: R504
