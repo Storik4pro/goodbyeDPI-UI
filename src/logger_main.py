@@ -21,7 +21,7 @@ __formatStdoutHandler: logging.StreamHandler  # noqa: N816
 
 
 class __CustomFormatter(logging.Formatter):
-    def format(self, record):   # noqa: A003
+    def format(self, record):  # noqa: A003
         record.threadId = threading.get_ident()
         return super().format(record)
 

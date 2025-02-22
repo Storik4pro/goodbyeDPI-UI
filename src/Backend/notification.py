@@ -28,7 +28,13 @@ class Toast(QObject):
 
     @asyncSlot(str, str, str, str, str)
     async def show_error(
-        self, notification_id, title, message, button1, button2, callback=None,
+        self,
+        notification_id,
+        title,
+        message,
+        button1,
+        button2,
+        callback=None,
     ):
         self.notifications[notification_id] = callback
 

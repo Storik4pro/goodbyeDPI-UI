@@ -64,7 +64,8 @@ class GoodCheckHelper(QObject):
     def __init__(self):
         super().__init__()
         self.settings = Settings(
-            GOODCHECK_PATH + "/config.ini", space_around_delimiters=False,
+            GOODCHECK_PATH + "/config.ini",
+            space_around_delimiters=False,
         )
         self.process = None
         self.log_watcher = QFileSystemWatcher()
@@ -97,13 +98,19 @@ class GoodCheckHelper(QObject):
     @Slot()
     def start(self):
         self.settings.change_setting(
-            "GoodbyeDPI", "GoodbyeDPIFolder", "..\\\\goodbyeDPI",
+            "GoodbyeDPI",
+            "GoodbyeDPIFolder",
+            "..\\\\goodbyeDPI",
         )
         self.settings.change_setting(
-            "GoodbyeDPI", "GoodbyeDPIExecutableName", "gdpi.exe",
+            "GoodbyeDPI",
+            "GoodbyeDPIExecutableName",
+            "gdpi.exe",
         )
         self.settings.change_setting(
-            "GoodbyeDPI", "GoodbyeDPIServiceNames", "goodbyedpi",
+            "GoodbyeDPI",
+            "GoodbyeDPIServiceNames",
+            "goodbyedpi",
         )
         self.settings.change_setting("Zapret", "ZapretFolder", "..\\\\zapret")
         self.settings.change_setting("ByeDPI", "ByeDPIFolder", "..\\\\byedpi")
@@ -118,7 +125,8 @@ class GoodCheckHelper(QObject):
         configs["goodcheck"].reload_config()
 
         log_pattern = os.path.join(
-            GOODCHECK_PATH + "/Logs", "logfile_GoodCheckGoGo_*.log",
+            GOODCHECK_PATH + "/Logs",
+            "logfile_GoodCheckGoGo_*.log",
         )
         for log_file in glob.glob(log_pattern):
             try:
@@ -161,7 +169,8 @@ class GoodCheckHelper(QObject):
 
     def find_new_log_file(self):
         log_pattern = os.path.join(
-            GOODCHECK_PATH + "/Logs", "logfile_GoodCheckGoGo_*.log",
+            GOODCHECK_PATH + "/Logs",
+            "logfile_GoodCheckGoGo_*.log",
         )
         log_files = glob.glob(log_pattern)
         if log_files:

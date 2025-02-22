@@ -232,7 +232,10 @@ class PatchDownloadWorker(QObject):
 
     def _download_and_process_dependency(self, url, dependency_patch_path):
         download_update(
-            url, dependency_patch_path, self.progressChanged, debug_check=False,
+            url,
+            dependency_patch_path,
+            self.progressChanged,
+            debug_check=False,
         )
 
         self._process_patch(dependency_patch_path)
@@ -257,7 +260,8 @@ class PatchDownloadWorker(QObject):
                         os.makedirs(target_dir)
                     for file in files:
                         shutil.move(
-                            os.path.join(root, file), os.path.join(target_dir, file),
+                            os.path.join(root, file),
+                            os.path.join(target_dir, file),
                         )
 
         old_directory = os.path.join(DIRECTORY, ".old")
@@ -269,10 +273,13 @@ class PatchDownloadWorker(QObject):
         for root, _, files in os.walk(goodbyeDPI_UI_path):
             for file in files:
                 source_path = os.path.relpath(
-                    os.path.join(root, file), goodbyeDPI_UI_path,
+                    os.path.join(root, file),
+                    goodbyeDPI_UI_path,
                 )
                 target_path = os.path.join(
-                    old_directory, os.path.relpath(root, goodbyeDPI_UI_path), file,
+                    old_directory,
+                    os.path.relpath(root, goodbyeDPI_UI_path),
+                    file,
                 )
 
                 _file = os.path.join(DEBUG_PATH + DIRECTORY, source_path)
@@ -287,7 +294,8 @@ class PatchDownloadWorker(QObject):
                             os.makedirs(target_dir)
 
                     shutil.copy(
-                        os.path.join(DEBUG_PATH + DIRECTORY, source_path), target_path,
+                        os.path.join(DEBUG_PATH + DIRECTORY, source_path),
+                        target_path,
                     )
 
         zip_file_path = os.path.join(patch_dir, "..", "_portable.zip")
@@ -296,7 +304,9 @@ class PatchDownloadWorker(QObject):
 
         self.preparationProgress.emit()
         shutil.make_archive(
-            zip_file_path.replace(".zip", ""), "zip", f"{DIRECTORY}unpacked_patch",
+            zip_file_path.replace(".zip", ""),
+            "zip",
+            f"{DIRECTORY}unpacked_patch",
         )
         try:
             for i, patch_url in enumerate(self.processed_patches):

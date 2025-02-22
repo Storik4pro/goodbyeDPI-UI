@@ -77,7 +77,10 @@ try:
         QGuiApplication.setApplicationName(GlobalConfig.application_name)
         QGuiApplication.setApplicationDisplayName(GlobalConfig.application_name)
         QGuiApplication.setApplicationVersion(GlobalConfig.application_version)
-        logger_main.setup("GoodbyeDPI_UI", level=LOG_LEVEL if not DEBUG else logging.DEBUG)
+        logger_main.setup(
+            "GoodbyeDPI_UI",
+            level=LOG_LEVEL if not DEBUG else logging.DEBUG,
+        )
         app = QGuiApplication(sys.argv)
         engine = QQmlApplicationEngine()
 
@@ -169,10 +172,14 @@ try:
 
                 for component, executable in components_to_check.items():
                     component_path = os.path.join(
-                        DIRECTORY, "data", component, executable,
+                        DIRECTORY,
+                        "data",
+                        component,
+                        executable,
                     )
                     if config.getboolean(
-                        "COMPONENTS", component,
+                        "COMPONENTS",
+                        component,
                     ) and not os.path.exists(component_path):
                         settings.change_setting("COMPONENTS", component, "False")
                         logs.create_info_log(

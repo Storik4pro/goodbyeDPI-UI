@@ -104,7 +104,11 @@ def get_locale(element):
 
 class ProgressToast:
     def __init__(
-        self, app_id: str, title, description, filename="sample_file.txt",
+        self,
+        app_id: str,
+        title,
+        description,
+        filename="sample_file.txt",
     ) -> None:
         self.toast = Toast(
             app_id=app_id,
@@ -145,7 +149,7 @@ class ProgressToast:
             self.toast.elements[0].content = title
 
 
-async def show_message(app_id: str, title, description):   # ФУНКЦИЯ ПЕРЕПИСЫВАЛАСЬ
+async def show_message(app_id: str, title, description):  # ФУНКЦИЯ ПЕРЕПИСЫВАЛАСЬ
     toast = Toast(app_id=app_id)
     toast.elements = [
         Text(title),
@@ -154,7 +158,13 @@ async def show_message(app_id: str, title, description):   # ФУНКЦИЯ ПЕ
     return await toast.show()
 
 
-async def show_error(app_id: str, title, description, btn_text, btn_text2):  # ФУНКЦИЯ ПЕРЕПИСЫВАЛАСЬ
+async def show_error(
+    app_id: str,
+    title,
+    description,
+    btn_text,
+    btn_text2,
+):  # ФУНКЦИЯ ПЕРЕПИСЫВАЛАСЬ
     toast = Toast(app_id=app_id)
     elements = [
         Image(
@@ -181,7 +191,9 @@ async def show_error(app_id: str, title, description, btn_text, btn_text2):  # �
 def register_app():
     if not Toast.is_registered_app_id("GoodbyeDPI_app"):
         Toast.register_app_id(
-            "GoodbyeDPI_app", "GoodbyeDPI UI", icon_uri=DIRECTORY + "data\icon.png",  # noqa: W605
+            "GoodbyeDPI_app",
+            "GoodbyeDPI UI",
+            icon_uri=DIRECTORY + "data\icon.png",  # noqa: W605
         )
 
 
@@ -196,10 +208,17 @@ def install_font(font_path):
 
         reg_path = r"Software\Microsoft\Windows NT\CurrentVersion\Fonts"
         with winreg.OpenKey(
-            winreg.HKEY_LOCAL_MACHINE, reg_path, 0, winreg.KEY_SET_VALUE,
+            winreg.HKEY_LOCAL_MACHINE,
+            reg_path,
+            0,
+            winreg.KEY_SET_VALUE,
         ) as reg_key:
             winreg.SetValueEx(
-                reg_key, "Nunito SemiBold (TrueType)", 0, winreg.REG_SZ, font_name,
+                reg_key,
+                "Nunito SemiBold (TrueType)",
+                0,
+                winreg.REG_SZ,
+                font_name,
             )
 
         ctypes.windll.gdi32.AddFontResourceW(dest_path)
@@ -478,7 +497,9 @@ def start_process(*args, **kwargs):
     ]
 
     return subprocess.Popen(
-        _args, cwd=cwd, creationflags=subprocess.CREATE_NO_WINDOW,
+        _args,
+        cwd=cwd,
+        creationflags=subprocess.CREATE_NO_WINDOW,
     )
 
 
@@ -576,12 +597,16 @@ def save_version_data_to_cache(owner, name, obj="prg", url="releases/latest"):
         os.makedirs(f"{DIRECTORY}tempfiles")
 
     with open(
-        f"{DIRECTORY}tempfiles/versiondata_{owner}_{name}.json", "w", encoding="utf-8",
+        f"{DIRECTORY}tempfiles/versiondata_{owner}_{name}.json",
+        "w",
+        encoding="utf-8",
     ) as file:
         json.dump(data, file, indent=2, ensure_ascii=False)
 
     settings.change_setting(
-        "CACHE", f"{obj}_update_check_time", datetime.now().strftime("%d.%m.%Y"),
+        "CACHE",
+        f"{obj}_update_check_time",
+        datetime.now().strftime("%d.%m.%Y"),
     )
     settings.save_settings()
 
@@ -688,7 +713,8 @@ def get_component_download_url(component_name: str):  # ФУНЦИЯ ПЕРЕП�
     owner = component_addres.split("/")[0]
     try:
         if settings.get_value(
-            "CACHE", f"component_{component_name.lower()}_update_check_time",
+            "CACHE",
+            f"component_{component_name.lower()}_update_check_time",
         ) != datetime.now().strftime("%d.%m.%Y") or not os.path.exists(
             f"{DIRECTORY}tempfiles/versiondata_{owner}_{repo}.json",
         ):
@@ -786,7 +812,8 @@ def extract_zip(zip_file, zip_folder_to_unpack, extract_to, files_to_skip=[]):
                     else:
                         try:
                             with zip_ref.open(member) as source, open(
-                                destination_path, "wb",
+                                destination_path,
+                                "wb",
                             ) as target:
                                 shutil.copyfileobj(source, target)
                         except OSError as pe:
@@ -883,7 +910,8 @@ def register_component(component_name: str, version):
         else f"E:/_component/{component_name}"
     )
     result = download_files_from_github(
-        remote_dir=f"{component_name.lower()}/", local_dir=component_directory,
+        remote_dir=f"{component_name.lower()}/",
+        local_dir=component_directory,
     )
     if result:
         return result
@@ -894,7 +922,8 @@ def register_component(component_name: str, version):
         else f"E:/_component/{component_name}/config"
     )
     result = download_files_from_github(
-        remote_dir=f"{component_name.lower()}/configs", local_dir=config_component_path,
+        remote_dir=f"{component_name.lower()}/configs",
+        local_dir=config_component_path,
     )
     if result:
         return result
@@ -983,7 +1012,10 @@ def create_xml(author, executable, arguments):  # ФУНКЦИЯ ПЕРЕПИС�
   </Task>
   """
     with tempfile.NamedTemporaryFile(
-        "w", encoding="utf-16", suffix=".xml", delete=False,
+        "w",
+        encoding="utf-16",
+        suffix=".xml",
+        delete=False,
     ) as temp_xml:
         temp_xml.write(xml_content)
         return temp_xml.name
@@ -1031,7 +1063,8 @@ def sni_support():
 
 def check_urls():
     with open(
-        f"{(DEBUG_PATH if DEBUG else '') + GOODBYE_DPI_PATH}/custom_blacklist.txt", "r",
+        f"{(DEBUG_PATH if DEBUG else '') + GOODBYE_DPI_PATH}/custom_blacklist.txt",
+        "r",
     ) as file:
         urls = file.read().splitlines()
 
@@ -1210,7 +1243,8 @@ def check_json_file(file: str, component: str):
 def get_preset_parameters(index: int | str, engine: str):
     filename = f"{index}.json"
     path = os.path.join(
-        (DEBUG_PATH if DEBUG else "") + CONFIG_PATH + "/" + engine.lower(), filename,
+        (DEBUG_PATH if DEBUG else "") + CONFIG_PATH + "/" + engine.lower(),
+        filename,
     )
     try:
         with open(path, "r", encoding="utf-8") as file:

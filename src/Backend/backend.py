@@ -145,7 +145,9 @@ class Backend(QObject):
         if path.endswith(".bat") or path.endswith(".cmd"):
             try:
                 path = convert_bat_file(
-                    path, DEBUG_PATH + DIRECTORY + "converted", engine,
+                    path,
+                    DEBUG_PATH + DIRECTORY + "converted",
+                    engine,
                 )
             except Exception as ex:
                 logger.create_error_log(traceback.format_exc())
@@ -163,7 +165,8 @@ class Backend(QObject):
                 )
 
         custom_params = self.analyze_custom_parameters(
-            _path=path, _mode="custom_params_only",
+            _path=path,
+            _mode="custom_params_only",
         )
 
         bins_for_add = re.findall(
@@ -212,7 +215,9 @@ class Backend(QObject):
         try:
             convert_folder = convert_folder_name = ""
             if os.path.dirname(new_blacklist_file) != os.path.join(
-                DEBUG_PATH + DIRECTORY, "data", engine,
+                DEBUG_PATH + DIRECTORY,
+                "data",
+                engine,
             ) and (
                 len(new_blacklist_file.split("\\")) < 2
                 or new_blacklist_file.split("\\")[-2] != engine
@@ -228,7 +233,10 @@ class Backend(QObject):
                 convert_folder_name = f"converted{_filename}"
 
                 convert_folder = os.path.join(
-                    DEBUG_PATH + DIRECTORY, "data", engine, convert_folder_name,
+                    DEBUG_PATH + DIRECTORY,
+                    "data",
+                    engine,
+                    convert_folder_name,
                 )
 
                 if not os.path.exists(convert_folder):
@@ -244,7 +252,8 @@ class Backend(QObject):
                 params.replace(
                     old_blacklist_file,
                     os.path.join(
-                        convert_folder_name, os.path.basename(new_blacklist_file),
+                        convert_folder_name,
+                        os.path.basename(new_blacklist_file),
                     ),
                 ),
             )
@@ -262,7 +271,9 @@ class Backend(QObject):
     def return_autocorrect_to_default(self, engine):
         if self.last_preset_used:
             change_setting(
-                "CONFIG", f"{engine.lower()}_config_path", self.last_preset_used,
+                "CONFIG",
+                f"{engine.lower()}_config_path",
+                self.last_preset_used,
             )
             configs[engine].configfile = self.last_preset_used
             configs[engine].reload_config()
@@ -282,7 +293,11 @@ class Backend(QObject):
 
     @Slot(str, bool, result="QVariantList")
     def analyze_custom_parameters(
-        self, filename=None, unique=True, _path=None, _mode="analyze",
+        self,
+        filename=None,
+        unique=True,
+        _path=None,
+        _mode="analyze",
     ):
         path = (
             _path
@@ -540,7 +555,13 @@ class Backend(QObject):
             logger.raise_warning(traceback.format_exc())
 
     @Slot(str, str, str, str)
-    def update_dns(self, currentDnsV4, currentPortV4, currentDnsV6, currentPortV6):  # noqa: N803
+    def update_dns(
+        self,
+        currentDnsV4,  # noqa: N803
+        currentPortV4,  # noqa: N803
+        currentDnsV6,  # noqa: N803
+        currentPortV6,  # noqa: N803
+    ):
         print(currentDnsV4, currentPortV4, currentDnsV6, currentPortV6)
         change_settings(
             "GOODBYEDPI",
@@ -817,7 +838,9 @@ class Backend(QObject):
 
     @Slot(str, bool)
     def download_component(
-        self, component_name: str, process_need_reload: bool = False,
+        self,
+        component_name: str,
+        process_need_reload: bool = False,
     ):
         self.process_need_reload = process_need_reload
 
@@ -886,9 +909,11 @@ class UpdateCheckerWorker(QObject):
                 if not settings.settings.getboolean("COMPONENTS", c):
                     continue
                 if settings.get_value("COMPONENTS", c + "_version").replace(
-                    "v", "",
+                    "v",
+                    "",
                 ) != settings.get_value("COMPONENTS", c + "_server_version").replace(
-                    "v", "",
+                    "v",
+                    "",
                 ):
                     update_available = True
                     continue
@@ -902,7 +927,8 @@ class UpdateCheckerWorker(QObject):
 
                     if (
                         settings.get_value("COMPONENTS", c + "_version").replace(
-                            "v", "",
+                            "v",
+                            "",
                         )
                         != version
                     ):
@@ -912,9 +938,11 @@ class UpdateCheckerWorker(QObject):
                     settings.settings["GLOBAL"]["check_complete"] = "False"
 
                 if settings.get_value("COMPONENTS", c + "_version").replace(
-                    "v", "",
+                    "v",
+                    "",
                 ) != settings.get_value("COMPONENTS", c + "_server_version").replace(
-                    "v", "",
+                    "v",
+                    "",
                 ):
                     update_available = True
 

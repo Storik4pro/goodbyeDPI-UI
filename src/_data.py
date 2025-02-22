@@ -12,7 +12,9 @@ from logger import AppLogger
 
 DEBUG = True
 DEBUG_PATH = (
-    os.path.dirname(os.path.abspath(__file__)).replace("\src", "/") if DEBUG else ""  # noqa: W605
+    os.path.dirname(os.path.abspath(__file__)).replace("\src", "/")  # noqa: W605
+    if DEBUG
+    else ""
 )
 
 if getattr(sys, "frozen", False):
@@ -168,7 +170,8 @@ class Settings:
     def save_settings(self):
         with open(self.settingsfile, "w", encoding=self.encoding) as configfile:
             self.settings.write(
-                configfile, space_around_delimiters=self.space_around_delimiters,
+                configfile,
+                space_around_delimiters=self.space_around_delimiters,
             )
 
         self.reload_settings()
@@ -243,7 +246,12 @@ try:
 
     for component in components:
         src = os.path.join(
-            "_internal", "data", "settings", "presets", component, "user.json",
+            "_internal",
+            "data",
+            "settings",
+            "presets",
+            component,
+            "user.json",
         )
 
         if not os.path.exists(src):
@@ -268,25 +276,34 @@ try:
 
     configs = {
         "goodbyedpi": UserConfig(
-            CONFIG_PATH + "/goodbyedpi/user.json"
-            if goodbyedpi_config_path == ""
-            or not os.path.exists(goodbyedpi_config_path)
-            else goodbyedpi_config_path,
+            (
+                CONFIG_PATH + "/goodbyedpi/user.json"
+                if goodbyedpi_config_path == ""
+                or not os.path.exists(goodbyedpi_config_path)
+                else goodbyedpi_config_path
+            ),
         ),
         "zapret": UserConfig(
-            CONFIG_PATH + "/zapret/user.json"
-            if zapret_config_path == "" or not os.path.exists(zapret_config_path)
-            else zapret_config_path,
+            (
+                CONFIG_PATH + "/zapret/user.json"
+                if zapret_config_path == "" or not os.path.exists(zapret_config_path)
+                else zapret_config_path
+            ),
         ),
         "byedpi": UserConfig(
-            CONFIG_PATH + "/byedpi/user.json"
-            if byedpi_config_path == "" or not os.path.exists(byedpi_config_path)
-            else byedpi_config_path,
+            (
+                CONFIG_PATH + "/byedpi/user.json"
+                if byedpi_config_path == "" or not os.path.exists(byedpi_config_path)
+                else byedpi_config_path
+            ),
         ),
         "spoofdpi": UserConfig(
-            CONFIG_PATH + "/spoofdpi/user.json"
-            if spoofdpi_config_path == "" or not os.path.exists(spoofdpi_config_path)
-            else spoofdpi_config_path,
+            (
+                CONFIG_PATH + "/spoofdpi/user.json"
+                if spoofdpi_config_path == ""
+                or not os.path.exists(spoofdpi_config_path)
+                else spoofdpi_config_path
+            ),
         ),
         "goodcheck": UserConfig(CONFIG_PATH + "/goodbyedpi/goodcheck.json"),
     }

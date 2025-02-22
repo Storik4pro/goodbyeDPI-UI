@@ -84,13 +84,15 @@ def check_args(preset):
 
     if engine == "goodbyedpi":
         advanced_mode_setting = settings.settings.getboolean(
-            "GLOBAL", "use_advanced_mode",
+            "GLOBAL",
+            "use_advanced_mode",
         )
         if advanced_mode_setting and preset != -1:
             advanced_mode_setting = False
     else:
         advanced_mode_setting = settings.settings.getboolean(
-            engine.upper(), "use_advanced_mode",
+            engine.upper(),
+            "use_advanced_mode",
         )
 
     if advanced_mode_setting or engine == "spoofdpi":  # noqa: R505
@@ -158,11 +160,13 @@ def get_preset_name(engine, preset_id):
 def get_engine_preset(engine: str):
     if engine == "goodbyeDPI":
         advanced_mode_setting = settings.settings.getboolean(
-            "GLOBAL", "use_advanced_mode",
+            "GLOBAL",
+            "use_advanced_mode",
         )
     else:
         advanced_mode_setting = settings.settings.getboolean(
-            engine.upper(), "use_advanced_mode",
+            engine.upper(),
+            "use_advanced_mode",
         )
 
     cfg = settings.settings.get("CONFIG", f"{engine.lower()}_config_path")
@@ -173,7 +177,8 @@ def get_engine_preset(engine: str):
         return 'Custom - "user.json"'
     if not advanced_mode_setting:
         return get_preset_name(
-            engine, settings.settings.getint(f"{engine.upper()}", "preset"),
+            engine,
+            settings.settings.getint(f"{engine.upper()}", "preset"),
         )
     print(engine)
     return "UNKNOWN"

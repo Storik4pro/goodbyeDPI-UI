@@ -50,7 +50,8 @@ class AfterUpdateHelper(QObject):
 
     @Slot(bool)
     def startUpdateProcess(  # noqa: N802
-        self, skip_components_update,
+        self,
+        skip_components_update,
     ):  # Add flag for skip components update
         self.startMovingSettings()
         self.skip_components_update = skip_components_update
@@ -159,7 +160,7 @@ class MovingSettingsWorker(QObject):
                 ):
                     logger.create_error_log(
                         "The update could not be completed correctly. Your data may be lost.\n\n"
-                        + f"Backup settings file {source_dir+'/settings/_settings.ini'} does not exist.",
+                        + f"Backup settings file {source_dir + '/settings/_settings.ini'} does not exist.",
                     )
                 settings.reload_settings()
 
@@ -263,7 +264,9 @@ class CleanupWorker(QObject):
                                 os.remove(file_path)
                                 files_deleted += 1
                                 self.update_progress(
-                                    files_deleted, total_items, total_estimated_time,
+                                    files_deleted,
+                                    total_items,
+                                    total_estimated_time,
                                 )
                             except Exception as e:
                                 logger.create_error_log(
@@ -275,7 +278,9 @@ class CleanupWorker(QObject):
                                 os.rmdir(dir_path)
                                 files_deleted += 1
                                 self.update_progress(
-                                    files_deleted, total_items, total_estimated_time,
+                                    files_deleted,
+                                    total_items,
+                                    total_estimated_time,
                                 )
                             except Exception as e:
                                 logger.create_error_log(
@@ -285,7 +290,9 @@ class CleanupWorker(QObject):
                         os.rmdir(item)
                         files_deleted += 1
                         self.update_progress(
-                            files_deleted, total_items, total_estimated_time,
+                            files_deleted,
+                            total_items,
+                            total_estimated_time,
                         )
                     except Exception as e:
                         logger.create_error_log(f"Error deleting directory {item}: {e}")
@@ -293,7 +300,9 @@ class CleanupWorker(QObject):
                     os.remove(item)
                     files_deleted += 1
                     self.update_progress(
-                        files_deleted, total_items, total_estimated_time,
+                        files_deleted,
+                        total_items,
+                        total_estimated_time,
                     )
             except Exception as e:
                 logger.create_error_log(f"Error deleting {item}: {e}")
@@ -310,7 +319,7 @@ class CleanupWorker(QObject):
         self.emitRemainingTime(remaining_time)
         time.sleep(0.01)
 
-    def emitRemainingTime(self, remaining_time):   # noqa: N802
+    def emitRemainingTime(self, remaining_time):  # noqa: N802
         if remaining_time > 60:
             minutes_left = int(remaining_time / 60)
             remaining_time_str = ["cleanup_c", minutes_left]
@@ -361,7 +370,8 @@ class UpdateComponentsWorker(QObject):
 
                     if (
                         settings.get_value("COMPONENTS", c + "_version").replace(
-                            "v", "",
+                            "v",
+                            "",
                         )
                         != version
                     ):
@@ -372,9 +382,11 @@ class UpdateComponentsWorker(QObject):
                     settings.settings["GLOBAL"]["check_complete"] = "False"
 
                 if settings.get_value("COMPONENTS", c + "_version").replace(
-                    "v", "",
+                    "v",
+                    "",
                 ) != settings.get_value("COMPONENTS", c + "_server_version").replace(
-                    "v", "",
+                    "v",
+                    "",
                 ):
                     update_available = True
 
@@ -401,9 +413,11 @@ class UpdateComponentsWorker(QObject):
             if not settings.settings.getboolean("COMPONENTS", c):
                 continue
             if settings.get_value("COMPONENTS", c + "_version").replace(
-                "v", "",
+                "v",
+                "",
             ) != settings.get_value("COMPONENTS", c + "_server_version").replace(
-                "v", "",
+                "v",
+                "",
             ):
                 self.components_to_update.append(component_name)
 

@@ -94,12 +94,20 @@ def uac_check():
 
         if ctypes.windll.shell32.IsUserAnAdmin() == 0:
             ctypes.windll.shell32.ShellExecuteW(
-                None, "runas", sys.executable, __file__, None, 1,
+                None,
+                "runas",
+                sys.executable,
+                __file__,
+                None,
+                1,
             )
             exit(0)
 
 
-def generate_python_file(output_file, mapping=None):  # ФУНКЦИЯ ПЕРЕПИСЫВАЛАСЬ, ЗДЕСЬ МОГУТ БЫТЬ ОШИБКИ
+def generate_python_file(
+    output_file,
+    mapping=None,
+):  # ФУНКЦИЯ ПЕРЕПИСЫВАЛАСЬ, ЗДЕСЬ МОГУТ БЫТЬ ОШИБКИ
     target = {
         "application_id": properties.get("appId", ""),
         "application_name": properties.get("appName", ""),
@@ -144,7 +152,10 @@ if __name__ == "__main__":
         help="Run fast start application (disable update resources)",
     )
     parser.add_argument(
-        "-r", "--reload", action="store_true", help="Enable hot reload for qml files",
+        "-r",
+        "--reload",
+        action="store_true",
+        help="Enable hot reload for qml files",
     )
     parser.add_argument(
         "-q",
