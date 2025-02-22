@@ -168,7 +168,7 @@ async def show_error(
     toast = Toast(app_id=app_id)
     elements = [
         Image(
-            f"file:///{(DIRECTORY if not DEBUG else DEBUG_PATH)+'/data/warning.png'}\
+            f"file:///{(DIRECTORY if not DEBUG else DEBUG_PATH) + '/data/warning.png'}\
                 ?foreground=#FFFFFF&background=#F7630C&padding=40",
             placement=ToastImagePlacement.LOGO,
         ),
