@@ -10,6 +10,7 @@ import winreg
 
 from logger import AppLogger
 
+
 DEBUG = True
 DEBUG_PATH = (
     os.path.dirname(os.path.abspath(__file__)).replace("\src", "/")  # noqa: W605

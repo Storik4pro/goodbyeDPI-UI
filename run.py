@@ -10,8 +10,6 @@ PATH = os.path.dirname(os.path.abspath(__file__))
 
 TOOL_DESCRIPTION = """
 Starts the application with the specified arguments for debug.
-
-ATTENTION! Turn on DEBUG mode in the _data.py file before starting the application.
 """
 
 EXCLUDE_QT_FILES = """opengl32sw,qt6location,qt6webchannel,
@@ -169,6 +167,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Skip UAC check (not recomended)",
     )
+
     args = parser.parse_args()
 
     _args = [" "]
