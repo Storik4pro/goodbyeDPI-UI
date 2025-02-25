@@ -61,6 +61,7 @@ Item{
             "/spoofdpi": resolvedUrl("res/qml/page/T_Spoofdpi.qml"),
             "/byedpi": resolvedUrl("res/qml/page/T_Byedpi.qml"),
             "/update": resolvedUrl("res/qml/page/T_Update.qml"),
+            "/proxy": resolvedUrl("res/qml/page/T_Proxy.qml"),
         }
     }
     Menu{
@@ -152,6 +153,12 @@ Item{
             property var key: componentKey
             property var title: componentTitle
             property var _icon
+        }
+    }
+    Connections {
+        target:proxyHelper
+        function onOpenProxySettings(){
+            page_router.go("/proxy")
         }
     }
     Connections {
