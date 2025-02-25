@@ -176,6 +176,112 @@ FramelessWindow {
             
         }
     }
+
+    Dialog{
+        id: proxySetupDialog
+        x: Math.ceil((parent.width - width) / 2)
+        y: Math.ceil((parent.height - height) / 2)
+        width: 500
+        contentHeight: 300
+        parent: Overlay.overlay
+        closePolicy: Popup.NoAutoClose
+        modal: true
+        title: backend.get_element_loc("first_proxy_setup")
+        Flickable {
+            id: proxySetupFlickable
+            clip: true
+            anchors.fill: parent
+            anchors.rightMargin:-10
+            anchors.leftMargin:-10
+            contentHeight: proxySetupContentColumn.implicitHeight
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.rightMargin:20
+                ColumnLayout {
+                    id:proxySetupContentColumn
+                    Layout.leftMargin:10
+                    Layout.rightMargin:-10
+                    Label {
+                        text: backend.get_element_loc("first_proxy_setup_tip").arg(backend.getValue("PROXY", "proxy_addr")+ ":" + backend.getValue("PROXY", "proxy_port"))
+                        wrapMode: Text.Wrap
+                        Layout.fillWidth: true
+                    }
+                    Button{
+                        id:btn2
+                        Layout.preferredHeight: Math.max(68, udpLay.implicitHeight + 10)
+                        Layout.fillWidth:true
+                        Layout.minimumWidth: 300 
+                        Layout.maximumWidth: 1000
+                        Layout.alignment: Qt.AlignHCenter
+                        RowLayout{
+                            anchors.fill: parent
+                            anchors{
+                                leftMargin: 20
+                                rightMargin: 20
+                            }
+                            spacing: 10
+                            Icon {
+                                source: FluentIcons.graph_Network
+                                Layout.preferredHeight:20
+                            }
+                            ColumnLayout{
+                                id:udpLay
+                                Layout.fillWidth: true
+                                spacing: 2
+                                Label{
+                                    Layout.fillWidth: true
+                                    text: backend.get_element_loc('setup_btn')
+                                    horizontalAlignment: Text.AlignLeft
+                                    wrapMode:Text.Wrap
+                                    font: Typography.body
+                                }
+                                Label {
+                                    text: backend.get_element_loc('first_setup_proxy_btn_tip')
+                                    Layout.fillWidth: true
+                                    font: Typography.caption
+                                    color: "#c0c0c0"
+                                    horizontalAlignment: Text.AlignLeft
+                                    wrapMode:Text.Wrap
+                                }
+                            }
+                            IconButton {
+                                id: btn_icon1
+                                width: 30
+                                height: 30
+                                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                                Icon {
+                                    anchors.centerIn: parent
+                                    source: FluentIcons.graph_ChevronRight
+                                    width: 15
+                                    height: 15
+                                }
+                                onClicked: {
+                                    proxyHelper.open_setup()
+                                    proxySetupDialog.close()
+                                }
+                            }
+                        }
+                        
+                        onClicked: {
+                            proxyHelper.open_setup()
+                            proxySetupDialog.close()
+                        }
+                        
+                    }
+                }
+            }
+            ScrollBar.vertical: ScrollBar {}
+        }
+        footer: DialogButtonBox{
+            Button{
+                text: backend.get_element_loc("cancel")
+                onClicked: {
+                    backend.changeValue("PROXY", "proxy_now_used", "manual")
+                    proxySetupDialog.close()
+                }
+            }
+        }
+    }
     function exit() {
         var qw = window.width - _width
         var qh = window.height - _height
@@ -490,6 +596,16 @@ FramelessWindow {
         function onProcess_started() {
             updateIcon()
         }
+        function onProcess_need_setup() {
+            window.show()
+            windowState = true
+            window.raise()
+            window.requestActivate()
+            if (system_tray && backend.getValue("APPEARANCE_MODE", "quit_to") !== "tray") {
+                system_tray.destroy()
+            }
+            proxySetupDialog.open()
+        }
         function onProcess_stopped() {
             updateIcon()
         }
@@ -526,6 +642,14 @@ FramelessWindow {
         function onProcess_stopped_signal() {
             blocker.enabled = false;
             blocker.visible = false;
+        }
+    }
+    Connections {
+        target:proxyHelper
+        function onErrorHappens(text, code) {
+            currentError = text
+            currentErrorCode = code
+            errorDialog.open()
         }
     }
     Connections {
