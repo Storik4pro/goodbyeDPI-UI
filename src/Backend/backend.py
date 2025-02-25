@@ -2,6 +2,7 @@ import configparser
 from datetime import datetime
 import json
 import os
+from pathlib import Path
 import platform
 import random
 import re
@@ -47,7 +48,7 @@ class Backend(QObject):
     @Slot(str, result=str)
     def get_element_loc(self, element_name) -> str:
         try:
-            return text.inAppText[element_name].replace("{executable}", "%1").replace("<br>", "\n")
+            return text.inAppText[element_name].replace("{executable}", "%1")
         except:return "<globallocalize."+element_name+">"
         
     @Slot(result=bool)
@@ -92,6 +93,15 @@ class Backend(QObject):
                 '_icon': "",
             },
         ]
+        
+    @Slot(str, result=bool)
+    def is_exe_file(self, path:str):
+        return os.path.isfile(path) and path.lower().endswith(".exe") and os.path.exists(path)
+    
+    @Slot(str, result=bool)
+    def is_uwp_folder(self, path:str):
+        appx_manifest = Path(path, 'AppxManifest.xml')
+        return os.path.isdir(path) and os.path.exists(path) and os.path.exists(appx_manifest)
     
     @Slot(str, str, result=bool)
     def load_preset(self, engine, path):
