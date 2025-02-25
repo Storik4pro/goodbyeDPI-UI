@@ -1,5 +1,6 @@
 import hashlib
 import json
+from pathlib import Path
 import platform
 import random
 import string
@@ -33,9 +34,9 @@ from toasted import Button, Image, Progress, Text, Toast, ToastButtonStyle, Toas
 import winsound
 
 import requests
-from _data import GOODBYE_DPI_EXECUTABLE, PARAMETER_MAPPING, S_PARAMETER_MAPPING, S_VALUE_PARAMETERS, VALUE_PARAMETERS, ZAPRET_EXECUTABLE, ZAPRET_PATH, \
+from _data import GOODBYE_DPI_EXECUTABLE, PARAMETER_MAPPING, PROXIFYRE_FILES_LIST, S_PARAMETER_MAPPING, S_VALUE_PARAMETERS, VALUE_PARAMETERS, ZAPRET_EXECUTABLE, ZAPRET_PATH, \
     GOODBYE_DPI_PATH, DEBUG, DIRECTORY, DEBUG_PATH, REPO_NAME, REPO_OWNER, CONFIGS_REPO_NAME, SETTINGS_FILE_PATH,\
-    CONFIG_PATH, SPOOFDPI_EXECUTABLE, BYEDPI_EXECUTABLE, EXECUTABLES, COMPONENTS_URLS, text, settings
+    CONFIG_PATH, SPOOFDPI_EXECUTABLE, BYEDPI_EXECUTABLE, EXECUTABLES, COMPONENTS_URLS, REQUEST_HEADER, text, settings
 
 def error_sound():
     winsound.MessageBeep(winsound.MB_ICONHAND)
@@ -330,17 +331,28 @@ class GoodbyedpiProcess(QObject):
     process_stopped = Signal(str)
     error_occurred = Signal(str)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, engine=None):
         super().__init__(parent)
         self.worker = None
         self.error = False
         self.stop = False
-        self.engine = settings.settings['GLOBAL']['engine']
+        if engine:
+            self.engine = engine
+            self.engine_manual_setup = True
+        else:
+            self.engine = settings.settings['GLOBAL']['engine']
+            self.engine_manual_setup = False
         self.reason = 'by user'
+        
+    @Slot(str)
+    def change_engine(self, engine):
+        self.engine = engine
 
     @Slot()
     def start_goodbyedpi(self, *args):
-        self.engine = settings.settings['GLOBAL']['engine']
+        if not self.engine_manual_setup:
+            self.engine = settings.settings['GLOBAL']['engine']
+        
         if self.worker is None or not self.worker.isRunning():
             self.worker = GoodbyedpiWorker(args=args, engine=self.engine)
             self.worker.output_signal.connect(self.handle_output)
@@ -487,9 +499,20 @@ def check_mica():
     return build >= 22000
 
 # update
+
+def check_response(url, _headers=None):
+    headers = _headers
+    _response = requests.get(url, headers=headers)
+    if _response.status_code == 403:
+        req_header = headers | REQUEST_HEADER if headers else REQUEST_HEADER
+        _authorized_response = requests.get(url, headers=req_header)
+    else:
+        return _response
+    return _authorized_response
+
 def save_version_data_to_cache(owner, name, object='prg', url='releases/latest'):
     url = f"https://api.github.com/repos/{owner}/{name}/{url}"
-    response = requests.get(url)
+    response = check_response(url)
     
     if response.status_code != 200:
         return f'ERR_SERVER_STATUS_CODE_{response.status_code}'
@@ -708,7 +731,7 @@ def download_files_from_github(remote_dir, local_dir):
     ]
 
     try:
-        response = requests.get(base_url)
+        response = check_response(base_url)
         if response.status_code != 200:
             return f"ERR_SERVER_STATUS_CODE_{response.status_code}"
 
@@ -732,7 +755,7 @@ def download_files_from_github(remote_dir, local_dir):
                     continue
                 
                 download_url = file_info['download_url']
-                file_response = requests.get(download_url, headers=headers)
+                file_response = check_response(download_url, _headers=headers)
                 if file_response.status_code == 200:
                     with open(local_filepath, 'wb') as f:
                         f.write(file_response.content)
@@ -951,6 +974,56 @@ def convert_custom_params(command, parameter_mapping, value_parameters):
     params['custom_parameters'] = ' '.join(custom_params)
     return params
 
+def check_proxifyre_install() -> bool:
+    proxifyre_path = Path(DEBUG_PATH+DIRECTORY, 'data', 'proxifyre')
+    if not os.path.exists(proxifyre_path):
+        return False
+    
+    for path in PROXIFYRE_FILES_LIST:
+        if not os.path.exists(Path(proxifyre_path, path)):
+            return False
+        
+    return True
+
+registry_path = r"Software\Microsoft\Windows\CurrentVersion\Internet Settings"
+
+def save_proxy_settings(isRun:int, settings:dict=None, signal:Signal=None):
+    try:
+        try:
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, registry_path, 0, winreg.KEY_ALL_ACCESS)
+        except Exception as e:
+            err = f"\n{e}"
+            if signal:
+                signal.emit(
+                    text.safe_get('reg_write_error').format(f"HKEY_CURRENT_USER/{registry_path}"),
+                    "ERR_REGISTRY_WRITE"
+                )
+            return False
+
+        winreg.SetValueEx(key, "ProxyEnable", 0, winreg.REG_DWORD, isRun)
+        
+        if settings:
+            proxy_server = settings.get("ProxyServer", "")
+            exceptions = settings.get("ProxyOverride", "")
+            winreg.SetValueEx(key, "ProxyServer", 0, winreg.REG_SZ, proxy_server)
+            
+            winreg.SetValueEx(key, "ProxyOverride", 0, winreg.REG_SZ, exceptions)
+        
+        winreg.CloseKey(key)
+
+        INTERNET_OPTION_SETTINGS_CHANGED = 39
+        INTERNET_OPTION_REFRESH = 37
+        ctypes.windll.Wininet.InternetSetOptionW(0, INTERNET_OPTION_SETTINGS_CHANGED, 0, 0)
+        ctypes.windll.Wininet.InternetSetOptionW(0, INTERNET_OPTION_REFRESH, 0, 0)
+        return True
+    except Exception as e:
+        err = f"\n{e}"
+        if signal:
+            signal.emit(
+                text.safe_get('reg_write_error').format(f"HKEY_CURRENT_USER/{registry_path}"),
+                "ERR_REGISTRY_WRITE_APPLY"
+            )
+        return False
 # JSON
 def convert_bat_file(bat_file, output_folder, engine):
     with open(bat_file, 'r', encoding='utf-8') as f:
