@@ -330,6 +330,61 @@ ScrollablePage {
             spacing: 3
             width: parent.width
             Label {
+                text: backend.get_element_loc("proxy_settings")
+                font: Typography.bodyStrong
+                Layout.topMargin: 15
+            }
+            Button{
+                Layout.preferredHeight: 68
+                Layout.fillWidth: true
+                Layout.preferredWidth: Math.min(1000, parent.width * 0.9) 
+                Layout.minimumWidth: 300 
+                Layout.maximumWidth: 1000
+                Layout.alignment: Qt.AlignHCenter
+                enabled: backend.check_winpty()
+                RowLayout{
+                    anchors.fill: parent
+                    anchors{
+                        leftMargin: 20
+                        rightMargin: 20
+                    }
+                    spacing: 10
+                    ColumnLayout{
+                        Layout.fillWidth: true
+                        spacing: 2
+                        Label{
+                            Layout.fillWidth: true
+                            horizontalAlignment: Text.AlignLeft
+                            text: backend.get_element_loc('proxy_setup')
+                            font: Typography.body
+                            wrapMode:Text.Wrap
+                        }
+                        Label {
+                            Layout.fillWidth:true
+                            text: backend.get_element_loc('proxy_setup_tip')
+                            horizontalAlignment: Text.AlignLeft
+                            font: Typography.caption
+                            color: "#c0c0c0"
+                            wrapMode:Text.Wrap
+                        }
+                    }
+                    Button {
+                        id: btn_icon
+                        width: 30
+                        height: 30
+                        Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                        text: backend.get_element_loc("setup_btn")
+                        onClicked: {
+                            page_router.go("/proxy")
+                        }
+                    }
+                }
+                
+                onClicked: {
+                    page_router.go("/proxy")
+                }
+            }
+            Label {
                 text: backend.get_element_loc("zapret_advansed")
                 font: Typography.bodyStrong
                 Layout.topMargin: 15
