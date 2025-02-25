@@ -94,7 +94,7 @@ class GoodCheckHelper(QObject):
             try:
                 os.remove(log_file)
             except Exception as e:
-                print(f"Не удалось удалить файл {log_file}: {e}")
+                print(f"Error while trying to delete {log_file}: {e}")
 
         if self.process is None:
             arguments = ['-q', 
