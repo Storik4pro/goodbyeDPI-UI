@@ -412,6 +412,7 @@ def start_process(*args, **kwargs):
     :param execut: Executable file. Default -> `EXECUTABLES[engine]`
     :param path: Path to execut. Default -> `DIRECTORY+f'data/{engine}/{execut}'`
     :param cwd: Process work directory. Default -> `DIRECTORY+f'data/{engine}'`
+    :param env: Process environment. Default -> `None`
     '''
     engine = kwargs.get('engine', settings.settings["GLOBAL"]["engine"]) 
     execut = kwargs.get('execut', EXECUTABLES[engine])
@@ -421,12 +422,13 @@ def start_process(*args, **kwargs):
     cwd = kwargs.get('cwd', os.path.join(GOODBYE_DPI_PATH, 'x86_64') \
                                          if settings.settings['GLOBAL']['engine'] == 'goodbyeDPI'\
                                          else os.path.join(DIRECTORY+f'data/{engine}'))
-
+    env = kwargs.get('env', None)
+    
     _args = [
             path,
             *args,
     ]
-    process = subprocess.Popen(_args, cwd=cwd, creationflags=subprocess.CREATE_NO_WINDOW)
+    process = subprocess.Popen(_args, cwd=cwd, env=env, creationflags=subprocess.CREATE_NO_WINDOW)
     return process
 
 def stop_servise():
