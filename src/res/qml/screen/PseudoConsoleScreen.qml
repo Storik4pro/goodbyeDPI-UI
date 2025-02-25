@@ -37,8 +37,10 @@ ScrollablePage {
     property bool process_state: process.is_process_alive()
     property string execut: process.get_executable()
     property string output_str:  (process.get_output() === "") ? 
-        "[DEBUG?] Yap, here want been flashlight animation. But, it's missing here. If you see it message, sorry" :
+        "[FLASHLIGHT] Seems like the process is not running or the output is empty. Dont worry, if you run byedpi it`s normal." :
         process.get_output()
+
+    property bool isProxifyreUsed: process.is_proxifyre_used()
 
     ColumnLayout {
         spacing: 10
@@ -112,14 +114,35 @@ ScrollablePage {
 
             Item { Layout.fillWidth: true } 
 
+            RowLayout{
+                visible: isProxifyreUsed
+                Label{
+                    text:backend.get_element_loc('view_for')
+                    font:Typography.body
+                }
+                ComboBox{
+                    id: view_for
+                    Layout.preferredHeight: 30
+                    model: ["ProxiFyre", execut]
+                    currentIndex: 1
+                    onCurrentIndexChanged: {
+                        if (currentIndex === 0) {
+                            load_output('proxifyre')
+                        } else {
+                            load_output('main')
+                        }
+                    }
+                }
+            }
+
             IconButton {
                 id: restart_button
                 text: qsTr(backend.get_element_loc('get_help'))
-                
+                display: isProxifyreUsed? IconButton.IconOnly:IconButton.TextBesideIcon 
                 icon.name: FluentIcons.graph_FavoriteStar
                 icon.width: 18
                 icon.height: 18
-                Layout.preferredWidth:200
+                Layout.preferredWidth:isProxifyreUsed?30:200
                 onClicked: {
                     Qt.openUrlExternally("https://github.com/Storik4pro/goodbyeDPI-UI/discussions")
                 }
@@ -173,6 +196,19 @@ ScrollablePage {
                 }
                 onClicked: confirmationDialog.open()
             }
+        }
+    }
+
+    function load_output(type) {
+        if (type === 'proxifyre') {
+            var _output_str = process.get_proxifyre_output()
+        } else {
+            var _output_str = process.get_output()
+        }
+        if (_output_str !== "") {
+            output_str = _output_str
+        } else if (process.is_process_alive()) {
+            output_str = "[FLASHLIGHT] Seems like the process is not running or the output is empty. Dont worry, if you run byedpi it`s normal."
         }
     }
 
@@ -241,10 +277,19 @@ ScrollablePage {
         target: process
         function onOutput_added() {
             var _output = arguments[0];
-            addOutput(_output);
+            if (view_for.currentIndex === 1) {
+                addOutput(_output);
+            }
+        }
+        function onProxifyre_output_added(){
+            var _output = arguments[0];
+            if (view_for.currentIndex === 0) {
+                addOutput(_output);
+            }
         }
         function onError_happens() {
             var _output = arguments[0];
+            view_for.currentIndex = 1
             addOutput(_output);
         }
         function onProcess_started(){
@@ -269,6 +314,18 @@ ScrollablePage {
         }
         function onEngine_changed() {
             execut = process.get_executable()
+            if (!process.is_process_alive()) {
+                updateStatus(qsTr(backend.get_element_loc('pseudoconsole_find')))
+                setIcon("info")
+                isProxifyreUsed = process.is_proxifyre_used()
+                output_str = "[FLASHLIGHT] Seems like the process is not running or the output is empty. Dont worry, if you run byedpi it`s normal."
+            }
+        }
+    }
+    Connections {
+        target: proxyHelper
+        function onProxyTypeChanged(){
+            isProxifyreUsed = process.is_proxifyre_used()
         }
     }
     Connections {
