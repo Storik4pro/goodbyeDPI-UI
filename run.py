@@ -34,6 +34,12 @@ EXCLUDE_QT_FILES = """opengl32sw,qt6location,qt6webchannel,
   qt6scxml,\\
   qt6scxmlqml,qt6sensors,qt6sensorsquick,qt6spatialaudio,qt6sql,\\
   qt6statemachine,qt6statemachineqml"""
+  
+if not os.path.exists(".env"):
+    api = input("Please enter the GitHub API key " +
+                "(Keep empty if you want to send requests unregistered) -> ")
+    with open(".env", "w") as env_file:
+        env_file.write(f"DEV_API={api}\n")
 
 if not os.path.exists("config.properties"):
     with open("config.properties", "w") as file:
