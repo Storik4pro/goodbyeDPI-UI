@@ -300,6 +300,10 @@ ScrollablePage {
 
     Component.onCompleted: {
         prgBrInd.visible = true;
+        if (appArguments.indexOf("--after-failed-update") !== -1) {
+            failedUpdateOptions();
+            return;
+        }
         if (!backend.is_debug()) {
             if (appArguments.indexOf("--after-patching") !== -1) {
                 updateHelper.startUpdateProcess(true)
@@ -307,9 +311,7 @@ ScrollablePage {
                 updateHelper.startUpdateProcess(false)
             }
         }
-        if (appArguments.indexOf("--after-failed-update") !== -1) {
-            failedUpdateOptions();
-        }
+        
         
     }
 }
