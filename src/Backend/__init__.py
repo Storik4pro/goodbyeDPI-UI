@@ -5,3 +5,5 @@ from .multiWindow import MultiWindow
 from .goodCheckHelper import GoodCheckHelper
 from .afterUpdateHelper import AfterUpdateHelper
 from .patcher import Patcher
+from .proxyHelper import ProxyHelper
+from .iconImageProvider import IconImageProvider
