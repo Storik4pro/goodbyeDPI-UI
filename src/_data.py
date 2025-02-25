@@ -7,8 +7,15 @@ import sys
 import traceback
 import winreg
 from logger import AppLogger
+from dotenv import load_dotenv
 
 state = getattr(sys, 'frozen', False)
+
+if os.path.exists("apiKeys.py") or state:
+    from apiKeys import API_KEY
+else:
+    API_KEY = None
+
 
 DEBUG = True if '--debug' in sys.argv[1:] and not state else False
 DEBUG_PATH = os.path.dirname(os.path.abspath(__file__)).replace("\src", "/") if DEBUG else ""
@@ -38,6 +45,12 @@ DIRECTORY = f'{application_path}/' if not DEBUG else ''
 
 VERSION = "1.2.6"
 
+load_dotenv()
+DEV_API = os.getenv('DEV_API')
+API = API_KEY
+CURRENT_API = DEV_API if DEBUG else API
+REQUEST_HEADER = {"Authorization": f"token {CURRENT_API}"} if CURRENT_API else None
+
 SETTINGS_FILE_PATH = DIRECTORY+'data/settings/settings.ini'
 BACKUP_SETTINGS_FILE_PATH = DIRECTORY+'data/settings/_settings.ini'
 CONFIG_PATH = DIRECTORY+'data/settings/presets'
@@ -49,11 +62,14 @@ ZAPRET_PATH = DIRECTORY+'data/zapret/'
 ZAPRET_EXECUTABLE = "winws.exe" 
 SPOOFDPI_EXECUTABLE = "spoofdpi-windows-amd64.exe" 
 BYEDPI_EXECUTABLE = "ciadpi.exe" 
+PROXIFYRE_CONFIG_PATH = DIRECTORY+'data/proxifyre/app-config.json'
+PROXIFYRE_EXECUTABLE = 'proxifyre.exe'
 EXECUTABLES = {
     'goodbyeDPI':GOODBYE_DPI_EXECUTABLE,
     'zapret':ZAPRET_EXECUTABLE,
     'spoofdpi':SPOOFDPI_EXECUTABLE,
-    'byedpi': BYEDPI_EXECUTABLE
+    'byedpi': BYEDPI_EXECUTABLE,
+    'proxifyre': PROXIFYRE_EXECUTABLE
 }
 COMPONENTS_URLS = {
     'goodbyeDPI':'ValdikSS/GoodbyeDPI',
@@ -61,6 +77,25 @@ COMPONENTS_URLS = {
     'spoofdpi':'xvzc/SpoofDPI',
     'byedpi':'hufrea/byedpi'
 }
+
+PROXIFYRE_VERSIONS = {
+    'basic':'v1.0.22',
+    'ndisapi':'v3.6.1'
+}
+
+PROXIFYRE_URLS = {
+    'basic':f'wiresock/proxifyre/releases/download/{PROXIFYRE_VERSIONS["basic"]}/ProxiFyre-v1.0.22-x64-signed.zip',
+    'ndisapi':f'wiresock/ndisapi/releases/download/{PROXIFYRE_VERSIONS["ndisapi"]}/tools_bin_x64.zip',
+    'ndisapi_msi':f'wiresock/ndisapi/releases/download/{PROXIFYRE_VERSIONS["ndisapi"]}/Windows.Packet.Filter.3.6.1.1.x64.msi'
+}
+
+PROXIFYRE_FILES_LIST = [
+    'socksify.exe', 'udp2tcp.exe', 'dnstrace.exe', 'ebridge.exe', 'ipv6_parser.exe',
+    'ndisapi.dll', 'pcapplusplus.exe', 'rebind.exe', 'sni_inspector.exe', 'capture.exe',
+    'dns_proxy.exe', 'proxifyre.exe.config', 'socksify.dll', 'topshelf.dll', 'topshelf.xml',
+    'newtonsoft.json.dll', 'newtonsoft.json.xml', 'nlog.config', 'nlog.dll', 'nlog.xml', 
+    'proxifyre.exe'
+]
 
 FONT = 'Segoe UI'
 MONO_FONT = 'Cascadia Mono' if is_font_installed('Cascadia Mono') else 'Consolas'
@@ -183,6 +218,9 @@ class Text:
         config = configparser.ConfigParser()
         config.read(LOCALE_FILE_PATH, encoding='utf-8')
         self.inAppText = config[f'{self.selectLanguage}']
+        
+    def safe_get(self, key):
+        return self.inAppText.get(key, "Unable to load text for this message")
 
 try:    
     logger.create_logs(f"Importing application localize from \"{LOCALE_FILE_PATH}\"")
@@ -210,7 +248,7 @@ class UserConfig:
         with open(path, 'w', encoding='utf-8') as file:
             json.dump(self.data, file, ensure_ascii=False, indent=4)
 
-    def get_value(self, key) -> str|bool|int:
+    def get_value(self, key) -> str|bool|int|list:
         return self.data.get(key)
     
     def set_value(self, key, value):
