@@ -442,6 +442,55 @@ ScrollablePage {
             }
         }
         Button{
+            Layout.preferredHeight: 68
+            Layout.fillWidth: true
+            Layout.preferredWidth: Math.min(1000, parent.width * 0.9) 
+            Layout.minimumWidth: 300 
+            Layout.maximumWidth: 1000
+            Layout.alignment: Qt.AlignHCenter
+            enabled: true
+            RowLayout{
+                anchors.fill: parent
+                anchors{
+                    leftMargin: 20
+                    rightMargin: 20
+                }
+                spacing: 10
+                ColumnLayout{
+                    Layout.fillWidth: true
+                    spacing: 2
+                    Label{
+                        Layout.fillWidth: true
+                        horizontalAlignment: Text.AlignLeft
+                        text: backend.get_element_loc('proxy_setup')
+                        font: Typography.body
+                        wrapMode:Text.Wrap
+                    }
+                    Label {
+                        Layout.fillWidth:true
+                        text: backend.get_element_loc('proxy_setup_tip')
+                        horizontalAlignment: Text.AlignLeft
+                        font: Typography.caption
+                        color: "#c0c0c0"
+                        wrapMode:Text.Wrap
+                    }
+                }
+                Button {
+                    width: 30
+                    height: 30
+                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                    text: backend.get_element_loc("setup_btn")
+                    onClicked: {
+                        page_router.go("/proxy")
+                    }
+                }
+            }
+            
+            onClicked: {
+                page_router.go("/proxy")
+            }
+        }
+        Button{
             id:btn2
             Layout.preferredHeight: 68
             Layout.fillWidth:true
