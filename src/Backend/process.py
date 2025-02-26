@@ -2,6 +2,9 @@ import glob
 import os
 from pathlib import Path
 import re
+import subprocess
+import sys
+import win32api
 import time
 import winreg
 from PySide6.QtCore import QObject, Slot, QTimer
@@ -278,19 +281,28 @@ class ProxyProcess(QObject):
             
             self.del_log_file()
             
-            env = os.environ.copy()
+            new_env = os.environ.copy()
 
-            exe_dir = os.path.dirname(os.path.abspath(__file__))
+            execution_dir = getattr(sys, '_MEIPASS', os.path.abspath(os.path.dirname(__file__)))
 
-            env['PATH'] = os.pathsep.join(
-                p for p in env.get('PATH', '').split(os.pathsep)
-                if os.path.normcase(p) != os.path.normcase(exe_dir)
+            for key, value in new_env.items():
+                if execution_dir in value:
+                    new_env[key] = value.replace(execution_dir, '')
+
+            new_dir = os.path.join("C:", "TEMP", "proxifyre")  
+
+            win32api.SetDllDirectory(new_dir)
+
+            self.process = subprocess.Popen(
+                [Path(proxifyre_path,"proxifyre.exe")],
+                shell=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env=new_env,
+                cwd=proxifyre_path,
+                creationflags=subprocess.CREATE_NO_WINDOW
             )
             
-            self.process = start_process(
-                execut="proxifyre.exe", path=Path(proxifyre_path,"proxifyre.exe"), 
-                cwd=proxifyre_path, env=env
-                )
             QTimer.singleShot(1000, self.find_new_log_file)
             result = True
 
@@ -309,6 +321,7 @@ class ProxyProcess(QObject):
             self.log_monitor_timer.stop()
             self.process.terminate()
             self.process.kill()
+            
             self.process = None
         elif self.proxy_mode == 'basic':
             self.setup_system_proxy(0)
