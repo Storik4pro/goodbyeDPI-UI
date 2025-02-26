@@ -341,7 +341,7 @@ ScrollablePage {
                 Layout.minimumWidth: 300 
                 Layout.maximumWidth: 1000
                 Layout.alignment: Qt.AlignHCenter
-                enabled: backend.check_winpty()
+                enabled: true
                 RowLayout{
                     anchors.fill: parent
                     anchors{
