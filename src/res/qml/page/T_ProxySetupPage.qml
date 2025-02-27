@@ -43,7 +43,7 @@ ScrollablePage {
                         visible:true
                         
                         Label {
-                            text:backend.get_element_loc("install_proxifyre_tip")
+                            text:qsTr(backend.get_element_loc("install_proxifyre_tip")).arg("1.0.22")
                             wrapMode:Text.Wrap
                             Layout.maximumWidth:contentColumn.width - 10
                         }
@@ -68,7 +68,7 @@ ScrollablePage {
                             }
                         }
                         Label {
-                            text:backend.get_element_loc("install_ndisapi_tip")
+                            text:qsTr(backend.get_element_loc("install_ndisapi_tip")).arg("3.6.1")
                             wrapMode:Text.Wrap
                             Layout.maximumWidth:contentColumn.width - 10
                         }
