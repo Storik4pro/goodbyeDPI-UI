@@ -39,7 +39,7 @@ ScrollablePage {
         ColumnLayout {
             id: contentLayout
             Layout.minimumHeight: 100
-            Layout.preferredHeight: page.height - header.implicitHeight - qfooter.implicitHeight - 48 - 24
+            Layout.preferredHeight: page.height - header.implicitHeight - qfooter.implicitHeight - autoscroll.implicitHeight - 48 - 24
             Layout.fillWidth: true
 
             Rectangle {
@@ -70,7 +70,9 @@ ScrollablePage {
                             font.family: "Cascadia Code"
                             color: "#D4D4D4"
                             onTextChanged: {
-                                scrollView.ScrollBar.vertical.position = scrollView.contentHeight
+                                if (autoscroll.checked) {
+                                    scrollView.ScrollBar.vertical.position = scrollView.contentHeight
+                                }
                             }
                         }
                     }
@@ -81,6 +83,15 @@ ScrollablePage {
             Layout.fillWidth: true
             Layout.fillHeight: true
         }
+    }
+
+    CheckBox {
+        id:autoscroll
+        checked:true
+        Layout.alignment:Qt.AlignRight
+        text:backend.get_element_loc("autoscroll")
+        Layout.topMargin: -7
+        Layout.bottomMargin:7
     }
 
     ColumnLayout {
