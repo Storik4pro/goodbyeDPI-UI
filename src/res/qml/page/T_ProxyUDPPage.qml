@@ -338,7 +338,7 @@ ScrollablePage {
                                 radius:2
                             }
                             onClicked:{
-                                Qt.openUrlExternally("https://habr.com/ru/articles/850292/")
+                                Qt.openUrlExternally("https://storik4pro.github.io/wiki/proxy-install-util/")
                             }
                         }
                     }
@@ -790,11 +790,6 @@ ScrollablePage {
                         onClicked:{
                             page_router.go("/")
                         }
-                    }
-                    Button {
-                        text:backend.get_element_loc("chk_preset")
-                        Layout.alignment: Qt.AlignHCenter
-                        Layout.preferredWidth:250
                     }
                 }
             }
