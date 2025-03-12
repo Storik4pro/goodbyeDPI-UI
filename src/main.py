@@ -47,7 +47,7 @@ try:
         process = Process()
         toast = Toast()
         multiWindow = MultiWindow()
-        goodCheck = GoodCheckHelper()
+        goodCheck = GoodCheckHelper(process)
         afterUpdate = AfterUpdateHelper()
         patcher = Patcher()
         iconImageProvider = IconImageProvider()
