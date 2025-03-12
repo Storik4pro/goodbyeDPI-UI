@@ -34,7 +34,7 @@ from typing import Dict, List, Optional, Union
 from urllib.parse import urlparse
 
 import requests
-# from icmplib import async_ping
+from icmplib import async_ping
 from pydantic import BaseModel, Field
 
 cluster_decode_array = {
@@ -317,12 +317,11 @@ async def ping_host(host: str, options: Options) -> None:
             return False
     else:
         try:
-            return True
-            # host = await async_ping(host, count=count, timeout=timeout)
-            # if host.is_alive:
-            #     return True
-            # else:
-            #     return False
+            host = await async_ping(host, count=count, timeout=timeout)
+            if host.is_alive:
+                return True
+            else:
+                return False
         except Exception as e:
             print(e)
             return False
