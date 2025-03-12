@@ -154,3 +154,4 @@ tempfiles/versiondata_xvzc_SpoofDPI.json
 patch.cdpipatch
 src/apiKeys.py
 data/proxifyre/app-config.json
+chkpreset/*
