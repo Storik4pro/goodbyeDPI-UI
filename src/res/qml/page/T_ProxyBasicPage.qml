@@ -88,6 +88,7 @@ ScrollablePage {
                         }
                     }
                     Layout.preferredWidth:page.width - 50
+                    Layout.maximumWidth: 1000
                     Layout.leftMargin:-6
 
                     onClicked: {
