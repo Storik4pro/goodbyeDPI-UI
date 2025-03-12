@@ -140,6 +140,7 @@ ScrollablePage {
                         id: checkBtn
                         text: updatesAvailable ? backend.get_element_loc("update_available_btn_t") : backend.get_element_loc("update_available_btn_f")
                         highlighted: true
+                        enabled:!goodCheck.is_process_alive()
                         Layout.minimumWidth: 50
                         Layout.alignment: Qt.AlignRight|Qt.AlignVCenter
                         
@@ -314,6 +315,16 @@ ScrollablePage {
 
     function showWhatsNew() {
         Qt.openUrlExternally("https://github.com/Storik4pro/goodbyeDPI-UI/releases/latest")
+    }
+
+    Connections {
+        target:goodCheck
+        function onStarted(){
+            checkBtn.enabled = false;
+        }
+        function onProcess_finished_signal(){
+            checkBtn.enabled = true;
+        }
     }
 
     Connections {

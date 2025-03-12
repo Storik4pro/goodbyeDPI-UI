@@ -12,6 +12,7 @@ ScrollablePage {
     property string engine : backend.getValue('GLOBAL', 'engine')
     property string engine_version: backend.getValue('COMPONENTS', backend.getValue('GLOBAL', 'engine').toLowerCase()+"_version")
     property string preset: process.get_preset()
+    property bool stopBtnEnabled: !goodCheck.is_process_alive()
     ColumnLayout {
         Layout.preferredWidth: Math.min(1000, parent.width)
         Layout.minimumWidth: 300
@@ -117,6 +118,7 @@ ScrollablePage {
                     }
                     text: checked ? backend.get_element_loc("on_") : backend.get_element_loc("off")
                     checked: process.is_process_alive()
+                    enabled:!goodCheck.is_process_alive()
                     onClicked: {
                         if (!isInitializing){
                             if (checked) {
@@ -380,6 +382,8 @@ ScrollablePage {
                             Layout.leftMargin: 5
                             Layout.rightMargin: 10
                             Button{
+                                id:stop
+                                enabled:stopBtnEnabled
                                 Layout.fillWidth: true
                                 LayoutMirroring.enabled: true
                                 text: backend.get_element_loc("pseudoconsole_stop")
@@ -517,6 +521,17 @@ ScrollablePage {
         var radius = Math.max(distance(centerX,centerY,0,0),distance(centerX,centerY,target.width,0),distance(centerX,centerY,0,target.height),distance(centerX,centerY,target.width,target.height))
         var reveal = loader_reveal.item
         reveal.start(reveal.width*Screen.devicePixelRatio,reveal.height*Screen.devicePixelRatio,Qt.point(centerX,centerY),radius,Theme.dark)
+    }
+    Connections {
+        target:goodCheck
+        function onStarted(){
+            startSwitch.enabled = false;
+            stopBtnEnabled = false;
+        }
+        function onProcess_finished_signal(){
+            startSwitch.enabled = true;
+            stopBtnEnabled = true;
+        }
     }
     Connections {
         target:process

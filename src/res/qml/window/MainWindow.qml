@@ -18,6 +18,7 @@ FramelessWindow {
     property var _width: backend.getInt("APPEARANCE_MODE", 'width')
     property var screenGeometryx: Screen.desktopAvailableHeight
     property var screenGeometryy: Screen.desktopAvailableWidth
+    property bool isProcessCanStart:true
     width: backend.getBool("APPEARANCE_MODE", "use_custom_window_size") ? _width : 838
     height: backend.getBool("APPEARANCE_MODE", "use_custom_window_size") ? _height : 652
     x: backend.get_first_run() ? undefined:backend.getValue("APPEARANCE_MODE", "x")
@@ -174,6 +175,40 @@ FramelessWindow {
                 }
             }
             
+        }
+    }
+
+    Dialog {
+        id:pcRestart
+        x: Math.ceil((parent.width - width) / 2)
+        y: Math.ceil((parent.height - height) / 2)
+        parent: Overlay.overlay
+        closePolicy: Popup.NoAutoClose
+        modal: true
+        title: backend.get_element_loc("restart_need")
+        Column {
+            spacing: 20
+            anchors.fill: parent
+            Label {
+                width: 350
+                wrapMode: Text.Wrap
+                text: backend.get_element_loc("restart_need_tip")
+            }
+        }
+        footer: DialogButtonBox{
+            Button{
+                text: backend.get_element_loc("restart_later")
+                onClicked: {
+                    pcRestart.close()
+                }
+            }
+            Button{
+                text: backend.get_element_loc("restart_now")
+                highlighted:true
+                onClicked: {
+                    
+                }
+            }
         }
     }
 
@@ -364,6 +399,7 @@ FramelessWindow {
                 */
                 P.MenuItem {
                     id:onItem
+                    enabled:isProcessCanStart
                     text: processStarted ? backend.get_element_loc("_off"):backend.get_element_loc("on")
                     //icon.source: "qrc:/qt/qml/GoodbyeDPI_UI/res/image/tray_logo_red.png"
                     onTriggered: {
@@ -577,6 +613,15 @@ FramelessWindow {
         }
     }
 
+    Connections {
+        target:proxyHelper
+        function onStateChanged(state) {
+            if (state == 'VS_RESTART') {
+                pcRestart.open()
+            } 
+        }
+    }
+
     Connections{
         target: process
         function onError_happens(){
@@ -626,24 +671,20 @@ FramelessWindow {
             onEntered: {}
         }
     }
-
+    
     Connections {
         target:goodCheck
-        function onStarted() {
-            WindowRouter.go("/goodcheck");
-            blocker.enabled = true;
-            blocker.visible = true; 
-
+        function onStarted(){
+            isProcessCanStart = false;
         }
         function onProcess_finished_signal () {
-            blocker.enabled = false;
-            blocker.visible = false;
-        }
-        function onProcess_stopped_signal() {
-            blocker.enabled = false;
-            blocker.visible = false;
+            if (backend.getBool('NOTIFICATIONS', 'goodcheck_complete')) {
+                Qt.callLater(toast.show_notification, "#NOTF_GOODCHECK_OPEN", "GoodCheck", backend.get_element_loc("goodcheck_complete"))
+            }
+            isProcessCanStart = true;
         }
     }
+    
     Connections {
         target:proxyHelper
         function onErrorHappens(text, code) {
@@ -721,6 +762,16 @@ FramelessWindow {
                     if (system_tray && backend.getValue("APPEARANCE_MODE", "quit_to") !== "tray") {
                         system_tray.destroy()
                     }
+                }
+            } else if (notificationId == '#NOTF_GOODCHECK_OPEN') {
+                if (action === "user_not_dismissed") {
+                    windowState = true
+                    window.show()
+                    window.raise()
+                    window.requestActivate()
+                    if (system_tray && backend.getValue("APPEARANCE_MODE", "quit_to") !== "tray") {
+                        system_tray.destroy()
+                    }               
                 }
             }
         }

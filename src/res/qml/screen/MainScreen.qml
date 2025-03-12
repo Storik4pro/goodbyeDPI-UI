@@ -172,7 +172,12 @@ Item{
                 if (action === "user_not_dismissed") {
                     Qt.callLater(page_router.go, "/system")
                 }
-            } 
+            }  else if (notificationId == '#NOTF_GOODCHECK_OPEN') {
+                if (action === "user_not_dismissed") {
+                    page_router.go("/additional",{info:"GoodCheck"})
+                    
+                }
+            }
         }
     }
 
