@@ -1,6 +1,6 @@
 # =======================================================================
 # Original author - lumenpearson
-# https://gist.github.com/lumenpearson/6ad618258fa512cc9eaa0b9371322492
+# https://github.com/lumenpearson
 # =======================================================================
 """
 This module provides an asynchronous availability checker for TCP, UDP, and GGC servers.
