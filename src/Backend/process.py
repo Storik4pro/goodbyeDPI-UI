@@ -404,10 +404,15 @@ class Process(QObject):
     @Slot(result=bool)
     def is_process_alive(self):
         return self.is_running
+    
+    @Slot(str, str)
+    def start_process_manually(self, engine, _args):
+        self.start_process(engine, _args.split(" "))
 
     @Slot(result=bool)
-    def start_process(self):
-        self.engine = settings.settings['GLOBAL']['engine']
+    def start_process(self, engine=None, _args=None):
+        print(engine)
+        self.engine = settings.settings['GLOBAL']['engine'] if engine is None else engine
         self.engine_changed.emit(self.engine)
         self.preset_changed.emit()
         self.clean_output.emit()
@@ -433,12 +438,16 @@ class Process(QObject):
             return False
         
         try:
-            args = check_args(-1)
+            new_args = [engine] if engine else [None]
+            args = check_args(-1) if _args is None else _args
+            new_args.extend(args)
         except Exception as ex:
             error_sound()
             self.handle_error(f"Internal error. Unable to start process. \nError information: \n{ex}")
+            if self.engine in supported_proxy_engines:
+                self.proxy_process.stop_proxy(self.engine)
             return False
-        print(args)
+        
         self.is_running = True
         
         if self.engine in supported_proxy_engines:
@@ -446,11 +455,10 @@ class Process(QObject):
             self.output_added.emit(f"[PROXY] Proxy {self.engine} started.\n")
             self.process_started.emit(True)
             
-        return self.process.start_goodbyedpi(*args)
+        return self.process.start_goodbyedpi(*new_args)
 
     @Slot(result=bool)
     def stop_process(self):
-        self.is_running = False
         result = self.process.stop_goodbyedpi()
         return result
     
@@ -468,8 +476,6 @@ class Process(QObject):
         self.output += data
 
     def handle_process_started(self):
-        self.engine = settings.settings['GLOBAL']['engine']
-
         self.engine_changed.emit(self.engine)
         self.preset_changed.emit()
         self.process_started.emit(True)
