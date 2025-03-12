@@ -531,18 +531,20 @@ ScrollablePage {
                     Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
                     Icon {
                         anchors.centerIn: parent
-                        source: FluentIcons.graph_OpenInNewWindow
+                        source: FluentIcons.graph_ChevronRight
                         width: 15
                         height: 15
                     }
                     onClicked: {
-                        goodCheckDialog.open()
+                        context.router.go("/goodcheck")
+                        //goodCheckDialog.open()
                     }
                 }
             }
             
             onClicked: {
-                goodCheckDialog.open()
+                context.router.go("/goodcheck")
+                //goodCheckDialog.open()
             }
             
         }
