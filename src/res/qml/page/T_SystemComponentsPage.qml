@@ -48,6 +48,31 @@ Page {
                     ColumnLayout {
                         id: licenseLayout
                         visible:true
+                        Label {
+                            text:qsTr(backend.get_element_loc("install_vs_tip"))
+                            wrapMode:Text.Wrap
+                            Layout.maximumWidth:contentColumn.width - 10
+                        }
+                        HyperlinkButton {
+                            id:vsBtn
+                            text: backend.get_element_loc("about_license") + ": VS Redistributable"
+                            FluentUI.primaryColor: Theme.accentColor.defaultBrushFor()
+                            Layout.preferredHeight:15
+                            font: Typography.caption
+                            Layout.preferredWidth:implicitWidth - 15
+                            flat: true
+                            background: Rectangle {
+                                implicitWidth: 100
+                                implicitHeight: 40
+                                color: Theme.accentColor.defaultBrushFor()
+                                opacity: 0.1
+                                visible:vsBtn.hovered
+                                radius:2
+                            }
+                            onClicked:{
+                                Qt.openUrlExternally("https://visualstudio.microsoft.com/license-terms/vs2022-cruntime/")
+                            }
+                        }
                         Rectangle {
                             id:restInfo
                             Layout.preferredHeight: Math.max(80, infoColumnLayoutLic.implicitHeight + 20)
@@ -483,7 +508,8 @@ Page {
 
                     Expander {
                         id: exp
-                        expanded: true
+                        expanded: !goodCheck.is_process_alive()
+                        enabled:!goodCheck.is_process_alive()
                         Layout.fillWidth: true
                         Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
                         Layout.minimumWidth: 300
@@ -741,11 +767,11 @@ Page {
                     }
                 }
                 function change_engine(componentName) {
+                    process.change_engine(componentName)
                     if (process.is_process_alive()) {
                         process.stop_process()
                         Qt.callLater(process.start_process)
                     }
-                    process.change_engine(componentName)
                 }
 
                 function remove_component(componentName, button) {
@@ -810,7 +836,15 @@ Page {
         }
     }
 
-    
+    Connections {
+        target:goodCheck
+        function onStarted(){
+            exp.enabled = false;
+        }
+        function onProcess_finished_signal(){
+            exp.enabled = true;
+        }
+    }
 
     Connections {
         target:proxyHelper
