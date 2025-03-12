@@ -9,7 +9,7 @@ FramelessWindow {
     property var argument
     property string execut: process.get_executable()
     id: window
-    title: backend.get_element_loc("goodcheck_title")
+    title: backend.get_element_loc("pseudoconsole_title").arg("")
     width: 800
     height: 500
     minimumWidth: 800
@@ -35,11 +35,16 @@ FramelessWindow {
         }
     onCloseListener: function(event){
         WindowRouter.removeWindow(window)
-        goodCheck.stop_process()
         event.accepted = false
     }
     initialItem: resolvedUrl("res/qml/screen/GoodCheckScreen.qml")
 
+    Connections{
+        target:goodCheck
+        function onConsoleCloseRequest() {
+            WindowRouter.removeWindow(window)
+        }
+    }
     
     
 

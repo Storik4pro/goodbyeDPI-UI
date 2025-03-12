@@ -16,12 +16,6 @@ ScrollablePage {
         Layout.leftMargin: 24
         Layout.rightMargin: 24
         Layout.fillWidth: true
-
-        Label {
-            text: qsTr(backend.get_element_loc('goodcheck_title'))
-            font: Typography.title
-        }
-
         IconLabel {
             id: status_label
             text: qsTr(backend.get_element_loc('pseudoconsole_find'))
@@ -115,10 +109,10 @@ ScrollablePage {
             IconButton {
                 id: restart_button
                 text: qsTr(backend.get_element_loc('get_help'))
+                display: IconButton.IconOnly
                 icon.name: FluentIcons.graph_FavoriteStar
                 icon.width: 18
                 icon.height: 18
-                Layout.preferredWidth: 200
                 onClicked: {
                     Qt.openUrlExternally("https://github.com/Storik4pro/goodbyeDPI-UI/discussions")
                 }
@@ -135,6 +129,18 @@ ScrollablePage {
                 ToolTip.visible: hovered
                 ToolTip.delay: 500
                 ToolTip.text: qsTr(backend.get_element_loc('pseudoconsole_stop'))
+            }
+            Button {
+                id: close_button
+                text: qsTr(backend.get_element_loc('close_tool'))
+                icon.name: FluentIcons.graph_Cancel
+                icon.width: 18
+                icon.height: 18
+                Layout.preferredWidth: 200
+                spacing: 5
+                onClicked: {
+                    goodCheck.close_console()
+                }
             }
         }
     }
@@ -174,6 +180,10 @@ ScrollablePage {
         }
     }
 
+    Component.onCompleted: {
+        addOutput(goodCheck.get_output())
+    }
+
     property string inputPrompt: ""
 
     function addOutput(output) {
@@ -190,7 +200,6 @@ ScrollablePage {
         } else if (output.includes("All Done")) {
             updateStatus(qsTr(backend.get_element_loc('pseudoconsole_success_end')).arg(execut))
             setIcon("success")
-            goodCheck.handle_finished()
             stop_button.enabled = false
         } 
     }
