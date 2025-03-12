@@ -43,6 +43,7 @@
         <file>res/qml/page/T_ProxyBasicPage.qml</file>
         <file>res/qml/page/T_ProxySetupPage.qml</file>
         <file>res/qml/page/T_ProxyUDPPage.qml</file>
+        <file>res/qml/page/T_AdditionalUtilsGoodCheckPage.qml</file>
         <file>res/qml/screen/MainScreen.qml</file>
         <file>res/qml/window/MainWindow.qml</file>
         <file>res/qml/screen/MultiWindowScreen.qml</file>
