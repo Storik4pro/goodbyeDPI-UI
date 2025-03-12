@@ -537,6 +537,7 @@ class UpdateDownloadWorker(QObject):
         basic_filename = '_proxifyre.zip'
         ndisapi_filename = '_ndisapi.zip'
         ndisapi_msi_filename = '_ndisapi.msi'
+        vs_redist_filename = 'VC_redist.x64.exe'
         
         directory = os.path.join(DEBUG_PATH+DIRECTORY, 'data', 'proxifyre')
         if not os.path.exists(directory):
@@ -545,10 +546,13 @@ class UpdateDownloadWorker(QObject):
         basic_url = "https://github.com/" + PROXIFYRE_URLS['basic']
         ndisapi_url = "https://github.com/" + PROXIFYRE_URLS['ndisapi']
         ndisapi_msi_url = "https://github.com/" + PROXIFYRE_URLS['ndisapi_msi']
+        vs_redist_url = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
         
         basic_directory = os.path.join(directory, basic_filename)
         ndisapi_directory = os.path.join(directory, ndisapi_filename)
         ndisapi_msi_directory = os.path.join(directory, ndisapi_msi_filename)
+        vs_redist_directory = os.path.join(directory, vs_redist_filename)
+
         try:
             # download proxifyre
             self.stateChanged.emit("PRXF_d")
@@ -562,6 +566,10 @@ class UpdateDownloadWorker(QObject):
             self.stateChanged.emit("NDSA_MSI_d")
             download_update(ndisapi_msi_url, ndisapi_msi_directory, self.progressChanged, 
                             debug_check=False)
+            
+             # download Visual Studio 2022 redistributable
+            self.stateChanged.emit("VS_REDIST_d")
+            download_update(vs_redist_url, vs_redist_directory, self.progressChanged, debug_check=False)
             
             folder_to_unpack = ""
             
@@ -599,6 +607,29 @@ class UpdateDownloadWorker(QObject):
             
             delete_file(file_path=ndisapi_msi_directory)
             
+            # install Visual Studio 2022 redistributable
+            self.stateChanged.emit("VS_REDIST_i")
+            vs_redist_process = subprocess.Popen(
+                [vs_redist_directory, '/install', '/passive', '/norestart'],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=Path(directory)
+            )
+            
+            start_time = time.time()
+            while vs_redist_process.poll() is None:
+                time.sleep(1)
+                if time.time() - start_time > 600:
+                    vs_redist_process.kill()
+                    return 'ERR_VS_REDIST_INSTALL_TIMEOUT'
+            
+            _codes = [0, 1603, 3010]
+            
+            if not vs_redist_process.returncode in _codes:
+                return f'ERR_VS_REDIST_INSTALL_FAILED_{vs_redist_process.returncode}'
+            
+            if vs_redist_process.returncode == 3010:
+                self.stateChanged.emit("VS_RESTART")
+            
+            delete_file(file_path=vs_redist_directory)
             
         except requests.ConnectionError:
             return 'ERR_CONNECTION_LOST'

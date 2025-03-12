@@ -92,6 +92,31 @@ ScrollablePage {
                                 Qt.openUrlExternally("https://github.com/wiresock/ndisapi")
                             }
                         }
+                        Label {
+                            text:qsTr(backend.get_element_loc("install_vs_tip"))
+                            wrapMode:Text.Wrap
+                            Layout.maximumWidth:contentColumn.width - 10
+                        }
+                        HyperlinkButton {
+                            id:vsBtn
+                            text: backend.get_element_loc("about_license") + ": VS Redistributable"
+                            FluentUI.primaryColor: Theme.accentColor.defaultBrushFor()
+                            Layout.preferredHeight:15
+                            font: Typography.caption
+                            Layout.preferredWidth:implicitWidth - 15
+                            flat: true
+                            background: Rectangle {
+                                implicitWidth: 100
+                                implicitHeight: 40
+                                color: Theme.accentColor.defaultBrushFor()
+                                opacity: 0.1
+                                visible:vsBtn.hovered
+                                radius:2
+                            }
+                            onClicked:{
+                                Qt.openUrlExternally("https://visualstudio.microsoft.com/license-terms/vs2022-cruntime/")
+                            }
+                        }
                         Rectangle {
                             id:restInfo
                             Layout.preferredHeight: Math.max(80, infoColumnLayoutLic.implicitHeight + 20)
@@ -785,6 +810,8 @@ ScrollablePage {
                 state_text.text = qsTr(backend.get_element_loc("state_ndsapi_download")).arg(value)
             } else if (state == 'NDSA_MSI_d') {
                 state_text.text = qsTr(backend.get_element_loc('state_ndsapi_msi_download')).arg(value)
+            } else if (state == 'VS_REDIST_d') {
+                state_text.text = qsTr(backend.get_element_loc('state_vs_download')).arg(value)
             }
         } 
         function onStateChanged(_state) {
@@ -798,7 +825,9 @@ ScrollablePage {
                 state_text.text = backend.get_element_loc('state_ndsapi_installing')
             } else if (state == 'NDSA_MSI_i') {
                 state_text.text = backend.get_element_loc('state_ndsapi_msi_installing')
-            }
+            } else if (state == 'VS_REDIST_i') {
+                state_text.text = backend.get_element_loc('state_vs_installing')
+            } 
         }
         function onDownloadFinished(errorCode) {
             loadingColumnLayout.visible = false
