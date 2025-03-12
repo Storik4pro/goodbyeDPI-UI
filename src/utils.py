@@ -349,9 +349,9 @@ class GoodbyedpiProcess(QObject):
         self.engine = engine
 
     @Slot()
-    def start_goodbyedpi(self, *args):
+    def start_goodbyedpi(self, engine=None, *args):
         if not self.engine_manual_setup:
-            self.engine = settings.settings['GLOBAL']['engine']
+            self.engine = engine if engine else settings.settings['GLOBAL']['engine'] 
         
         if self.worker is None or not self.worker.isRunning():
             self.worker = GoodbyedpiWorker(args=args, engine=self.engine)
@@ -378,9 +378,9 @@ class GoodbyedpiProcess(QObject):
                         return False
         if self.worker and self.worker.isRunning():
             self.worker.stop()
-            self.process_stopped.emit(self.reason)
             self.error = False
             self.stop = True
+        self.process_stopped.emit(self.reason)
         return True
 
     def handle_output(self, data):
