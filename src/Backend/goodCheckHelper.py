@@ -178,6 +178,7 @@ class GoodCheckHelper(QObject):
     started = Signal()
     process_stopped_signal = Signal()
     consoleCloseRequest = Signal()
+    current_strategy_check_changed = Signal(int, int)
 
     def __init__(self, process:Process):
         super().__init__()
@@ -409,6 +410,17 @@ class GoodCheckHelper(QObject):
                         self.strategy_list = None
                     elif "All Done" in new_content:
                         self.handle_finished()
+                        
+                    pattern = r', strategy (\d/\d):'
+                    blocks = re.findall(pattern, new_content, re.DOTALL | re.IGNORECASE)
+                    if blocks:
+                        current_strategy_check = int(blocks[-1].split("/")[0])
+                        print(blocks[-1])
+                        all_strategy_check = int(blocks[-1].split("/")[1])
+                        self.current_strategy_check_changed.emit(
+                            current_strategy_check, all_strategy_check
+                            )
+                    
                     self.output_signal.emit(new_content)
         else:
             self.log_monitor_timer.stop()
@@ -427,10 +439,13 @@ class GoodCheckHelper(QObject):
                     try:
                         proc.terminate()
                         self.process = None
-                        break
                     except psutil.NoSuchProcess:
                         pass
-
+                if proc.info['name'] in ['gdpi.exe', 'winws.exe']:
+                    try:
+                        proc.terminate()
+                    except psutil.NoSuchProcess:
+                        pass
             self.process = None
             self.process_stopped_signal.emit()
             self.log_monitor_timer.stop()

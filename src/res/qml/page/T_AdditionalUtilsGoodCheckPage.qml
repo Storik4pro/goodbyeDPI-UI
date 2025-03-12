@@ -50,6 +50,7 @@ ScrollablePage {
     property bool output_ready: false
     property bool process_state: false
     property bool isExitAvailible: false
+    property string state_text: "[0/0]"
     property string execut: "goodcheckgogo.exe" 
     property string _execut: "chk preset" 
     property string output_str: ""
@@ -831,8 +832,7 @@ ScrollablePage {
                         Layout.fillWidth:true
                     }
                     Label {
-                        visible:false
-                        text:backend.get_element_loc("left") + ": "
+                        text:backend.get_element_loc("currently_running") + " " + state_text
                     }
                     
                 }
@@ -2032,6 +2032,9 @@ ScrollablePage {
             updateStatus(qsTr(backend.get_element_loc('pseudoconsole_user_stop')).arg(execut_string))
             setIcon("info")
             stopActions()
+        }
+        function onCurrent_strategy_check_changed(current, all) {
+            state_text = "["+current+"/"+all+"]"
         }
     }
 
