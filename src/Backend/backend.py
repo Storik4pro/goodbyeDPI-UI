@@ -21,7 +21,7 @@ from PySide6.QtQml import QQmlApplicationEngine
 
 from logger import AppLogger
 from utils import ProgressToast, background_sound, change_setting, change_settings, check_version, check_winpty, convert_bat_file, create_xml, delete_file, download_blacklist, error_sound, extract_zip, get_component_download_url, get_latest_release, get_download_url, download_update, move_settings_file, open_custom_blacklist, open_folder, pretty_path, register_component, remove_xml, stop_servise, unregister_component
-from _data import BACKUP_SETTINGS_FILE_PATH, BLACKLIST_PROVIDERS, COMPONENTS_URLS, CONFIG_PATH, DEBUG_PATH, EXECUTABLES, LOG_LEVEL, PRESETS, PRESETS_DEFAULT, REPO_NAME, REPO_OWNER, SETTINGS_FILE_PATH, VERSION, Settings, settings, DEBUG, DIRECTORY, configs, text
+from _data import BACKUP_SETTINGS_FILE_PATH, BLACKLIST_PROVIDERS, COMPONENTS_URLS, CONFIG_PATH, DEBUG_PATH, EXECUTABLES, LOG_LEVEL, PRESETS, PRESETS_DEFAULT, REPO_NAME, REPO_OWNER, SETTINGS_FILE_PATH, VERSION, Settings, UserConfig, settings, DEBUG, DIRECTORY, configs, text
 
 KEY = 'GOODBYEDPI'
 PATH = 'GoodbyeDPI_UI'
@@ -93,6 +93,14 @@ class Backend(QObject):
                 '_icon': "",
             },
         ]
+        
+    @Slot()
+    def restart_pc(self):
+        try:
+            subprocess.run(["shutdown", "/r", "/t", "0"], check=True)
+        except subprocess.CalledProcessError as e:
+            logger.create_error_log(f"Failed to restart PC: {e}")
+            self.errorHappens.emit("Failed to restart PC", "ERR_RESTART_FAILURE")
         
     @Slot(str, result=bool)
     def is_exe_file(self, path:str):
@@ -211,7 +219,47 @@ class Backend(QObject):
             configs[engine].reload_config()
             self.last_preset_used = None
         else:
-            self.return_to_default(engine)    
+            self.return_to_default(engine)   
+            
+    @Slot(str, str, result=bool)
+    def create_config(self, engine, params):
+        try:
+            chkpreset_path = Path(DEBUG_PATH+DIRECTORY, 'chkpreset')
+            if not os.path.exists(chkpreset_path):
+                os.makedirs(chkpreset_path)
+            
+            filename = datetime.now().strftime("%H_%M_%S_%d_%m_%Y") + '.json'
+            filepath = Path(chkpreset_path, filename)
+            
+            data = {
+                'custom_parameters':params
+            }
+            
+            if not os.path.exists(filepath):
+                with open(filepath, 'w', encoding='utf-8') as file:
+                    json.dump(data, file, ensure_ascii=False, indent=4)
+                file.close()
+            else:
+                config = UserConfig(filepath)
+                config.set_value('custom_parameters', params)
+                del config
+            
+        except IOError:
+            self.errorHappens.emit(
+                f'Filesystem is damaged or program has no access. '
+                'Continuation is impossible.', 
+                'ERR_FILE_WRITE'
+            )
+            logger.create_error_log(traceback.format_exc())
+            return False
+        except Exception as e:
+            self.errorHappens.emit(
+                f'Something went wrong. View logs/settings_import.log for more information', 
+                'ERR_UNKNOWN'
+            )
+            logger.create_error_log(traceback.format_exc())
+            return False
+        return self.load_preset(engine.lower(), str(filepath))
         
     @Slot(str, str)
     def save_preset(self, engine, path):
