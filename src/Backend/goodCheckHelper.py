@@ -112,8 +112,8 @@ def parse_all_data(text: str) -> tuple:
         success_count, all_count = block[0].split("/")
         strategy_list = block[1].replace('[', '').replace(']', '').strip().split("\n")
         strategies.append({
-            'success': success_count,
-            'all': all_count,
+            'success': int(success_count),
+            'all': int(all_count),
             'strategies': strategy_list,
         })
     
@@ -201,14 +201,13 @@ class GoodCheckHelper(QObject):
         
     def parse_data(self):
         if (self.parsed_data is None or self.parsed_data == ({}, [])) and self.output:
-            print(self.parsed_data)
             self.parsed_data = parse_all_data(self.output)
-            print(self.parsed_data)
         return self.parsed_data if self.parsed_data else ({}, [])
     
     @Slot(result=bool)
     def is_data_ready(self):
-        return True if self.parsed_data else False
+        _empty = ({}, [])
+        return True if self.parse_data() != _empty else False
     
     @Slot(result=str)
     def get_check_engine_name(self):
