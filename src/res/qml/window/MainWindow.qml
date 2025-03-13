@@ -773,6 +773,13 @@ FramelessWindow {
                         system_tray.destroy()
                     }               
                 }
+            } else if (notificationId == '#NOTF_SERT_INFO_OPEN') {
+                if (!backend.is_debug()) {
+                    backend.toggleBool("NOTIFICATIONS", "is_sert_info_shown", true)
+                }
+                if (action === "user_not_dismissed") {
+                    Qt.openUrlExternally("https://storik4pro.github.io/wiki/cert/")
+                }
             }
         }
     }
@@ -812,6 +819,12 @@ FramelessWindow {
         if (backend.check_updates()) {
             delayTimer.start()
         }
+        /*
+        if (!backend.getBool('NOTIFICATIONS', 'is_sert_info_shown')) {
+            Qt.callLater(toast.show_sert_info, "#NOTF_SERT_INFO_OPEN", backend.get_element_loc('sert_title'), backend.get_element_loc("sert_info"), backend.get_element_loc('help'))
+        }
+        */
+
         updateIcon()
         backend.start_check_component_updates()
         

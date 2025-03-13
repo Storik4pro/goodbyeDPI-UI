@@ -108,6 +108,25 @@ class ProgressToast():
         self.toast.elements[2].status = status
         if body: self.toast.elements[1].content = body
         if title: self.toast.elements[0].content = title
+        
+async def show_cert_info(app_id:str, title, description, btnText):
+    toast = Toast(
+        app_id = app_id
+    )
+    toast.elements = [
+        Image(f"file:///{(DIRECTORY if not DEBUG else DEBUG_PATH)+'/data/certificate.png'}?foreground=#FFFFFF&background=#F7630C&padding=40",
+            placement = ToastImagePlacement.LOGO
+        ),
+        Text(title),
+        Text(description),
+        Button(
+            btnText, 
+            arguments = "accept",
+        ),
+    ]
+
+    result = await toast.show()
+    return result
 
 async def show_message(app_id : str, title, description):
     toast = Toast(
