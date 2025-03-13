@@ -19,6 +19,8 @@ FramelessWindow {
     property var screenGeometryx: Screen.desktopAvailableHeight
     property var screenGeometryy: Screen.desktopAvailableWidth
     property bool isProcessCanStart:true
+    property bool isMaximized: backend.getBool("APPEARANCE_MODE", "is_maximized")
+    visibility:isMaximized ? Window.Maximized : undefined
     width: backend.getBool("APPEARANCE_MODE", "use_custom_window_size") ? _width : 838
     height: backend.getBool("APPEARANCE_MODE", "use_custom_window_size") ? _height : 652
     x: backend.get_first_run() ? undefined:backend.getValue("APPEARANCE_MODE", "x")
@@ -318,20 +320,26 @@ FramelessWindow {
         }
     }
     function exit() {
-        var qw = window.width - _width
-        var qh = window.height - _height
-        if (backend.getBool("APPEARANCE_MODE", "use_custom_window_size")) {
-            if (-50 > qw || qw > 50) {
-                backend.changeValue("APPEARANCE_MODE", 'width', window.width)
+        console.log(isMaximized)
+        if (window.visibility !== Window.Maximized && 
+            window.visibility !== Window.Minimized && 
+            !isMaximized) {
+            var qw = window.width - _width
+            var qh = window.height - _height
+            if (backend.getBool("APPEARANCE_MODE", "use_custom_window_size")) {
+                if (-50 > qw || qw > 50) {
+                    backend.changeValue("APPEARANCE_MODE", 'width', window.width)
+                }
+                if (-50 > qh || qh > 50) {
+                    backend.changeValue("APPEARANCE_MODE", 'height', window.height)
+                }
             }
-            if (-50 > qh || qh > 50) {
-                backend.changeValue("APPEARANCE_MODE", 'height', window.height)
-            }
+        
+            var x = window.x
+            var y = window.y + appBar.height - 17
+            backend.changeValue("APPEARANCE_MODE", 'x', x)
+            backend.changeValue("APPEARANCE_MODE", 'y', y)
         }
-        var x = window.x
-        var y = window.y + appBar.height - 17
-        backend.changeValue("APPEARANCE_MODE", 'x', x)
-        backend.changeValue("APPEARANCE_MODE", 'y', y)
         
         goodCheck.stop_process()
         process.stop_process()
@@ -542,13 +550,15 @@ FramelessWindow {
         windowState = false
         var qw = window.width - _width
         var qh = window.height - _height
-
-        if (backend.getBool("APPEARANCE_MODE", "use_custom_window_size") ){
-            if (-100 > qw || qw > 100) {
-                backend.changeValue("APPEARANCE_MODE", 'width', window.width)
-            }
-            if (-100 > qh || qh > 100) {
-                backend.changeValue("APPEARANCE_MODE", 'height', window.height)
+        console.log(isMaximized)
+        if (!isMaximized) {
+            if (backend.getBool("APPEARANCE_MODE", "use_custom_window_size") ){
+                if (-100 > qw || qw > 100) {
+                    backend.changeValue("APPEARANCE_MODE", 'width', window.width)
+                }
+                if (-100 > qh || qh > 100) {
+                    backend.changeValue("APPEARANCE_MODE", 'height', window.height)
+                }
             }
         }
         if (backend.getBool('NOTIFICATIONS', "hide_in_tray")) {
@@ -562,7 +572,13 @@ FramelessWindow {
                 trayHide()
             }
 
-        } 
+        } else if (window.visibility === Window.Maximized) {
+            backend.toggleBool("APPEARANCE_MODE", "is_maximized", true)
+            isMaximized = true
+        } else if (window.visibility !== Window.Hidden) {
+            backend.toggleBool("APPEARANCE_MODE", "is_maximized", false)
+            isMaximized = false
+        }
     }
     
     Component{
