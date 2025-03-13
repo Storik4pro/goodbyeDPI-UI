@@ -11,6 +11,38 @@ ScrollablePage {
     id:page
     header:Item{}
 
+    function _asyncToGenerator(fn) {
+        return function() {
+            var self = this,
+            args = arguments
+            return new Promise(function(resolve, reject) {
+                var gen = fn.apply(self, args)
+                function _next(value) {
+                    _asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value)
+                }
+                function _throw(err) {
+                    _asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err)
+                }
+                _next(undefined)
+            })
+        }
+    }
+
+    function _asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) {
+        try {
+            var info = gen[key](arg)
+            var value = info.value
+        } catch (error) {
+            reject(error)
+            return
+        }
+        if (info.done) {
+            resolve(value)
+        } else {
+            Promise.resolve(value).then(_next, _throw)
+        }
+    }
+
     property int currentStep: context && context.argument.info === 'results' ? 
                               2: goodCheck.is_process_alive() ? 1 : 0
     property var goodbyeDPI_model: [
@@ -1251,169 +1283,191 @@ ScrollablePage {
             Layout.rightMargin:25
             Layout.topMargin:20
             Layout.alignment: Qt.AlignHCenter
-            RowLayout{
+            ColumnLayout {
                 Layout.alignment: Qt.AlignRight
                 Layout.fillWidth: true
-                Layout.preferredHeight: currentStep === 21 || currentStep === 22 || currentStep == 2 ? 65:50
-                Button{
-                    Layout.preferredHeight: Math.max(40, goBackLay.implicitHeight + 10)
-                    Layout.fillWidth:true
-                    Layout.minimumWidth: 140 
-                    Layout.maximumWidth: 1000
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.bottomMargin: 20
-                    visible:currentStep === 21 || currentStep === 22
-                    RowLayout{
-                        LayoutMirroring.enabled: true
-                        anchors.fill: parent
-                        anchors {
-                            leftMargin: 20
-                            rightMargin: 20
-                        }
-                        spacing: 10
-                        Icon {
-                            visible:!isExitAvailible
-                            source: FluentIcons.graph_ClickSolid
-                            Layout.preferredHeight:15
-                            Layout.preferredWidth:15
-                        }
-                        ColumnLayout{
-                            id:goBackLay
-                            Layout.fillWidth: true
-                            spacing: 2
-                            Label{
-                                Layout.fillWidth: true
-                                text: backend.get_element_loc('choose_any_back')
-                                horizontalAlignment: Text.AlignLeft
-                                wrapMode:Text.Wrap
-                                font: Typography.body
+                Layout.preferredHeight: (
+                    currentStep === 21 || currentStep === 22 || currentStep == 2 ? 65:50
+                    )+(animation.visible? animation.height+10:0)
+                RowLayout {
+                    id: animation
+                    visible: false
+                    Layout.alignment: Qt.AlignRight
+                    Label {
+                        text:backend.get_element_loc("data_getting_ready")
+                    }
+                    AnimatedImage { 
+                        Layout.alignment: Qt.AlignRight
+                        width:15
+                        height:15
+                        source: "qrc:/qt/qml/GoodbyeDPI_UI/res/image/find.gif" 
+                        speed: 2
+                    }
+                }
+                RowLayout{
+                    Layout.alignment: Qt.AlignRight
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: currentStep === 21 || currentStep === 22 || currentStep == 2 ? 65:50
+                    Button{
+                        Layout.preferredHeight: Math.max(40, goBackLay.implicitHeight + 10)
+                        Layout.fillWidth:true
+                        Layout.minimumWidth: 140 
+                        Layout.maximumWidth: 1000
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.bottomMargin: 20
+                        visible:currentStep === 21 || currentStep === 22
+                        RowLayout{
+                            LayoutMirroring.enabled: true
+                            anchors.fill: parent
+                            anchors {
+                                leftMargin: 20
+                                rightMargin: 20
                             }
-                        }
-                        IconButton {
-                            width: 30
-                            height: 30
-                            Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                            spacing: 10
                             Icon {
-                                anchors.centerIn: parent
-                                source: FluentIcons.graph_ChevronLeft
-                                width: 15
-                                height: 15
+                                visible:!isExitAvailible
+                                source: FluentIcons.graph_ClickSolid
+                                Layout.preferredHeight:15
+                                Layout.preferredWidth:15
                             }
-                            onClicked: {
-                                currentStep = 2;
-                            }
-                        }
-                    }
-                    
-                    onClicked: {
-                        currentStep = 2;
-                    }
-                    
-                }
-                Button{
-                    Layout.preferredHeight: Math.max(40, goHomeLay.implicitHeight + 10)
-                    Layout.fillWidth:true
-                    Layout.minimumWidth: 140 
-                    Layout.maximumWidth: 1000
-                    Layout.alignment: Qt.AlignHCenter
-                    Layout.bottomMargin: 20
-                    visible:isExitAvailible
-                    highlighted:true
-                    RowLayout{
-                        LayoutMirroring.enabled: true
-                        anchors.fill: parent
-                        anchors {
-                            leftMargin: 20
-                            rightMargin: 20
-                        }
-                        spacing: 10
-                        ColumnLayout{
-                            id:goHomeLay
-                            Layout.fillWidth: true
-                            spacing: 2
-                            Label{
+                            ColumnLayout{
+                                id:goBackLay
                                 Layout.fillWidth: true
-                                text: backend.get_element_loc('home')
-                                horizontalAlignment: Text.AlignLeft
-                                wrapMode:Text.Wrap
-                                font: Typography.body
-                                color: Qt.rgba(0, 0, 0, 255)
+                                spacing: 2
+                                Label{
+                                    Layout.fillWidth: true
+                                    text: backend.get_element_loc('choose_any_back')
+                                    horizontalAlignment: Text.AlignLeft
+                                    wrapMode:Text.Wrap
+                                    font: Typography.body
+                                }
+                            }
+                            IconButton {
+                                width: 30
+                                height: 30
+                                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                                Icon {
+                                    anchors.centerIn: parent
+                                    source: FluentIcons.graph_ChevronLeft
+                                    width: 15
+                                    height: 15
+                                }
+                                onClicked: {
+                                    currentStep = 2;
+                                }
                             }
                         }
-                        IconButton {
-                            width: 30
-                            height: 30
-                            Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-                            Icon {
-                                anchors.centerIn: parent
-                                source: FluentIcons.graph_Home
-                                color: Qt.rgba(0, 0, 0, 255)
-                                width: 15
-                                height: 15
+                        
+                        onClicked: {
+                            currentStep = 2;
+                        }
+                        
+                    }
+                    Button{
+                        Layout.preferredHeight: Math.max(40, goHomeLay.implicitHeight + 10)
+                        Layout.fillWidth:true
+                        Layout.minimumWidth: 140 
+                        Layout.maximumWidth: 1000
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.bottomMargin: 20
+                        visible:isExitAvailible
+                        highlighted:true
+                        RowLayout{
+                            LayoutMirroring.enabled: true
+                            anchors.fill: parent
+                            anchors {
+                                leftMargin: 20
+                                rightMargin: 20
                             }
-                            onClicked: {
-                                page_router.go('/')
+                            spacing: 10
+                            ColumnLayout{
+                                id:goHomeLay
+                                Layout.fillWidth: true
+                                spacing: 2
+                                Label{
+                                    Layout.fillWidth: true
+                                    text: backend.get_element_loc('home')
+                                    horizontalAlignment: Text.AlignLeft
+                                    wrapMode:Text.Wrap
+                                    font: Typography.body
+                                    color: Qt.rgba(0, 0, 0, 255)
+                                }
+                            }
+                            IconButton {
+                                width: 30
+                                height: 30
+                                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                                Icon {
+                                    anchors.centerIn: parent
+                                    source: FluentIcons.graph_Home
+                                    color: Qt.rgba(0, 0, 0, 255)
+                                    width: 15
+                                    height: 15
+                                }
+                                onClicked: {
+                                    page_router.go('/')
+                                }
                             }
                         }
-                    }
-                    
-                    onClicked: {
-                        page_router.go('/')
-                    }
-                    
-                }
-                Button{
-                    id:stop_button
-                    highlighted:false
-                    visible:currentStep === 1 
-                    enabled:true
-                    display: page.width-50 < 500? IconButton.IconOnly:IconButton.TextBesideIcon 
-                    icon.name: FluentIcons.graph_Delete
-                    icon.width: 18
-                    icon.height: 18
-                    Layout.alignment:Qt.AlignRight
-                    Layout.preferredWidth: page.width-50 < 500? 40:implicitWidth
-                    Layout.minimumWidth:page.width-50 < 500? 40: page.width > 650 ? 200 : (page.width - 55) / 3
-                    Layout.bottomMargin:30
-                    text:backend.get_element_loc("pseudoconsole_stop")
-                    onClicked: {
-                        confirmationDialog.open()
-                    }
-                }
-                Button{
-                    id:back_button
-                    highlighted:false
-                    visible:currentStep!==2 && currentStep !== 21 && currentStep !== 22
-                    enabled:currentStep !== 0 && currentStep !== 1
-                    Layout.alignment:Qt.AlignRight
-                    Layout.minimumWidth:page.width > 650 ? 200 : (page.width - 55) / 3
-                    Layout.bottomMargin:30
-                    text:backend.get_element_loc("back_button")
-                    onClicked: {
-                        currentStep --;
-                    }
-                }
-                Button{
-                    id:next_button
-                    highlighted:true
-                    visible:currentStep!==2 && currentStep !== 21 && currentStep !== 22
-                    enabled:currentStep!==1
-                    Layout.alignment:Qt.AlignRight
-                    Layout.minimumWidth:page.width > 650 ? 200 : (page.width - 55) / 3
-                    Layout.bottomMargin:30
-                    text:backend.get_element_loc("next_button")
-                    onClicked: {
-                        if (currentStep === 0) {
-                            var success = process.stop_process()
-                            //process.stop_service()
-                            goodCheck.start(engine.model[engine.currentIndex])
-                            progressBar.visible = true
-                            stop_button.enabled = true
+                        
+                        onClicked: {
+                            page_router.go('/')
                         }
-                        if (currentStep === 1) {
+                        
+                    }
+                    Button{
+                        id:stop_button
+                        highlighted:false
+                        visible:currentStep === 1 
+                        enabled:true
+                        display: page.width-50 < 500? IconButton.IconOnly:IconButton.TextBesideIcon 
+                        icon.name: FluentIcons.graph_Delete
+                        icon.width: 18
+                        icon.height: 18
+                        Layout.alignment:Qt.AlignRight
+                        Layout.preferredWidth: page.width-50 < 500? 40:implicitWidth
+                        Layout.minimumWidth:page.width-50 < 500? 40: page.width > 650 ? 200 : (page.width - 55) / 3
+                        Layout.bottomMargin:30
+                        text:backend.get_element_loc("pseudoconsole_stop")
+                        onClicked: {
+                            confirmationDialog.open()
+                        }
+                    }
+                    Button{
+                        id:back_button
+                        highlighted:false
+                        visible:currentStep!==2 && currentStep !== 21 && currentStep !== 22
+                        enabled:currentStep !== 0 && currentStep !== 1
+                        Layout.alignment:Qt.AlignRight
+                        Layout.minimumWidth:page.width > 650 ? 200 : (page.width - 55) / 3
+                        Layout.bottomMargin:30
+                        text:backend.get_element_loc("back_button")
+                        onClicked: {
+                            currentStep --;
+                        }
+                    }
+                    Button{
+                        id:next_button
+                        highlighted:true
+                        visible:currentStep!==2 && currentStep !== 21 && currentStep !== 22
+                        enabled:currentStep!==1
+                        Layout.alignment:Qt.AlignRight
+                        Layout.minimumWidth:page.width > 650 ? 200 : (page.width - 55) / 3
+                        Layout.bottomMargin:30
+                        text:backend.get_element_loc("next_button")
+                        onClicked: {
+                            if (currentStep === 0) {
+                                var success = process.stop_process()
+                                //process.stop_service()
+                                goodCheck.start(engine.model[engine.currentIndex])
+                                progressBar.visible = true
+                                stop_button.enabled = true
+                            }
+                            if (currentStep === 1) {
 
+                            }
+                            currentStep ++;
                         }
-                        currentStep ++;
                     }
                 }
             }
@@ -1883,61 +1937,76 @@ ScrollablePage {
     }
 
     function loadAllData() {
-        var data = goodCheck.get_strategy_list()
-        strategyModel.clear()
-                    
-        for (var i = 0; i < data.length; ++i) {
-            var strategyGroup = data[i]
-            var all = strategyGroup.all
-            var success = strategyGroup.success
-            strategyModel.append({
-                'all':all,
-                'success':success,
-                'type':'separator',
-                'strategy':''
-            })
-            var strategies = strategyGroup.strategies
-            for (var j = 0; j < strategies.length; ++j) {
-                    strategyModel.append({
+        _asyncToGenerator(function*() {
+            animation.visible = true
+            var data = goodCheck.get_strategy_list()
+            strategyModel.clear()
+            yield pass();
+                        
+            for (var i = 0; i < data.length; ++i) {
+                yield pass();
+                var strategyGroup = data[i]
+                var all = strategyGroup.all
+                var success = strategyGroup.success
+                strategyModel.append({
                     'all':all,
                     'success':success,
-                    'type':'strategy',
-                    'strategy':strategies[j]
+                    'type':'separator',
+                    'strategy':''
                 })
-            }
-        }
-
-        var data = goodCheck.get_sitelist()
-        failureSitelistModel.clear()
-
-        for (var i = 0; i < data.length; ++i) {
-            var failureSites = data[i]['failure']
-            if (failureSites !== undefined) {
-                for (var j = 0; j < failureSites.length; ++j) {
-                    var failureSite = failureSites[j]
-                    failureSitelistModel.append({
-                        'url': failureSite.url,
-                        'ip': failureSite.ip,
-                        'bestStrategy': 'NO'
+                var strategies = strategyGroup.strategies
+                for (var j = 0; j < strategies.length; ++j) {
+                    yield pass();
+                        strategyModel.append({
+                        'all':all,
+                        'success':success,
+                        'type':'strategy',
+                        'strategy':strategies[j]
                     })
                 }
             }
-        }
 
-        var data = goodCheck.get_sitelist()
-        sitelistModel.clear()
-                    
-        for (var i = 0; i < data.length; ++i) {
-            var successSites = data[i]['success']
-            for (var j = 0; j < successSites.length; ++j) {
-                var successSite = successSites[j]
-                sitelistModel.append({
-                    'url': successSite.url,
-                    'ip': successSite.ip,
-                    'bestStrategy': successSite.best
-                })
+            var data = goodCheck.get_sitelist()
+            failureSitelistModel.clear()
+
+            for (var i = 0; i < data.length; ++i) {
+                var failureSites = data[i]['failure']
+                if (failureSites !== undefined) {
+                    for (var j = 0; j < failureSites.length; ++j) {
+                        yield pass();
+                        var failureSite = failureSites[j]
+                        failureSitelistModel.append({
+                            'url': failureSite.url,
+                            'ip': failureSite.ip,
+                            'bestStrategy': 'NO'
+                        })
+                    }
+                }
             }
-        }
+
+            var data = goodCheck.get_sitelist()
+            sitelistModel.clear()
+                        
+            for (var i = 0; i < data.length; ++i) {
+                var successSites = data[i]['success']
+                for (var j = 0; j < successSites.length; ++j) {
+                    yield pass();
+                    var successSite = successSites[j]
+                    sitelistModel.append({
+                        'url': successSite.url,
+                        'ip': successSite.ip,
+                        'bestStrategy': successSite.best
+                    })
+                }
+            }
+            animation.visible = false
+        })();
+    }
+
+    function pass() {
+        return new Promise(function (resolve, reject) {
+            Qt.callLater(resolve);
+        } );
     }
 
     function changeWidth() {
