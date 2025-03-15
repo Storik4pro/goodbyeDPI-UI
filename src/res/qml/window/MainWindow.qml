@@ -18,6 +18,9 @@ FramelessWindow {
     property var _width: backend.getInt("APPEARANCE_MODE", 'width')
     property var screenGeometryx: Screen.desktopAvailableHeight
     property var screenGeometryy: Screen.desktopAvailableWidth
+    property bool isProcessCanStart:true
+    property bool isMaximized: backend.getBool("APPEARANCE_MODE", "is_maximized")
+    visibility:isMaximized ? Window.Maximized : undefined
     width: backend.getBool("APPEARANCE_MODE", "use_custom_window_size") ? _width : 838
     height: backend.getBool("APPEARANCE_MODE", "use_custom_window_size") ? _height : 652
     x: backend.get_first_run() ? undefined:backend.getValue("APPEARANCE_MODE", "x")
@@ -176,21 +179,167 @@ FramelessWindow {
             
         }
     }
-    function exit() {
-        var qw = window.width - _width
-        var qh = window.height - _height
-        if (backend.getBool("APPEARANCE_MODE", "use_custom_window_size")) {
-            if (-50 > qw || qw > 50) {
-                backend.changeValue("APPEARANCE_MODE", 'width', window.width)
-            }
-            if (-50 > qh || qh > 50) {
-                backend.changeValue("APPEARANCE_MODE", 'height', window.height)
+
+    Dialog {
+        id:pcRestart
+        x: Math.ceil((parent.width - width) / 2)
+        y: Math.ceil((parent.height - height) / 2)
+        parent: Overlay.overlay
+        closePolicy: Popup.NoAutoClose
+        modal: true
+        title: backend.get_element_loc("restart_need")
+        Column {
+            spacing: 20
+            anchors.fill: parent
+            Label {
+                width: 350
+                wrapMode: Text.Wrap
+                text: backend.get_element_loc("restart_need_tip")
             }
         }
-        var x = window.x
-        var y = window.y + appBar.height - 17
-        backend.changeValue("APPEARANCE_MODE", 'x', x)
-        backend.changeValue("APPEARANCE_MODE", 'y', y)
+        footer: DialogButtonBox{
+            Button{
+                text: backend.get_element_loc("restart_later")
+                onClicked: {
+                    pcRestart.close()
+                }
+            }
+            Button{
+                text: backend.get_element_loc("restart_now")
+                highlighted:true
+                onClicked: {
+                    
+                }
+            }
+        }
+    }
+
+    Dialog{
+        id: proxySetupDialog
+        x: Math.ceil((parent.width - width) / 2)
+        y: Math.ceil((parent.height - height) / 2)
+        width: 500
+        contentHeight: 300
+        parent: Overlay.overlay
+        closePolicy: Popup.NoAutoClose
+        modal: true
+        title: backend.get_element_loc("first_proxy_setup")
+        Flickable {
+            id: proxySetupFlickable
+            clip: true
+            anchors.fill: parent
+            anchors.rightMargin:-10
+            anchors.leftMargin:-10
+            contentHeight: proxySetupContentColumn.implicitHeight
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.rightMargin:20
+                ColumnLayout {
+                    id:proxySetupContentColumn
+                    Layout.leftMargin:10
+                    Layout.rightMargin:-10
+                    Label {
+                        text: backend.get_element_loc("first_proxy_setup_tip").arg(backend.getValue("PROXY", "proxy_addr")+ ":" + backend.getValue("PROXY", "proxy_port"))
+                        wrapMode: Text.Wrap
+                        Layout.fillWidth: true
+                    }
+                    Button{
+                        id:btn2
+                        Layout.preferredHeight: Math.max(68, udpLay.implicitHeight + 10)
+                        Layout.fillWidth:true
+                        Layout.minimumWidth: 300 
+                        Layout.maximumWidth: 1000
+                        Layout.alignment: Qt.AlignHCenter
+                        RowLayout{
+                            anchors.fill: parent
+                            anchors{
+                                leftMargin: 20
+                                rightMargin: 20
+                            }
+                            spacing: 10
+                            Icon {
+                                source: FluentIcons.graph_Network
+                                Layout.preferredHeight:20
+                            }
+                            ColumnLayout{
+                                id:udpLay
+                                Layout.fillWidth: true
+                                spacing: 2
+                                Label{
+                                    Layout.fillWidth: true
+                                    text: backend.get_element_loc('setup_btn')
+                                    horizontalAlignment: Text.AlignLeft
+                                    wrapMode:Text.Wrap
+                                    font: Typography.body
+                                }
+                                Label {
+                                    text: backend.get_element_loc('first_setup_proxy_btn_tip')
+                                    Layout.fillWidth: true
+                                    font: Typography.caption
+                                    color: "#c0c0c0"
+                                    horizontalAlignment: Text.AlignLeft
+                                    wrapMode:Text.Wrap
+                                }
+                            }
+                            IconButton {
+                                id: btn_icon1
+                                width: 30
+                                height: 30
+                                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                                Icon {
+                                    anchors.centerIn: parent
+                                    source: FluentIcons.graph_ChevronRight
+                                    width: 15
+                                    height: 15
+                                }
+                                onClicked: {
+                                    proxyHelper.open_setup()
+                                    proxySetupDialog.close()
+                                }
+                            }
+                        }
+                        
+                        onClicked: {
+                            proxyHelper.open_setup()
+                            proxySetupDialog.close()
+                        }
+                        
+                    }
+                }
+            }
+            ScrollBar.vertical: ScrollBar {}
+        }
+        footer: DialogButtonBox{
+            Button{
+                text: backend.get_element_loc("cancel")
+                onClicked: {
+                    backend.changeValue("PROXY", "proxy_now_used", "manual")
+                    proxySetupDialog.close()
+                }
+            }
+        }
+    }
+    function exit() {
+        console.log(isMaximized)
+        if (window.visibility !== Window.Maximized && 
+            window.visibility !== Window.Minimized && 
+            !isMaximized) {
+            var qw = window.width - _width
+            var qh = window.height - _height
+            if (backend.getBool("APPEARANCE_MODE", "use_custom_window_size")) {
+                if (-50 > qw || qw > 50) {
+                    backend.changeValue("APPEARANCE_MODE", 'width', window.width)
+                }
+                if (-50 > qh || qh > 50) {
+                    backend.changeValue("APPEARANCE_MODE", 'height', window.height)
+                }
+            }
+        
+            var x = window.x
+            var y = window.y + appBar.height - 17
+            backend.changeValue("APPEARANCE_MODE", 'x', x)
+            backend.changeValue("APPEARANCE_MODE", 'y', y)
+        }
         
         goodCheck.stop_process()
         process.stop_process()
@@ -258,6 +407,7 @@ FramelessWindow {
                 */
                 P.MenuItem {
                     id:onItem
+                    enabled:isProcessCanStart
                     text: processStarted ? backend.get_element_loc("_off"):backend.get_element_loc("on")
                     //icon.source: "qrc:/qt/qml/GoodbyeDPI_UI/res/image/tray_logo_red.png"
                     onTriggered: {
@@ -400,14 +550,20 @@ FramelessWindow {
         windowState = false
         var qw = window.width - _width
         var qh = window.height - _height
-
-        if (backend.getBool("APPEARANCE_MODE", "use_custom_window_size") ){
-            if (-100 > qw || qw > 100) {
-                backend.changeValue("APPEARANCE_MODE", 'width', window.width)
+        console.log(isMaximized)
+        if (!isMaximized) {
+            if (backend.getBool("APPEARANCE_MODE", "use_custom_window_size") ){
+                if (-100 > qw || qw > 100) {
+                    backend.changeValue("APPEARANCE_MODE", 'width', window.width)
+                }
+                if (-100 > qh || qh > 100) {
+                    backend.changeValue("APPEARANCE_MODE", 'height', window.height)
+                }
             }
-            if (-100 > qh || qh > 100) {
-                backend.changeValue("APPEARANCE_MODE", 'height', window.height)
-            }
+            var x = window.x
+            var y = window.y + appBar.height - 17
+            backend.changeValue("APPEARANCE_MODE", 'x', x)
+            backend.changeValue("APPEARANCE_MODE", 'y', y)
         }
         if (backend.getBool('NOTIFICATIONS', "hide_in_tray")) {
             toast.show_notification("#NOTF_MAXIMIZE", "GoodbyeDPI UI", backend.get_element_loc("tray_icon"))
@@ -420,7 +576,13 @@ FramelessWindow {
                 trayHide()
             }
 
-        } 
+        } else if (window.visibility === Window.Maximized) {
+            backend.toggleBool("APPEARANCE_MODE", "is_maximized", true)
+            isMaximized = true
+        } else if (window.visibility !== Window.Hidden) {
+            backend.toggleBool("APPEARANCE_MODE", "is_maximized", false)
+            isMaximized = false
+        }
     }
     
     Component{
@@ -471,6 +633,15 @@ FramelessWindow {
         }
     }
 
+    Connections {
+        target:proxyHelper
+        function onStateChanged(state) {
+            if (state == 'VS_RESTART') {
+                pcRestart.open()
+            } 
+        }
+    }
+
     Connections{
         target: process
         function onError_happens(){
@@ -489,6 +660,16 @@ FramelessWindow {
         }
         function onProcess_started() {
             updateIcon()
+        }
+        function onProcess_need_setup() {
+            window.show()
+            windowState = true
+            window.raise()
+            window.requestActivate()
+            if (system_tray && backend.getValue("APPEARANCE_MODE", "quit_to") !== "tray") {
+                system_tray.destroy()
+            }
+            proxySetupDialog.open()
         }
         function onProcess_stopped() {
             updateIcon()
@@ -510,22 +691,26 @@ FramelessWindow {
             onEntered: {}
         }
     }
-
+    
     Connections {
         target:goodCheck
-        function onStarted() {
-            WindowRouter.go("/goodcheck");
-            blocker.enabled = true;
-            blocker.visible = true; 
-
+        function onStarted(){
+            isProcessCanStart = false;
         }
         function onProcess_finished_signal () {
-            blocker.enabled = false;
-            blocker.visible = false;
+            if (backend.getBool('NOTIFICATIONS', 'goodcheck_complete')) {
+                Qt.callLater(toast.show_notification, "#NOTF_GOODCHECK_OPEN", "GoodCheck", backend.get_element_loc("goodcheck_complete"))
+            }
+            isProcessCanStart = true;
         }
-        function onProcess_stopped_signal() {
-            blocker.enabled = false;
-            blocker.visible = false;
+    }
+    
+    Connections {
+        target:proxyHelper
+        function onErrorHappens(text, code) {
+            currentError = text
+            currentErrorCode = code
+            errorDialog.open()
         }
     }
     Connections {
@@ -598,6 +783,23 @@ FramelessWindow {
                         system_tray.destroy()
                     }
                 }
+            } else if (notificationId == '#NOTF_GOODCHECK_OPEN') {
+                if (action === "user_not_dismissed") {
+                    windowState = true
+                    window.show()
+                    window.raise()
+                    window.requestActivate()
+                    if (system_tray && backend.getValue("APPEARANCE_MODE", "quit_to") !== "tray") {
+                        system_tray.destroy()
+                    }               
+                }
+            } else if (notificationId == '#NOTF_SERT_INFO_OPEN') {
+                if (!backend.is_debug()) {
+                    backend.toggleBool("NOTIFICATIONS", "is_sert_info_shown", true)
+                }
+                if (action === "user_not_dismissed") {
+                    Qt.openUrlExternally("https://storik4pro.github.io/wiki/cert/")
+                }
             }
         }
     }
@@ -637,6 +839,12 @@ FramelessWindow {
         if (backend.check_updates()) {
             delayTimer.start()
         }
+        /*
+        if (!backend.getBool('NOTIFICATIONS', 'is_sert_info_shown')) {
+            Qt.callLater(toast.show_sert_info, "#NOTF_SERT_INFO_OPEN", backend.get_element_loc('sert_title'), backend.get_element_loc("sert_info"), backend.get_element_loc('help'))
+        }
+        */
+
         updateIcon()
         backend.start_check_component_updates()
         

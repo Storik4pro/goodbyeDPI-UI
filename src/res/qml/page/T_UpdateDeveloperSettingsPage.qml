@@ -188,6 +188,35 @@ ScrollablePage {
                     }
                 }
             }
+            Label{
+                text:"Router navigation"
+                font: Typography.bodyStrong
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                TextField{
+                    id:routerText
+                    Layout.preferredHeight:30
+                    Layout.fillWidth:true
+                    placeholderText: "/"
+                }
+                TextField{
+                    id:argText
+                    Layout.preferredHeight:30
+                    placeholderText: "args"
+                }
+                Button{
+                    icon.name: FluentIcons.graph_Send
+                    width: 40
+                    Layout.preferredHeight:30
+                    icon.width: 20
+                    icon.height: 20
+                    display: Button.IconOnly
+                    onClicked:{
+                        page_router.go(routerText.text, {info:argText.text})
+                    }
+                }
+            }
         }
     }
 

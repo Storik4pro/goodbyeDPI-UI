@@ -3,7 +3,7 @@ from PySide6.QtCore import QProcess, Signal, QThread
 from qasync import QEventLoop, asyncSlot
 from toasted import ToastDismissReason
 
-from utils import show_error, show_message
+from utils import show_error, show_message, show_cert_info
 from _data import text
 
 class Toast(QObject):
@@ -43,5 +43,19 @@ class Toast(QObject):
 
         self.notificationAction.emit(notification_id, action)
     
+    @asyncSlot(str, str, str, str)
+    async def show_sert_info(self, notification_id, title, message, button1, callback = None):
+        
+        self.notifications[notification_id] = callback
+        
+        result = await show_cert_info("GoodbyeDPI_app", title, message, button1)
+        
+        if result.dismiss_reason == ToastDismissReason.NOT_DISMISSED:
+            action = 'user_not_dismissed'
+        elif result.dismiss_reason == ToastDismissReason.APPLICATION_HIDDEN:
+            action = 'application_hidden'
+        else:
+            action = 'other'
 
+        self.notificationAction.emit(notification_id, action)
     

@@ -1,0 +1,73 @@
+/Use symbol '/' to comment a line
+
+
+/Protocol; can be either TCP or UDP; it's required or error will be shown when parsing list
+#PROTO=TCP
+/IP version; can be 4 or 6
+#IPV=4
+/Proxy settings; should be in the form of protocol://ip:port; leave empty to disable
+#PROXY=socks5h://127.0.0.1:18081
+
+
+/Strategy keys; program will use them to form a list of all possible combinations
+/One line - one key set; must begin with '#KEY#'
+/Use symbol ';' for keys separation
+/Use symbol '&' for keys merging
+/'empty' will be substituted with nothingness; 'FAKESNI', 'FAKEHEXSTREAMTCP', 'FAKEHEXSTREAMUDP', 'FAKEHEXBYTESTCP', 'FAKEHEXBYTESUDP', 'PAYLOADTCP' and 'PAYLOADUDP' will be substituted with values from config.ini
+/You can also put values directly, if you don't want substitution
+/Group of keys must always end with #ENDGROUP#
+
+
+/---Split, Disorder, TLSrec---/
+
+#KEY#--ip 127.0.0.1 --port 18081
+#KEY#--pf 443
+#KEY#--tlsrec 2;--tlsrec 2+s;--tlsrec 0+sm;--tlsrec -1;--tlsrec 1:3:4+s
+#KEY#empty;--fake -1
+#KEY#empty;--ttl 4;--ttl 8
+#KEY#empty;--fake-data=":\x16\x03\x03\x01\";--fake-data=PAYLOADTCP;--tls-sni=fonts.google.com;--tls-sni=fonts.google.com&--fake-data=":\x16\x03\x03\x01\"
+#ENDGROUP#
+
+#KEY#--ip 127.0.0.1 --port 18081
+#KEY#--pf 443
+#KEY#--split 2;--split 2+s;--split 0+sm;--split -1
+#KEY#empty;--tlsrec 2;--tlsrec 2+s;--tlsrec 0+sm;--tlsrec -1;--tlsrec 1:3:4+s;--fake -1
+#KEY#empty;--ttl 4;--ttl 8
+#KEY#empty;--fake-data=":\x16\x03\x03\x01\";--fake-data=PAYLOADTCP;--tls-sni=fonts.google.com;--tls-sni=fonts.google.com&--fake-data=":\x16\x03\x03\x01\"
+#ENDGROUP#
+
+#KEY#--ip 127.0.0.1 --port 18081
+#KEY#--pf 443
+#KEY#--disorder 2;--disorder 2+s;--disorder 0+sm;--disorder -1
+#KEY#empty;--tlsrec 2;--tlsrec 2+s;--tlsrec 0+sm;--tlsrec -1;--tlsrec 1:3:4+s;--fake -1
+#KEY#empty;--ttl 4;--ttl 8
+#KEY#empty;--fake-data=":\x16\x03\x03\x01\";--fake-data=PAYLOADTCP;--tls-sni=fonts.google.com;--tls-sni=fonts.google.com&--fake-data=":\x16\x03\x03\x01\"
+#ENDGROUP#
+
+#KEY#--ip 127.0.0.1 --port 18081
+#KEY#--pf 443
+#KEY#--split 2;--split 2+s;--split 0+sm;--split -1
+#KEY#--disorder 2;--disorder 2+s;--disorder 0+sm;--disorder -1
+#KEY#empty;--ttl 4;--ttl 8
+#KEY#empty;--fake-data=":\x16\x03\x03\x01\";--fake-data=PAYLOADTCP;--tls-sni=fonts.google.com;--tls-sni=fonts.google.com&--fake-data=":\x16\x03\x03\x01\"
+#ENDGROUP#
+
+/---OOB, DisOOB---/
+
+#KEY#--ip 127.0.0.1 --port 18081
+#KEY#--pf 443
+#KEY#--oob 1;--oob 1+s;--oob 0+sm;--oob -1
+#KEY#empty;--tlsrec 2;--tlsrec 2+s;--tlsrec 0+sm;--tlsrec -1;--tlsrec 1:3:4+s;--split 2;--split 2+s;--split 0+sm;--split -1;--disorder 2;--disorder 2+s;--disorder 0+sm;--disorder -1;--fake -1
+#KEY#empty;--ttl 4;--ttl 8
+#KEY#empty;--fake-data=":\x16\x03\x03\x01\";--fake-data=PAYLOADTCP;--tls-sni=fonts.google.com;--tls-sni=fonts.google.com&--fake-data=":\x16\x03\x03\x01\"
+#KEY#--oob-data b
+#ENDGROUP#
+
+#KEY#--ip 127.0.0.1 --port 18081
+#KEY#--pf 443
+#KEY#--disoob 1;--disoob 1+s;--disoob 0+sm;--disoob -1
+#KEY#empty;--tlsrec 2;--tlsrec 2+s;--tlsrec 0+sm;--tlsrec -1;--tlsrec 1:3:4+s;--split 2;--split 2+s;--split 0+sm;--split -1;--disorder 2;--disorder 2+s;--disorder 0+sm;--disorder -1;--fake -1
+#KEY#empty;--ttl 4;--ttl 8
+#KEY#empty;--fake-data=":\x16\x03\x03\x01\";--fake-data=PAYLOADTCP;--tls-sni=fonts.google.com;--tls-sni=fonts.google.com&--fake-data=":\x16\x03\x03\x01\"
+#KEY#--oob-data b
+#ENDGROUP#

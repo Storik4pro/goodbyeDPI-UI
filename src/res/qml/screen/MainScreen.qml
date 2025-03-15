@@ -61,6 +61,7 @@ Item{
             "/spoofdpi": resolvedUrl("res/qml/page/T_Spoofdpi.qml"),
             "/byedpi": resolvedUrl("res/qml/page/T_Byedpi.qml"),
             "/update": resolvedUrl("res/qml/page/T_Update.qml"),
+            "/proxy": resolvedUrl("res/qml/page/T_Proxy.qml"),
         }
     }
     Menu{
@@ -155,6 +156,12 @@ Item{
         }
     }
     Connections {
+        target:proxyHelper
+        function onOpenProxySettings(){
+            page_router.go("/proxy")
+        }
+    }
+    Connections {
         target:toast
         function onNotificationAction(notificationId, action) {
             if (notificationId === "#NOTF_UPDATE") {
@@ -165,7 +172,12 @@ Item{
                 if (action === "user_not_dismissed") {
                     Qt.callLater(page_router.go, "/system")
                 }
-            } 
+            }  else if (notificationId == '#NOTF_GOODCHECK_OPEN') {
+                if (action === "user_not_dismissed") {
+                    page_router.go("/additional",{info:"GoodCheck"})
+                    
+                }
+            }
         }
     }
 

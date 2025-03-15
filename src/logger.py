@@ -55,7 +55,7 @@ def __message_handler(msg_type, context, message:str):
     global __formatFileHandler
     global __stdoutHandler
     global __formatStdoutHandler
-    message = message.replace("qrc:/qt/qml/", DEBUG_PATH+"GoodbyeDPI_UI\\")
+    message = message.replace("qrc:/qt/qml/", DEBUG_PATH)
     __close_format()
     file_and_line_log_str = ""
     if context.file:
