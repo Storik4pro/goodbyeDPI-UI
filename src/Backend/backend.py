@@ -20,7 +20,7 @@ from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 
 from logger import AppLogger
-from utils import ProgressToast, background_sound, change_setting, change_settings, check_version, check_winpty, convert_bat_file, create_xml, delete_file, download_blacklist, error_sound, extract_zip, get_component_download_url, get_latest_release, get_download_url, download_update, move_settings_file, open_custom_blacklist, open_folder, pretty_path, register_component, remove_xml, stop_servise, unregister_component
+from utils import ProgressToast, background_sound, change_setting, change_settings, check_version, check_winpty, convert_bat_file, create_xml, delete_file, download_blacklist, error_sound, extract_zip, get_component_download_url, get_latest_release, get_download_url, download_update, move_settings_file, open_custom_blacklist, open_folder, pretty_path, register_component, remove_xml, start_process, stop_servise, unregister_component
 from _data import BACKUP_SETTINGS_FILE_PATH, BLACKLIST_PROVIDERS, COMPONENTS_URLS, CONFIG_PATH, DEBUG_PATH, EXECUTABLES, LOG_LEVEL, PRESETS, PRESETS_DEFAULT, REPO_NAME, REPO_OWNER, SETTINGS_FILE_PATH, VERSION, Settings, UserConfig, settings, DEBUG, DIRECTORY, configs, text
 
 KEY = 'GOODBYEDPI'
@@ -101,6 +101,37 @@ class Backend(QObject):
         except subprocess.CalledProcessError as e:
             logger.create_error_log(f"Failed to restart PC: {e}")
             self.errorHappens.emit("Failed to restart PC", "ERR_RESTART_FAILURE")
+            
+    @Slot(str)
+    def save_config_to_bbd(self, filepath):
+        config = configs['byedpi']
+        bbd_config = {
+            "app": "io.github.romanvht.byedpi",
+            "apps": [],
+            "history": [],
+            "settings": {
+                "byedpi_cmd_args": config.get_value('custom_parameters'),
+                "byedpi_enable_cmd_settings": True,
+            },
+            "version": f"CDPIUI-{VERSION}"
+        }
+        with open(filepath, 'w', encoding='utf-8') as file:
+            json.dump(bbd_config, file, ensure_ascii=False, indent=4)
+        file.close()
+  
+    @Slot()
+    def share_config_to_bbd(self):
+        filepath = Path(DEBUG_PATH+DIRECTORY, 'data', 'share', 'sharedConfig.json')
+        self.save_config_to_bbd(filepath)
+        share_app_path = Path(DEBUG_PATH+DIRECTORY, 'data', 'share')
+        share_app_exe = Path(share_app_path, 'WindowsFormsApp2.exe')
+        if os.path.exists(share_app_path):
+            start_process(path=share_app_exe, cwd=share_app_path, *[filepath])
+        else:
+            self.errorHappens.emit(
+                'Program cannot find WindowsFormsApp2.exe in "data/share/"',
+                'ERR_SHARE_FILE_NOT_FOUND'
+                )
         
     @Slot(str, result=bool)
     def is_exe_file(self, path:str):
@@ -143,8 +174,38 @@ class Backend(QObject):
         
         print(">>>>>>>>>>>>>>>>>>>>>>>>\n\n\n"+path)
         try:
-            change_setting('CONFIG', f'{engine.lower()}_config_path', path)
-            configs[engine].configfile = path
+            if engine == 'byedpi':
+                bbd_config = UserConfig(path)
+                filename = os.path.basename(path)
+                converted_path = Path(
+                    CONFIG_PATH, 'byedpi', 'converted', 
+                )
+                if not os.path.exists(converted_path):
+                    os.makedirs(converted_path)
+                
+                converted_filepath = Path(
+                   converted_path, filename
+                )
+                is_bbd = bbd_config.get_value('app') == 'io.github.romanvht.byedpi'
+                if is_bbd:
+                    settings = bbd_config.get_value('settings')['byedpi_cmd_args']
+                    byedpi_converted_config = {
+                        "custom_parameters":settings
+                    }
+                    with open(converted_filepath, 'w', encoding='utf-8') as file:
+                        json.dump(byedpi_converted_config, 
+                                  file, 
+                                  ensure_ascii=False, 
+                                  indent=4
+                        )
+                    file.close()
+                del bbd_config
+                    
+            change_setting('CONFIG', 
+                           f'{engine.lower()}_config_path', 
+                           path if not is_bbd else str(converted_filepath)
+            )
+            configs[engine].configfile = path if not is_bbd else str(converted_filepath)
             configs[engine].reload_config()
             
             if lists_for_add != []:
@@ -270,7 +331,48 @@ class Backend(QObject):
         change_setting('CONFIG', f'{engine.lower()}_config_path', "")
         configs[engine].configfile = CONFIG_PATH+f"/{engine.lower()}/user.json"
         configs[engine].reload_config()
-        
+    
+    @Slot(str, str, result=str)
+    def analyze_params_for_engine(self, engine:str, params:str):
+        new_params_list = []
+        if engine.lower() == 'byedpi':
+            configfile = Path(CONFIG_PATH, 'byedpi', '_supported_params.json')
+            config = UserConfig(configfile)
+            i = 0
+            params_list = params.replace("=", " ").split(' ')
+            supported_params = config.get_value('params')
+            if len(params_list) < 2:
+                return params
+            while i < len(params_list):
+                if not "-" in params_list[i]:
+                    i+=1
+                    continue
+
+                if any(params_list[i].startswith(param) for param in supported_params):
+                    new_params_list.append(params_list[i])
+                    if (
+                        "-" in params_list[i] and 
+                        i+1 < len(params_list) and 
+                        not "-" in params_list[i+1]
+                        ):
+                        new_params_list.append(params_list[i+1])
+                        i+=2
+                        continue
+                    else:
+                        i+=1
+                        continue
+                else:
+                    if (
+                        "-" in params_list[i] and 
+                        i+1 < len(params_list) and 
+                        not "-" in params_list[i+1]
+                        ):
+                        i+=2
+                        continue
+                    else:
+                        i+=1
+                        continue
+        return ' '.join(new_params_list)
 
     @Slot(str, bool, result='QVariantList')
     def analyze_custom_parameters(self, filename=None, unique=True, _path=None, _mode='analyze'):

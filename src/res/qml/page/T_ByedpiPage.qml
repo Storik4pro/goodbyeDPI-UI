@@ -17,6 +17,177 @@ Page{
         target: page
         edge: Qt.BottomEdge | Qt.RightEdge
     }
+    FileDialog {
+        id: fileDialogSaveBBD
+        title: qsTr("Save File As")
+        nameFilters: ["JSON Files (*.json)"]
+        fileMode: FileDialog.SaveFile
+        onAccepted: {
+            var filePath = selectedFile.toString().replace("file:///", "")
+            backend.save_config_to_bbd(filePath)
+            shareDialog.close()
+        }
+    }
+    Dialog {
+        id: shareDialog
+        x: Math.ceil((parent.width - width) / 2)
+        y: Math.ceil((parent.height - height) / 2)
+        parent: Overlay.overlay
+        modal: true
+        title: backend.get_element_loc("share")
+        width: 500
+        contentHeight: 250
+        closePolicy: Popup.NoAutoClose
+        Flickable {
+            id: addAppFlickable
+            clip: true
+            anchors.fill: parent
+            anchors.rightMargin:-10
+            anchors.leftMargin:-10
+            contentHeight: contentColumn.implicitHeight
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.rightMargin:0
+                ColumnLayout {
+                    id:contentColumn
+                    spacing: 5
+                    Layout.preferredWidth:480
+                    Layout.leftMargin:10
+                    Layout.rightMargin:10
+                    RowLayout {
+                        Image {
+                            source:"qrc:/qt/qml/GoodbyeDPI_UI/res/image/byebyedpi.png"
+                            Layout.preferredWidth:50
+                            Layout.preferredHeight:50
+                            Layout.alignment:Qt.AlignTop
+                        }
+                        ColumnLayout {
+                            Label {
+                                text: backend.get_element_loc("share_tip")
+                                wrapMode: Text.Wrap
+                                Layout.fillWidth: true
+                            }
+                            HyperlinkButton {
+                                id:vsBtn
+                                text: backend.get_element_loc("qhelp")
+                                FluentUI.primaryColor: Theme.accentColor.defaultBrushFor()
+                                Layout.preferredHeight:15
+                                font: Typography.caption
+                                Layout.preferredWidth:implicitWidth - 15
+                                flat: true
+                                background: Rectangle {
+                                    implicitWidth: 100
+                                    implicitHeight: 40
+                                    color: Theme.accentColor.defaultBrushFor()
+                                    opacity: 0.1
+                                    visible:vsBtn.hovered
+                                    radius:2
+                                }
+                                onClicked:{
+                                    Qt.openUrlExternally("https://storik4pro.github.io/wiki/byebyedpi-cross-config/")
+                                }
+                            }
+                        }
+                    }
+                    Button{
+                        id:btn2
+                        Layout.preferredHeight: Math.max(68, saveLay.implicitHeight + 10)
+                        Layout.fillWidth:true
+                        Layout.minimumWidth: 300 
+                        Layout.maximumWidth: 1000
+                        Layout.alignment: Qt.AlignHCenter
+                        RowLayout{
+                            anchors.fill: parent
+                            anchors{
+                                leftMargin: 20
+                                rightMargin: 20
+                            }
+                            spacing: 10
+                            Icon {
+                                source: FluentIcons.graph_Save
+                                Layout.preferredHeight:20
+                            }
+                            ColumnLayout{
+                                id:saveLay
+                                Layout.fillWidth: true
+                                spacing: 2
+                                Label{
+                                    Layout.fillWidth: true
+                                    text: backend.get_element_loc('share_to_file')
+                                    horizontalAlignment: Text.AlignLeft
+                                    wrapMode:Text.Wrap
+                                    font: Typography.body
+                                }
+                            }
+                        }
+                        
+                        onClicked: {
+                            fileDialogSaveBBD.open()
+                        }
+                        
+                    }
+                    Button{
+                        id:btn3
+                        Layout.preferredHeight: Math.max(68, shareLay.implicitHeight + 10)
+                        Layout.fillWidth:true
+                        Layout.minimumWidth: 300 
+                        Layout.maximumWidth: 1000
+                        Layout.alignment: Qt.AlignHCenter
+                        RowLayout{
+                            anchors.fill: parent
+                            anchors{
+                                leftMargin: 20
+                                rightMargin: 20
+                            }
+                            spacing: 10
+                            Icon {
+                                source: FluentIcons.graph_Share
+                                Layout.preferredHeight:20
+                            }
+                            ColumnLayout{
+                                id:shareLay
+                                Layout.fillWidth: true
+                                spacing: 2
+                                Label{
+                                    Layout.fillWidth: true
+                                    text: backend.get_element_loc('share_to_any')
+                                    horizontalAlignment: Text.AlignLeft
+                                    wrapMode:Text.Wrap
+                                    font: Typography.body
+                                }
+                                Label {
+                                    text: backend.get_element_loc('share_to_any_tip')
+                                    Layout.fillWidth: true
+                                    font: Typography.caption
+                                    color: "#c0c0c0"
+                                    horizontalAlignment: Text.AlignLeft
+                                    wrapMode:Text.Wrap
+                                }
+                            }
+                        }
+                        
+                        onClicked: {
+                            backend.share_config_to_bbd()
+                            shareDialog.close()
+                        }
+                        
+                    }
+                }
+            }
+            ScrollBar.vertical: ScrollBar {}
+        }
+        footer: DialogButtonBox{
+            Button {
+                id:cancelButton
+                text: backend.get_element_loc("cancel")
+                visible:true
+                onClicked: {
+                    shareDialog.close()
+                }
+            }
+        
+        }
+    }
 Loader {
     id: pageLoader
     anchors.fill: parent
@@ -564,6 +735,7 @@ ScrollablePage {
                                     var cursorPosition = customParameters.cursorPosition
                                     var previousText = text
                                     var newText = text.replace(/[^0-9a-zA-Z:"><\/\\.\-_\s,=+]/g, '')
+                                    
                                     if (newText !== previousText) {
                                         var diff = previousText.length - newText.length
                                         text = newText
@@ -583,6 +755,7 @@ ScrollablePage {
                             function saveCustomParameters() {
                                 var params = customParameters.text.trim()
                                 var processedParams = params.replace(/=/g, ' ').replace(/"/g, '')
+                                processedParams = backend.analyze_params_for_engine('byedpi', processedParams)
                                 backend.set_to_config("BYEDPI", "custom_parameters", processedParams)
                             }
                         }
@@ -590,11 +763,49 @@ ScrollablePage {
 
                     }
                 }
+                RowLayout{
+                    Layout.alignment:Qt.AlignRight
+                    Icon{
+                        source:FluentIcons.graph_Connect
+                        Layout.preferredWidth:15
+                        Layout.preferredHeight:13
+                    }
+                    Label{
+                        text:backend.get_element_loc("export_to_from_phone")
+                        font:Typography.bodyStrong
+                    }
+                    Button {
+                        text:backend.get_element_loc("export_to_phone")
+                        display: Button.IconOnly
+                        icon.name:FluentIcons.graph_Share
+                        icon.width:16
+                        icon.height:16
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 500
+                        ToolTip.text: text
+                        onClicked:{
+                            shareDialog.open()
+                        }
+                    }
+                    Button {
+                        text:backend.get_element_loc("export_from_phone")
+                        display: Button.IconOnly
+                        icon.name:FluentIcons.graph_Down
+                        icon.width:16
+                        icon.height:16
+                        ToolTip.visible: hovered
+                        ToolTip.delay: 500
+                        ToolTip.text: text
+                        onClicked:{
+                            fileDialogOpen.open()
+                        }
+                    }
+                }
 
                 Label {
                     text: backend.get_element_loc("output_prompt")
                     font: Typography.bodyStrong
-                    Layout.topMargin: 15
+                    Layout.topMargin: -15
                 }
                 ColumnLayout {
                     id: contentLayout
@@ -813,7 +1024,8 @@ ScrollablePage {
         var command = "ciadpi.exe"
 
         if (customParameters.text.trim() !== "") {
-            command += " " + customParameters.text.trim()
+            var text = backend.analyze_params_for_engine('byedpi', customParameters.text.trim())
+            command += " " + text
         }
 
         commandLineOutput.text = command
