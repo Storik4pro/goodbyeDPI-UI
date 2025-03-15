@@ -411,7 +411,7 @@ class GoodCheckHelper(QObject):
                         self.handle_finished()
                         
                     pattern = r', strategy (\d/\d):'
-                    blocks = re.findall(pattern, new_content, re.DOTALL | re.IGNORECASE)
+                    blocks = re.findall(pattern, self.output, re.DOTALL | re.IGNORECASE)
                     if blocks:
                         current_strategy_check = int(blocks[-1].split("/")[0])
                         print(blocks[-1])
@@ -454,6 +454,7 @@ class GoodCheckHelper(QObject):
             if os.path.exists(DIRECTORY+"data/goodbyeDPI/x86_64/gdpi.exe"):
                 os.remove(DIRECTORY+"data/goodbyeDPI/x86_64/gdpi.exe")
             self.process_stopped_signal.emit()
+        self.process_finished_signal.emit()
 
     @Slot()
     def handle_finished(self):
