@@ -1270,6 +1270,57 @@ ScrollablePage {
 
                 }
             }
+            Button{
+                id:btn2
+                Layout.preferredHeight: 34
+                Layout.fillWidth:true
+                Layout.minimumWidth: 300 
+                Layout.maximumWidth: 1000
+                Layout.alignment: Qt.AlignHCenter
+                RowLayout{
+                    anchors.fill: parent
+                    anchors{
+                        leftMargin: 20
+                        rightMargin: 20
+                    }
+                    spacing: 10
+                    Icon {
+                        source: FluentIcons.graph_FastForward
+                        Layout.preferredHeight:18
+                        Layout.preferredWidth:20
+                    }
+                    ColumnLayout{
+                        Layout.fillWidth: true
+                        spacing: 2
+                        Label{
+                            Layout.fillWidth: true
+                            text: backend.get_element_loc('qchk_preset')
+                            horizontalAlignment: Text.AlignLeft
+                            wrapMode:Text.Wrap
+                            font: Typography.body
+                        }
+                    }
+                    IconButton {
+                        width: 30
+                        height: 30
+                        Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                        Icon {
+                            anchors.centerIn: parent
+                            source: FluentIcons.graph_ChevronRight
+                            width: 15
+                            height: 15
+                        }
+                        onClicked: {
+                            page_router.go("/additional",{info:"GoodCheck:startNEW"})
+                        }
+                    }
+                }
+                
+                onClicked: {
+                    page_router.go("/additional",{info:"GoodCheck:startNEW"})
+                }
+                
+            }
 
             Label {
                 text: backend.get_element_loc("output_prompt")

@@ -17,7 +17,9 @@ StackPage {
         if (context) {
             if (context.argument.info === 'GoodCheck'){
                 router.go('/goodcheck',{info:"results"})
-            } 
+            } else if (context.argument.info === 'GoodCheck:startNEW') {
+                router.go('/goodcheck')
+            }
         }
     }
 }
