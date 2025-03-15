@@ -164,13 +164,14 @@ def _convert_cluster_to_url(codename):
 
     return f"https://rr1---sn-{decoded_codename}.googlevideo.com"
 
-
-GGC_SERVER = _extract_domain(
-    _convert_cluster_to_url(
-        requests.get("https://redirector.gvt1.com/report_mapping?di=no").text.split()[2]
+try:
+    GGC_SERVER = _extract_domain(
+        _convert_cluster_to_url(
+            requests.get("https://redirector.gvt1.com/report_mapping?di=no").text.split()[2]
+        )
     )
-)
-
+except:
+    GGC_SERVER = ""
 
 class DefaultHosts:
     @staticmethod
