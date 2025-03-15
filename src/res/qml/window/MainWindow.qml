@@ -560,6 +560,10 @@ FramelessWindow {
                     backend.changeValue("APPEARANCE_MODE", 'height', window.height)
                 }
             }
+            var x = window.x
+            var y = window.y + appBar.height - 17
+            backend.changeValue("APPEARANCE_MODE", 'x', x)
+            backend.changeValue("APPEARANCE_MODE", 'y', y)
         }
         if (backend.getBool('NOTIFICATIONS', "hide_in_tray")) {
             toast.show_notification("#NOTF_MAXIMIZE", "GoodbyeDPI UI", backend.get_element_loc("tray_icon"))
