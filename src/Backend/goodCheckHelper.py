@@ -410,7 +410,7 @@ class GoodCheckHelper(QObject):
                     elif "All Done" in new_content:
                         self.handle_finished()
                         
-                    pattern = r', strategy (\d/\d):'
+                    pattern = r', strategy (\d*/\d*):'
                     blocks = re.findall(pattern, self.output, re.DOTALL | re.IGNORECASE)
                     if blocks:
                         current_strategy_check = int(blocks[-1].split("/")[0])
