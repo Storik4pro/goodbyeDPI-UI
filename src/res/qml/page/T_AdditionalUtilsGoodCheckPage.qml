@@ -1933,7 +1933,9 @@ ScrollablePage {
 
     
     Component.onCompleted:{
-        loadAllData()
+        if (goodCheck.is_data_ready()) {
+            loadAllData()
+        }
     }
 
     function loadAllData() {
