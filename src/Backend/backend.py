@@ -122,11 +122,12 @@ class Backend(QObject):
     @Slot()
     def share_config_to_bbd(self):
         filepath = Path(DEBUG_PATH+DIRECTORY, 'data', 'share', 'sharedConfig.json')
+        str_filepath = str(filepath)
         self.save_config_to_bbd(filepath)
         share_app_path = Path(DEBUG_PATH+DIRECTORY, 'data', 'share')
         share_app_exe = Path(share_app_path, 'WindowsFormsApp2.exe')
-        if os.path.exists(share_app_path):
-            start_process(path=share_app_exe, cwd=share_app_path, *[filepath])
+        if os.path.exists(share_app_exe):
+            start_process(*(str_filepath), path=share_app_exe, cwd=share_app_path)
         else:
             self.errorHappens.emit(
                 'Program cannot find WindowsFormsApp2.exe in "data/share/"',
@@ -174,6 +175,7 @@ class Backend(QObject):
         
         print(">>>>>>>>>>>>>>>>>>>>>>>>\n\n\n"+path)
         try:
+            is_bbd = False
             if engine == 'byedpi':
                 bbd_config = UserConfig(path)
                 filename = os.path.basename(path)
