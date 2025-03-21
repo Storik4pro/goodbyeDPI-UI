@@ -128,6 +128,7 @@ Page{
                     }
                     Button{
                         id:btn3
+                        enabled:false
                         Layout.preferredHeight: Math.max(68, shareLay.implicitHeight + 10)
                         Layout.fillWidth:true
                         Layout.minimumWidth: 300 
@@ -150,7 +151,7 @@ Page{
                                 spacing: 2
                                 Label{
                                     Layout.fillWidth: true
-                                    text: backend.get_element_loc('share_to_any')
+                                    text: backend.get_element_loc('share_to_any') + " (Unavailable)"
                                     horizontalAlignment: Text.AlignLeft
                                     wrapMode:Text.Wrap
                                     font: Typography.body
