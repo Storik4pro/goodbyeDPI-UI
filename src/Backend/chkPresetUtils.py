@@ -1,12 +1,13 @@
 # =======================================================================
-# Original author - lumenpearson
+# Contributor - @lumenpearson
 # https://github.com/lumenpearson
 # =======================================================================
 """
-This module provides an asynchronous availability checker for TCP, UDP, and GGC servers.
+This module provides a synchronous availability checker for TCP, UDP, and GGC servers.
 It verifies connectivity by performing network requests and reports availability status.
+
 Features:
-- Uses asynchronous programming for efficient network checks.
+- Uses synchronous programming for network checks.
 - Supports middleware for request validation.
 - Includes three checker types:
   - TCPChecker: Checks TCP connection availability.
@@ -15,26 +16,28 @@ Features:
 - Middleware ensures request data integrity before checks.
 - Configuration options allow setting timeout, default ports, and output mode.
 - Results are printed in JSON format with type, address, and state fields.
+
 Usage:
 1. Provide lists of target servers for TCP, UDP, and GGC checks.
 2. Run `AvailabilityChecker.run_checks()` to execute all tests.
-3. Results can be printed immediately or collected asynchronously.
-This module is designed for performance and scalability, making it useful for monitoring
-network service availability efficiently.
+3. Results can be printed immediately or collected.
+
+This module is designed for simplicity and ease of use in synchronous environments.
 """
 
-import argparse
-import asyncio
 import json
 import os
 import platform
 import socket
 from abc import ABC, abstractmethod
+from argparse import ArgumentParser
+from subprocess import SubprocessError
+from subprocess import run as subprocess_run
 from typing import Dict, List, Optional, Union
 from urllib.parse import urlparse
 
 import requests
-from icmplib import async_ping
+from icmplib import ping  # use synchronous ping
 from pydantic import BaseModel, Field
 
 cluster_decode_array = {
@@ -134,7 +137,7 @@ def is_root() -> bool:
 def _extract_domain(url: str) -> str:
     """
     Extracts the domain from a given URL.
-    
+
     :param url: The full URL (e.g., "https://www.example.com/path?query=1").
     :type url: str
     :return: The extracted domain name (e.g., "example.com").
@@ -164,14 +167,13 @@ def _convert_cluster_to_url(codename):
 
     return f"https://rr1---sn-{decoded_codename}.googlevideo.com"
 
-try:
-    GGC_SERVER = _extract_domain(
-        _convert_cluster_to_url(
-            requests.get("https://redirector.gvt1.com/report_mapping?di=no").text.split()[2]
-        )
+
+GGC_SERVER = _extract_domain(
+    _convert_cluster_to_url(
+        requests.get("https://redirector.gvt1.com/report_mapping?di=no").text.split()[2]
     )
-except:
-    GGC_SERVER = ""
+)
+
 
 class DefaultHosts:
     @staticmethod
@@ -189,6 +191,7 @@ class DefaultHosts:
         return [
             "127.0.0.1",
             "127.0.0.1:3000",
+            "8.8.8.8",
             "0.0.0.0",
             "0.0.0.0:3000",
         ]
@@ -287,7 +290,7 @@ class Options(BaseModel):
         str_strip_whitespace = True
 
 
-async def ping_host(host: str, options: Options) -> None:
+def ping_host(host: str, options: Options) -> bool:
     """
     Ping a host asynchronously using fping or standard ping based on options.
     :param host: Hostname or IP address to ping
@@ -302,23 +305,27 @@ async def ping_host(host: str, options: Options) -> None:
     if fping:
         command = ["fping", "-c", str(count), "-t", str(timeout), host]
         try:
-            result = await asyncio.create_subprocess_exec(
-                *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            result = subprocess_run(
+                command, capture_output=True, text=True, check=False
             )
-            stdout, stderr = await result.communicate()
-            if result.returncode == 0:
+            if (
+                result.returncode == 0
+                and f"xmt/rcv/%loss" in result.stdout
+                and not " 0%" in result.stdout.split("xmt/rcv/%loss")[1]
+            ):
                 return True
-            else:
-                return False
+
+            return False
         except FileNotFoundError:
             print("Fping not found. Falling back to standard 'ping3' method.")
-            await ping_host(
-                host, options.copy(update={"ggc_fping": False, "ggcf": False})
-            )
+            ping_host(host, options.copy(update={"ggc_fping": False, "ggcf": False}))
+            return False
+        except SubprocessError as e:
+            print(f"Error running fping: {e}")
             return False
     else:
         try:
-            host = await async_ping(host, count=count, timeout=timeout)
+            host = ping(host, count=count, timeout=timeout)
             if host.is_alive:
                 return True
             else:
@@ -348,14 +355,14 @@ class Middleware(ABC):
     """Abstract base class for request middleware processing."""
 
     @abstractmethod
-    async def process_request(self, data: RequestData):
+    def process_request(self, data: RequestData):
         pass
 
 
 class TypeCheckMiddleware(Middleware):
     """Middleware to validate request data using Pydantic."""
 
-    async def process_request(self, data: RequestData):
+    def process_request(self, data: RequestData):
         RequestData.model_validate(data)
 
 
@@ -370,22 +377,24 @@ class Checker(ABC):
         """
         self.middlewares = [TypeCheckMiddleware()]
 
-    async def apply_middlewares(self, data: RequestData):
+    def apply_middlewares(self, data: RequestData):
         """
         Applies all middlewares to the given request data.
+
         :param data: The request data to process.
         :type data: RequestData
         """
         for middleware in self.middlewares:
             try:
-                await middleware.process_request(data)
+                middleware.process_request(data)
             except Exception as e:
                 print(f"Middleware error: {e}")
 
     @abstractmethod
-    async def check(self, data: RequestData) -> Dict[str, Union[str, bool]]:
+    def check(self, data: RequestData) -> Dict[str, Union[str, bool]]:
         """
         Abstract method for performing a check on request data.
+
         :param data: The request data to check.
         :type data: RequestData
         :return: A dictionary with check results.
@@ -401,28 +410,28 @@ class TCPChecker(Checker):
     def __init__(self, options: Options):
         """
         Initializes the TCP checker with options.
+
         :param options: Configuration options for the checker.
         """
         super().__init__()
         self.options = options
         self.timeout = (self.options.tcp_timeout or self.options.tcpt) / 1000
 
-    async def check(self, data: RequestData) -> Dict[str, Union[str, bool]]:
+    def check(self, data: RequestData) -> Dict[str, Union[str, bool]]:
         """
         Checks TCP connectivity for the given request data.
+
         :param data: The request data containing address and port.
         :return: A dictionary with check results, including address and connection state.
         """
-        await self.apply_middlewares(data)
+        self.apply_middlewares(data)
         port = data.port or self.options.tcpp
         try:
-            reader, writer = await asyncio.wait_for(
-                asyncio.open_connection(data.addr, port), self.timeout
-            )
-            writer.close()
-            await writer.wait_closed()
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(self.timeout)
+                s.connect((data.addr, port))
             return {"type": "TCP", "addr": data.addr, "state": True}
-        except (socket.gaierror, asyncio.TimeoutError, OSError):
+        except (socket.gaierror, socket.timeout, OSError):
             return {"type": "TCP", "addr": data.addr, "state": False}
 
 
@@ -434,38 +443,31 @@ class UDPChecker(Checker):
     def __init__(self, options: Options):
         """
         Initializes the UDP checker with options.
+
         :param options: Configuration options for the checker.
         """
         super().__init__()
         self.options = options
         self.timeout = (self.options.udp_timeout or self.options.udpt) / 1000
 
-    async def check(self, data: RequestData) -> Dict[str, Union[str, bool]]:
+    def check(self, data: RequestData) -> Dict[str, Union[str, bool]]:
         """
         Checks UDP connectivity for the given request data.
+
         :param data: The request data containing address and port.
         :return: A dictionary with check results, including address and connection state.
         """
-        await self.apply_middlewares(data)
+        self.apply_middlewares(data)
         port = data.port or self.options.udpp
         try:
-            return await self._udp_check(data.addr, port)
+            return self._udp_check_sync(data.addr, port)
         except (socket.timeout, socket.gaierror, OSError):
             return {"type": "UDP", "addr": data.addr, "state": False}
-
-    async def _udp_check(self, addr: str, port: int) -> Dict[str, Union[str, bool]]:
-        """
-        Runs the synchronous UDP check in an executor.
-        :param addr: The target address.
-        :param port: The target port.
-        :return: A dictionary with check results.
-        """
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, self._udp_check_sync, addr, port)
 
     def _udp_check_sync(self, addr: str, port: int) -> Dict[str, Union[str, bool]]:
         """
         Performs a synchronous UDP connectivity check by sending and receiving a packet.
+
         :param addr: The target address.
         :param port: The target port.
         :return: A dictionary with check results.
@@ -485,26 +487,28 @@ class GGCChecker(Checker):
     def __init__(self, options: Options):
         """
         Initializes the GGC checker with an HTTP session and options.
+
         :param options: Configuration options for the checker.
         """
         super().__init__()
         self.options = options
 
-    async def check(self, data: RequestData) -> Dict[str, Union[str, bool]]:
+    def check(self, data: RequestData) -> Dict[str, Union[str, bool]]:
         """
         Checks HTTPS connectivity for the given request data.
+
         :param data: The request data containing the target address.
         :return: A dictionary with check results, including address and connection state.
         """
-        await self.apply_middlewares(data)
+        self.apply_middlewares(data)
         try:
-            is_ping = await ping_host(data.addr, self.options)
+            is_ping = ping_host(data.addr, self.options)
             return {
                 "type": "GGC",
                 "addr": data.addr,
                 "state": is_ping,
             }
-        except Exception as e:  # noqa: F841
+        except Exception as _:
             return {"type": "GGC", "addr": data.addr, "state": False}
 
 
@@ -522,6 +526,7 @@ class ServerAvailabilityChecker:
     ):
         """
         Initializes the availability checker with target lists and options.
+
         :param tcp: List of TCP target addresses.
         :param udp: List of UDP target addresses.
         :param ggc: List of GGC target addresses.
@@ -546,9 +551,10 @@ class ServerAvailabilityChecker:
         self.options = options
         self.io = self.options.immediate_output or self.options.io
 
-    async def run_checks(self):
+    def run_checks(self):
         """
         Runs availability checks for all targets using their respective checkers.
+
         Opens an HTTP session for GGC checks and executes checks concurrently.
         Results are printed based on the options provided.
         """
@@ -565,32 +571,25 @@ class ServerAvailabilityChecker:
             checkers["GGC"] = GGCChecker(self.options)
             timeout = self.options.ggc_timeout or self.options.ggt
 
-        tasks = []
-        results_dict = {timeout: [] for timeout in self.targets.keys()}
-        for timeout, sites in self.targets.items():
-            if timeout not in checkers:
-                continue  # skip if no checker for this timeout type
+        results_dict = {target: [] for target in self.targets.keys()}
+        for target, sites in self.targets.items():
+            if target not in checkers:
+                continue  # skip if no checker for this target type
 
             for s in sites:
-                task = checkers[timeout].check(RequestData(addr=s))
+                result = checkers[target].check(RequestData(addr=s))
                 if self.io:
-                    result = await task
                     yield result if result is not None else None
                 else:
-                    tasks.append((timeout, task))
+                    if result is not None:
+                        results_dict[target].append(result)
         if not self.io:
-            results = await asyncio.gather(*(task[1] for task in tasks))
-
-            for (timeout, _), result in zip(tasks, results):
-                if result is not None:
-                    results_dict[timeout].append(result)
-
             yield results_dict
 
 
 def parse_args():
     options = Options()
-    parser = argparse.ArgumentParser(
+    parser = ArgumentParser(
         description="Check availability of TCP, UDP, and GGC servers."
     )
     parser.add_argument(
@@ -748,7 +747,7 @@ def parse_args():
     return parser.parse_args()
 
 
-async def main() -> None:
+def main() -> None:
     args = parse_args()
     options = Options(**vars(args))
     checker = ServerAvailabilityChecker(
@@ -757,6 +756,6 @@ async def main() -> None:
         args.ggc_hosts or args.ggch,
         options=options,
     )
-    
-    async for result in checker.run_checks():
+
+    for result in checker.run_checks():
         print(json.dumps(result, indent=2))
