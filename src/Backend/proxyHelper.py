@@ -36,7 +36,7 @@ def get_proxy_settings(signal:Signal=None):
             proxy_server, _ = winreg.QueryValueEx(key, "ProxyServer")
             settings["ProxyServer"] = proxy_server
         except FileNotFoundError:
-            settings["ProxyServer"] = None
+            settings["ProxyServer"] = "127.0.0.1:1080"
 
         try:
             proxy_override, _ = winreg.QueryValueEx(key, "ProxyOverride")
@@ -452,8 +452,12 @@ class ProxyHelper(QObject):
     @Slot(str, result=str)
     def get_proxy_setting_string(self, key, default=""):
         if self.settings:
+            if key == 'ProxyServer' and self.settings.get(key, default) == '':
+                return "127.0.0.1:1080"
             return self.settings.get(key, default)
         else:
+            if key == 'ProxyServer':
+                return "127.0.0.1:1080"
             return default
         
     @Slot(str, result=int)
