@@ -43,7 +43,7 @@ def is_font_installed(font_name):
 
 DIRECTORY = f'{application_path}/' if not DEBUG else ''
 
-VERSION = "1.2.7"
+VERSION = "1.2.8"
 
 load_dotenv()
 DEV_API = os.getenv('DEV_API')
