@@ -250,7 +250,7 @@ ScrollablePage {
                             text: backend.get_element_loc("developer_settings_tip")
                             horizontalAlignment: Text.AlignLeft
                             font: Typography.caption
-                            color: "#c0c0c0"
+                            color: Theme.res.textFillColorSecondary
                             wrapMode: Text.Wrap
                         }
                     }

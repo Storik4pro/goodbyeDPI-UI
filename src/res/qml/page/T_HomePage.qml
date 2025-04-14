@@ -50,7 +50,7 @@ ScrollablePage {
                 CopyableText{
                     text:engine
                     font: Typography.caption
-                    color: "#c0c0c0"
+                    color: Theme.res.textFillColorSecondary
                 }
             }
             RowLayout{
@@ -61,7 +61,7 @@ ScrollablePage {
                     id:version
                     text:engine_version
                     font: Typography.caption
-                    color: "#c0c0c0"
+                    color: Theme.res.textFillColorSecondary
                 }
             }
             RowLayout{
@@ -71,7 +71,7 @@ ScrollablePage {
                 CopyableText{
                     text:preset
                     font: Typography.caption
-                    color: "#c0c0c0"
+                    color: Theme.res.textFillColorSecondary
                 }
             }
             

@@ -537,7 +537,7 @@ ScrollablePage {
                             text: backend.get_element_loc("preset_tip")
                             horizontalAlignment: Text.AlignLeft
                             font: Typography.caption
-                            color: "#c0c0c0"
+                            color: Theme.res.textFillColorSecondary
                             wrapMode: Text.Wrap
                         }
                     }
@@ -829,7 +829,7 @@ ScrollablePage {
                     text: backend.get_element_loc("blacklist_used_tip")
                     horizontalAlignment: Qt.AlignVCenter
                     font: Typography.caption
-                    color: "#c0c0c0"
+                    color: Theme.res.textFillColorSecondary
                     width: exp.width - 100 - 30 
                     wrapMode: Text.Wrap
                 }

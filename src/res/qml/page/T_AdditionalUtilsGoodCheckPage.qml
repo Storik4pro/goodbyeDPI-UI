@@ -751,7 +751,7 @@ ScrollablePage {
                                 text: backend.get_element_loc("curl_tip")
                                 horizontalAlignment: Text.AlignLeft
                                 font: Typography.caption
-                                color: "#c0c0c0"
+                                color: Theme.res.textFillColorSecondary
                                 wrapMode: Text.Wrap
                                 Layout.preferredWidth: rwlay_curl_element.width - curl_element.width - 40
                             }
@@ -981,7 +981,7 @@ ScrollablePage {
                             text: backend.get_element_loc('chk_preset_view_for_sites_tip')
                             Layout.fillWidth: true
                             font: Typography.caption
-                            color: "#c0c0c0"
+                            color: Theme.res.textFillColorSecondary
                             horizontalAlignment: Text.AlignLeft
                             wrapMode:Text.Wrap
                         }
@@ -1039,7 +1039,7 @@ ScrollablePage {
                             text: backend.get_element_loc('chk_preset_view_for_strategy_tip')
                             Layout.fillWidth: true
                             font: Typography.caption
-                            color: "#c0c0c0"
+                            color: Theme.res.textFillColorSecondary
                             horizontalAlignment: Text.AlignLeft
                             wrapMode:Text.Wrap
                         }

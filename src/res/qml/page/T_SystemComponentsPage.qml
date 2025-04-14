@@ -527,7 +527,7 @@ Page {
                             text: backend.get_element_loc("component_settings_tip")
                             horizontalAlignment: Qt.AlignVCenter
                             font: Typography.caption
-                            color: "#c0c0c0"
+                            color: Theme.res.textFillColorSecondary
                             width: exp.width - 30 - 20 - 50
                             wrapMode: Text.Wrap
                         }
@@ -634,7 +634,7 @@ Page {
                             text: backend.get_element_loc("other_component_settings_tip")
                             horizontalAlignment: Qt.AlignVCenter
                             font: Typography.caption
-                            color: "#c0c0c0"
+                            color: Theme.res.textFillColorSecondary
                             width: exp.width - 30 - 20 - 50
                             wrapMode: Text.Wrap
                         }

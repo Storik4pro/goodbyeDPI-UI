@@ -83,7 +83,7 @@ ScrollablePage {
                                 text: backend.get_element_loc("developer_install_local_patch_tip")
                                 horizontalAlignment: Text.AlignLeft
                                 font: Typography.caption
-                                color: "#c0c0c0"
+                                color: Theme.res.textFillColorSecondary
                                 wrapMode: Text.Wrap
                             }
                         }

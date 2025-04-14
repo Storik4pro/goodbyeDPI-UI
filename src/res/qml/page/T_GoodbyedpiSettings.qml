@@ -115,7 +115,7 @@ ScrollablePage {
                         text: backend.get_element_loc("preset_tip")
                         horizontalAlignment: Text.AlignLeft
                         font: Typography.caption
-                        color: "#c0c0c0"
+                        color: Theme.res.textFillColorSecondary
                         wrapMode: Text.Wrap
                     }
                 }
@@ -159,7 +159,7 @@ ScrollablePage {
                 text: backend.get_element_loc("dns_tip")
                 horizontalAlignment: Qt.AlignHCenter
                 font: Typography.caption
-                color: "#c0c0c0"
+                color: Theme.res.textFillColorSecondary
             }
 
             trailing: Switch {
@@ -196,7 +196,7 @@ ScrollablePage {
                         CopyableText {
                             text: currentDnsV4
                             font: Typography.body
-                            color: "#c0c0c0"
+                            color: Theme.res.textFillColorSecondary
                         }
                     }
                     RowLayout {
@@ -209,7 +209,7 @@ ScrollablePage {
                         CopyableText {
                             text: currentPortV4
                             font: Typography.body
-                            color: "#c0c0c0"
+                            color: Theme.res.textFillColorSecondary
                         }
                     }
 
@@ -223,7 +223,7 @@ ScrollablePage {
                         CopyableText {
                             text: currentDnsV6
                             font: Typography.body
-                            color: "#c0c0c0"
+                            color: Theme.res.textFillColorSecondary
                         }
                     }
                     RowLayout {
@@ -236,7 +236,7 @@ ScrollablePage {
                         CopyableText {
                             text: currentPortV6
                             font: Typography.body
-                            color: "#c0c0c0"
+                            color: Theme.res.textFillColorSecondary
                         }
                     }
                     
@@ -368,7 +368,7 @@ ScrollablePage {
                 text: backend.get_element_loc("base_blacklist_tip")
                 horizontalAlignment: Qt.AlignVCenter
                 font: Typography.caption
-                color: "#c0c0c0"
+                color: Theme.res.textFillColorSecondary
                 width:exp.width - 30 - 20 - 50
                 
                 wrapMode:Text.Wrap
@@ -497,7 +497,7 @@ ScrollablePage {
                         horizontalAlignment: Text.AlignLeft
                         wrapMode:Text.Wrap
                         font: Typography.caption
-                        color: "#c0c0c0"
+                        color: Theme.res.textFillColorSecondary
                     }
                 }
                 IconButton {
@@ -561,7 +561,7 @@ ScrollablePage {
                         text: backend.get_element_loc("advanced_tip")
                         horizontalAlignment: Text.AlignLeft
                         font: Typography.caption
-                        color: "#c0c0c0"
+                        color: Theme.res.textFillColorSecondary
                         wrapMode: Text.Wrap
                     }
                 }
