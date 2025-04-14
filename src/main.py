@@ -25,7 +25,7 @@ try:
     from Components import CircularReveal
     from AppInfo import AppInfo
     from Backend import Backend, Process, MultiWindow, GoodCheckHelper, AfterUpdateHelper, \
-        Patcher, ProxyHelper, IconImageProvider
+        Patcher, ProxyHelper, IconImageProvider, SystemProcessHelper
     from Backend.notification import Toast
 
     from quick_start import after_update_actions, check_app_is_runned, chk_directory, first_run_actions, kill_update, merge_settings, merge_blacklist, rename_update_exe, merge_settings_to_json
@@ -52,6 +52,7 @@ try:
         patcher = Patcher()
         iconImageProvider = IconImageProvider()
         proxyHelper = ProxyHelper(iconImageProvider)
+        systemProcessHelper = SystemProcessHelper(process)
         print(sys.argv)
         os.environ["QT_QUICK_CONTROLS_STYLE"] = "FluentUI"
         QGuiApplication.setOrganizationName(GlobalConfig.application_company)
@@ -72,6 +73,7 @@ try:
         engine.rootContext().setContextProperty("updateHelper", afterUpdate)
         engine.rootContext().setContextProperty("patcher", patcher)
         engine.rootContext().setContextProperty("proxyHelper", proxyHelper)
+        engine.rootContext().setContextProperty("systemProcessHelper", systemProcessHelper)
         engine.addImageProvider("icons", iconImageProvider)
 
         engine.addImportPath(":/qt/qml")
