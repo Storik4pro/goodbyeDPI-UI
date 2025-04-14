@@ -837,6 +837,14 @@ Page {
     }
 
     Connections {
+        target:process
+        function onEngine_changed() {
+            pageLoader.sourceComponent = null;
+            pageLoader.sourceComponent = pageComponent;
+        }
+    }
+
+    Connections {
         target:goodCheck
         function onStarted(){
             exp.enabled = false;
