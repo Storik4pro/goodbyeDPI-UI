@@ -47,6 +47,7 @@ Starter {
             "/page": resolvedUrl("res/qml/window/PageWindow.qml"),
             "/goodcheck": resolvedUrl("res/qml/window/GoodCheckWindow.qml"),
             "/quickstart": resolvedUrl("res/qml/window/AfterUpdateWindow.qml"),
+            "/conditionalrun": resolvedUrl("res/qml/window/ConditionalRunWindow.qml"),
         }
         if (appArguments.indexOf("--after-update") !== -1 || appArguments.indexOf("--after-patching") !== -1 
             || appArguments.indexOf("--after-failed-update") !== -1){
