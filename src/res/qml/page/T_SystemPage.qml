@@ -19,12 +19,14 @@ ScrollablePage {
             font: Typography.bodyStrong
         }
         Button {
+            id:componentBtn
             Layout.minimumHeight: 68
             Layout.fillWidth: true
             Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
             Layout.minimumWidth: 300
             Layout.maximumWidth: 1000
             Layout.alignment: Qt.AlignHCenter
+            enabled:!systemProcessHelper.is_alive()
 
             RowLayout {
                 anchors.fill: parent
@@ -410,6 +412,15 @@ ScrollablePage {
                     }
                 }
             }
+        }
+    }
+    Connections{
+        target:systemProcessHelper
+        function onProcessCheckedStarted(){
+            componentBtn.enabled = false
+        }
+        function onProcessCheckedStopped(){
+            componentBtn.enabled = true
         }
     }
     

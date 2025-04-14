@@ -140,7 +140,7 @@ ScrollablePage {
                         id: checkBtn
                         text: updatesAvailable ? backend.get_element_loc("update_available_btn_t") : backend.get_element_loc("update_available_btn_f")
                         highlighted: true
-                        enabled:!goodCheck.is_process_alive()
+                        enabled:!goodCheck.is_process_alive() && !systemProcessHelper.is_alive()
                         Layout.minimumWidth: 50
                         Layout.alignment: Qt.AlignRight|Qt.AlignVCenter
                         
@@ -396,6 +396,15 @@ ScrollablePage {
                 whatsNewButton.visible = false
                 errorText = success
             }
+        }
+    }
+    Connections{
+        target:systemProcessHelper
+        function onProcessCheckedStarted(){
+            checkBtn.enabled = false
+        }
+        function onProcessCheckedStopped(){
+            checkBtn.enabled = true
         }
     }
     Connections {

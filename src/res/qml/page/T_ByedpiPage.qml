@@ -354,6 +354,7 @@ ScrollablePage {
                     id: checkBtn
                     text: backend.get_element_loc("update_available_btn_t")
                     highlighted: true
+                    enabled:!systemProcessHelper.is_alive()
                     Layout.minimumWidth: 50
                     Layout.alignment: Qt.AlignRight|Qt.AlignVCenter
                     
@@ -1071,6 +1072,15 @@ Component.onCompleted:{
             multiWindow.close_window(title);
         }
     }
+Connections{
+    target:systemProcessHelper
+    function onProcessCheckedStarted(){
+        checkBtn.enabled = false
+    }
+    function onProcessCheckedStopped(){
+        checkBtn.enabled = true
+    }
+}
 Connections {
         target:multiWindow
         function onMulti_window_init(id) {

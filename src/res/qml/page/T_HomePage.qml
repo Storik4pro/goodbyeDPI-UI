@@ -118,7 +118,7 @@ ScrollablePage {
                     }
                     text: checked ? backend.get_element_loc("on_") : backend.get_element_loc("off")
                     checked: process.is_process_alive()
-                    enabled:!goodCheck.is_process_alive()
+                    enabled:!goodCheck.is_process_alive() && !systemProcessHelper.is_alive()
                     onClicked: {
                         if (!isInitializing){
                             if (checked) {
@@ -529,6 +529,17 @@ ScrollablePage {
             stopBtnEnabled = false;
         }
         function onProcess_finished_signal(){
+            startSwitch.enabled = true;
+            stopBtnEnabled = true;
+        }
+    }
+    Connections{
+        target:systemProcessHelper
+        function onProcessCheckedStarted(){
+            startSwitch.enabled = false;
+            stopBtnEnabled = false;
+        }
+        function onProcessCheckedStopped(){
             startSwitch.enabled = true;
             stopBtnEnabled = true;
         }
