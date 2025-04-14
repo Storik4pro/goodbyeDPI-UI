@@ -87,8 +87,8 @@ def build_command_from_config(engine_name, parameter_mapping, value_parameters):
 
     return command
 
-def check_args(preset):
-    engine = settings.settings['GLOBAL']['engine'].lower()
+def check_args(preset, engine=None):
+    engine = engine.lower() if engine else settings.settings['GLOBAL']['engine'].lower()
     cfg = settings.settings['CONFIG'].get(f'{engine}_config_path', '')
     if cfg != "" and os.path.exists(cfg) and configs[engine].configfile != cfg:
         configs[engine].configfile = cfg
@@ -407,7 +407,7 @@ class Process(QObject):
     
     @Slot(str, str)
     def start_process_manually(self, engine, _args):
-        self.start_process(engine, _args.split(" "))
+        return self.start_process(engine, _args.split(" ") if _args else None)
 
     @Slot(result=bool)
     def start_process(self, engine=None, _args=None):
@@ -416,6 +416,10 @@ class Process(QObject):
         self.engine_changed.emit(self.engine)
         self.preset_changed.emit()
         self.clean_output.emit()
+        
+        if engine and not settings.settings['COMPONENTS'].getboolean(engine):
+            self.handle_error('Component not installed correctly.')
+            return False
 
         self.output = ""
         is_can_start = True
@@ -427,7 +431,7 @@ class Process(QObject):
             
             self.process_need_setup.emit()
             self.process_stopped.emit("by user")
-            return True
+            return False
         elif self.engine in supported_proxy_engines:
             if settings.settings['PROXY']['proxy_now_used'] == 'manual':
                 is_can_start = True
@@ -439,7 +443,7 @@ class Process(QObject):
         
         try:
             new_args = [engine] if engine else [None]
-            args = check_args(-1) if _args is None else _args
+            args = check_args(-1, engine) if _args is None else _args
             new_args.extend(args)
         except Exception as ex:
             error_sound()
