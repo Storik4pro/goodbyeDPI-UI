@@ -7,3 +7,4 @@ from .afterUpdateHelper import AfterUpdateHelper
 from .patcher import Patcher
 from .proxyHelper import ProxyHelper
 from .iconImageProvider import IconImageProvider
+from .systemProcessHelper import SystemProcessHelper
