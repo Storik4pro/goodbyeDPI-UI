@@ -231,6 +231,7 @@ ScrollablePage {
         } else if (output.includes("Error opening filter") || output.includes("unknown option") || 
                   output.includes("[PROXY] error creating listener:") || output.includes("[ERROR]")) {
             updateStatus(qsTr(backend.get_element_loc('pseudoconsole_error')).arg(execut))
+            systemProcessHelper.stop_process_checker()
             setIcon("error")
         
         } else if (output.includes("process has been terminated by user")) {
@@ -291,6 +292,7 @@ ScrollablePage {
             var _output = arguments[0];
             view_for.currentIndex = 1
             addOutput(_output);
+            systemProcessHelper.stop_process_checker()
         }
         function onProcess_started(){
             Qt.callLater(updateStatus, qsTr(backend.get_element_loc('pseudoconsole_success')).arg(execut))
