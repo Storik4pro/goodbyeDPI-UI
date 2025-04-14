@@ -753,6 +753,9 @@ def download_files_from_github(remote_dir, local_dir):
         f"list-youtube.txt", 
         "youtube.txt", "myhostlist.txt", "russia-blacklist.txt"
     ]
+    skip_filetypes = [
+        ".txt"
+    ]
 
     try:
         response = check_response(base_url)
@@ -776,6 +779,10 @@ def download_files_from_github(remote_dir, local_dir):
                     continue
                 
                 if filename in skip_files and os.path.exists(local_filepath):
+                    continue
+                
+                if (any(filename.endswith(ext) for ext in skip_filetypes) and 
+                    os.path.exists(local_filepath)):
                     continue
                 
                 download_url = file_info['download_url']
