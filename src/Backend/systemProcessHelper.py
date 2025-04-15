@@ -303,8 +303,7 @@ class SystemProcessHelper(QObject):
         self.is_worker_alive = False
         
     def stop_process(self, engine):
-        if not self.process.is_process_alive():
-            self.process.stop_process()
+        self.process.stop_process()
         
     def run_process(self, engine):
         if self.process.is_process_alive():
