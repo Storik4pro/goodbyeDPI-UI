@@ -43,6 +43,7 @@ class SystemProcessHelper(QObject):
         self.process = process
         self._worker = None
         self.qthread = None
+        self.is_worker_alive = False
         configpath = Path(DEBUG_PATH+DIRECTORY, "data", 
                           "settings", "sys_process_checker.json")
         
@@ -55,15 +56,13 @@ class SystemProcessHelper(QObject):
             self.config.set_value("tasks", {"sample_task": True})
         else:
             self.config = UserConfig(configpath)
-            
-        self.worker = SystemProcessFindWorker()
+
         self.tasks = []
         self.tasks = self.load_tasks()
         
     @Slot(result=bool)
     def is_alive(self):
-        result = self._worker and self.qthread.isRunning() 
-        return False if result is None else result
+        return self.is_worker_alive
         
     @Slot(str, 'QVariantList')
     def save_task(self, filename, data:list):
@@ -258,7 +257,9 @@ class SystemProcessHelper(QObject):
                     
         self.processCheckedStarted.emit()
         self.toastRequest.emit('#COND:START_SUCCESS', "")
-
+        self.process.stop_process()
+        
+        self.is_worker_alive = True
         self.qthread = QThread()
         self._worker = SystemProcessFindWorker()
         self._worker.setup(
@@ -278,6 +279,7 @@ class SystemProcessHelper(QObject):
         self._worker.stateChanged.connect(self.state_changed)
         self._worker.processAskToStop.connect(self.stop_process)
         self._worker.processAskToRun.connect(self.run_process)
+        self._worker.workFinished.connect(self.work_finished)
         self._worker.workFinished.connect(self.qthread.quit)
         self._worker.workFinished.connect(self._worker.deleteLater)
         self._worker.workFinished.connect(self.processCheckedStopped)
@@ -297,11 +299,19 @@ class SystemProcessHelper(QObject):
         print(state_text)
         logger.create_info_log(state_text)
         
+    def work_finished(self):
+        self.is_worker_alive = False
+        
     def stop_process(self, engine):
-        self.process.stop_process()
+        if not self.process.is_process_alive():
+            self.process.stop_process()
         
     def run_process(self, engine):
-        self.process.stop_process()
+        if self.process.is_process_alive():
+            if self.process.engine == ENGINES[engine]:
+                return
+            self.process.stop_process()
+            
         result = self.process.start_process_manually(ENGINES[engine], None)
         print(result)
         if not result and self._worker:
@@ -321,13 +331,14 @@ class SystemProcessFindWorker(QObject):
         self.is_run = False
         self.signal = None
         self.stop_flag = threading.Event()
+        self.lst_msg_proc_found = ""
         
     @Slot(dict)
     def setup(self, processDict, signal:SignalInstance):
         self.processDict = processDict
         self.signal = signal
+        self.lst_msg_proc_found = ""
         
-
     @Slot()
     def run(self):
         self.is_run = True
@@ -409,10 +420,13 @@ class SystemProcessFindWorker(QObject):
             pid = self.search_process(
                 dump, processName, processPath if processPath!="" else None
             )
-            if processState == 1 and not pid and self.signal:
+            if (processState == 1 and not pid and self.signal and 
+                self.lst_msg_proc_found != processName):
+                self.lst_msg_proc_found = processName
                 self.signal.emit('#COND:PROC_NOT_FOUND', processName) 
 
-            if processState != 1 and pid and self.signal:
+            if processState != 1 and pid and self.signal and self.lst_msg_proc_found != processName:
+                self.lst_msg_proc_found = processName
                 self.signal.emit('#COND:PROC_FOUND', processName) 
             
             if processState == 1 and not pid:
