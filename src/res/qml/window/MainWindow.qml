@@ -741,6 +741,10 @@ FramelessWindow {
         }
         function onToastRequest(id, _arg){
             var msg = ''
+            if (id != '#COND:FAILURE' && 
+                !backend.getBool('NOTIFICATIONS', 'notifyaboutconditional')) {
+                    return
+                }
             if (id == '#COND:START_SUCCESS') {
                 msg = backend.get_element_loc("notf_conditional_run_setup")
             } else if (id == '#COND:STOP_SUCCESS') {
