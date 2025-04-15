@@ -398,6 +398,7 @@ ScrollablePage {
                     id: checkBtn
                     text: backend.get_element_loc("update_available_btn_t")
                     highlighted: true
+                    enabled:!systemProcessHelper.is_alive()
                     Layout.minimumWidth: 50
                     Layout.alignment: Qt.AlignRight|Qt.AlignVCenter
                     
@@ -536,7 +537,7 @@ ScrollablePage {
                             text: backend.get_element_loc("preset_tip")
                             horizontalAlignment: Text.AlignLeft
                             font: Typography.caption
-                            color: "#c0c0c0"
+                            color: Theme.res.textFillColorSecondary
                             wrapMode: Text.Wrap
                         }
                     }
@@ -828,7 +829,7 @@ ScrollablePage {
                     text: backend.get_element_loc("blacklist_used_tip")
                     horizontalAlignment: Qt.AlignVCenter
                     font: Typography.caption
-                    color: "#c0c0c0"
+                    color: Theme.res.textFillColorSecondary
                     width: exp.width - 100 - 30 
                     wrapMode: Text.Wrap
                 }
@@ -1761,6 +1762,15 @@ Component {
 Component.onCompleted:{
         if (window.title !== title){
             multiWindow.close_window(title);
+        }
+    }
+Connections{
+        target:systemProcessHelper
+        function onProcessCheckedStarted(){
+            checkBtn.enabled = false
+        }
+        function onProcessCheckedStopped(){
+            checkBtn.enabled = true
         }
     }
 Connections {

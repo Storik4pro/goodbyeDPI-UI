@@ -189,7 +189,7 @@ class PatchDownloadWorker(QObject):
                 match = re.search(r'/download/(\d+\.\d+\.\d+)/', url)
                 if match and not DEBUG:
                     version = match.group(1)
-                    if version < VERSION:
+                    if version <= VERSION:
                         continue
                     
                 dependency_patch_path = os.path.join(temp_dir, os.path.basename(url))

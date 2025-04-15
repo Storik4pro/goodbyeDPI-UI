@@ -50,7 +50,7 @@ ScrollablePage {
                         CopyableText {
                             text: backend.get_version()
                             font: Typography.body
-                            color: "#c0c0c0"
+                            color: Theme.res.textFillColorSecondary
                         }
                     }
 
@@ -64,7 +64,7 @@ ScrollablePage {
                         CopyableText {
                             text: 'Storik4pro'
                             font: Typography.body
-                            color: "#c0c0c0"
+                            color: Theme.res.textFillColorSecondary
                         }
                     }
                 }
@@ -102,7 +102,7 @@ ScrollablePage {
                 text: "© 2024 Storik4. License: Apache License, Version 2.0."
                 Layout.preferredWidth: cllay.width - infoButton.width
                 font.pixelSize: 14
-                color: "#c0c0c0"
+                color: Theme.res.textFillColorSecondary
                 wrapMode:Text.Wrap
             }
             HyperlinkButton{

@@ -19,12 +19,14 @@ ScrollablePage {
             font: Typography.bodyStrong
         }
         Button {
+            id:componentBtn
             Layout.minimumHeight: 68
             Layout.fillWidth: true
             Layout.preferredWidth: Math.min(1000, parent.width * 0.9)
             Layout.minimumWidth: 300
             Layout.maximumWidth: 1000
             Layout.alignment: Qt.AlignHCenter
+            enabled:!systemProcessHelper.is_alive()
 
             RowLayout {
                 anchors.fill: parent
@@ -284,6 +286,29 @@ ScrollablePage {
                     }
 
                     Rectangle {
+                        Layout.fillWidth: true
+                        Layout.leftMargin: -15
+                        Layout.topMargin: 5
+                        Layout.bottomMargin: 5
+                        height: 3
+                        color: Qt.rgba(0.0, 0.0, 0.0, 0.3)
+                        opacity: 0.3
+                    }
+                    RowLayout {
+                        spacing: 10
+                        CheckBox {
+                            id:chkb5
+                            bottomPadding: 10
+                            text: backend.get_element_loc("notifications_conditional_util")
+                            checked: backend.getBool("NOTIFICATIONS", 'notifyaboutconditional')
+                            Layout.alignment: Qt.AlignVCenter
+                            onClicked: {
+                                backend.toggleBool("NOTIFICATIONS", "notifyaboutconditional", chkb5.checked)
+                            }
+                        }
+                    }
+
+                    Rectangle {
                         width: parent.width
                         height: 10
                         Layout.topMargin: 5
@@ -410,6 +435,15 @@ ScrollablePage {
                     }
                 }
             }
+        }
+    }
+    Connections{
+        target:systemProcessHelper
+        function onProcessCheckedStarted(){
+            componentBtn.enabled = false
+        }
+        function onProcessCheckedStopped(){
+            componentBtn.enabled = true
         }
     }
     

@@ -416,7 +416,7 @@ ScrollablePage {
                         text: backend.get_element_loc('see_output_tip')
                         horizontalAlignment: Text.AlignLeft
                         font: Typography.caption
-                        color: "#c0c0c0"
+                        color: Theme.res.textFillColorSecondary
                         wrapMode:Text.Wrap
                     }
                 }
@@ -442,13 +442,14 @@ ScrollablePage {
             }
         }
         Button{
+            id:proxyBtn
             Layout.preferredHeight: 68
             Layout.fillWidth: true
             Layout.preferredWidth: Math.min(1000, parent.width * 0.9) 
             Layout.minimumWidth: 300 
             Layout.maximumWidth: 1000
             Layout.alignment: Qt.AlignHCenter
-            enabled: true
+            enabled: !systemProcessHelper.is_alive()
             RowLayout{
                 anchors.fill: parent
                 anchors{
@@ -471,7 +472,7 @@ ScrollablePage {
                         text: backend.get_element_loc('proxy_setup_tip')
                         horizontalAlignment: Text.AlignLeft
                         font: Typography.caption
-                        color: "#c0c0c0"
+                        color: Theme.res.textFillColorSecondary
                         wrapMode:Text.Wrap
                     }
                 }
@@ -497,6 +498,7 @@ ScrollablePage {
             Layout.minimumWidth: 300 
             Layout.maximumWidth: 1000
             Layout.alignment: Qt.AlignHCenter
+            enabled:!systemProcessHelper.is_alive()
             RowLayout{
                 anchors.fill: parent
                 anchors{
@@ -518,7 +520,7 @@ ScrollablePage {
                         text: backend.get_element_loc('chk_preset_tip')
                         Layout.fillWidth: true
                         font: Typography.caption
-                        color: "#c0c0c0"
+                        color: Theme.res.textFillColorSecondary
                         horizontalAlignment: Text.AlignLeft
                         wrapMode:Text.Wrap
                     }
@@ -547,6 +549,63 @@ ScrollablePage {
             }
             
         }
+        Button{
+            id:btn3
+            Layout.minimumHeight: 68
+            Layout.fillWidth:true
+            Layout.minimumWidth: 300 
+            Layout.maximumWidth: 1000
+            Layout.alignment: Qt.AlignHCenter
+            Layout.preferredHeight:textButtonContent.implicitHeight + 20
+            RowLayout{
+                anchors.fill: parent
+                anchors{
+                    leftMargin: 20
+                    rightMargin: 20
+                }
+                spacing: 10
+                ColumnLayout{
+                    id:textButtonContent
+                    Layout.fillWidth: true
+                    spacing: 2
+                    Label{
+                        Layout.fillWidth: true
+                        text: backend.get_element_loc('conditional_run')
+                        horizontalAlignment: Text.AlignLeft
+                        wrapMode:Text.Wrap
+                        font: Typography.body
+                    }
+                    Label {
+                        text: backend.get_element_loc('conditional_run_tip')
+                        Layout.fillWidth: true
+                        font: Typography.caption
+                        color: Theme.res.textFillColorSecondary
+                        horizontalAlignment: Text.AlignLeft
+                        wrapMode:Text.Wrap
+                    }
+                }
+                IconButton {
+                    width: 30
+                    height: 30
+                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                    Icon {
+                        anchors.centerIn: parent
+                        source: FluentIcons.graph_OpenInNewWindow
+                        width: 15
+                        height: 15
+                    }
+                    onClicked: {
+                        WindowRouter.go("/conditionalrun")
+                    }
+                }
+            }
+            
+            onClicked: {
+                WindowRouter.go("/conditionalrun")
+            }
+            
+        }
+
     }
     Component.onCompleted:{
         if (window.title !== title){
@@ -559,6 +618,17 @@ ScrollablePage {
             if (id === title && window.title !== title) {
                 page_router.go("/")
             }
+        }
+    }
+    Connections{
+        target:systemProcessHelper
+        function onProcessCheckedStarted(){
+            proxyBtn.enabled = false
+            btn2.enabled = false
+        }
+        function onProcessCheckedStopped(){
+            proxyBtn.enabled = true
+            btn2.enabled = true
         }
     }
 }

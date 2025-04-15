@@ -34,10 +34,28 @@ FramelessWindow {
     autoDestroy: false
     property var processStarted: process.is_process_alive()
     property var windowState: true
+    property var isProcessCheckRun: systemProcessHelper.is_alive()
     initialItem: resolvedUrl("res/qml/screen/MainScreen.qml")
     appBar: AppBar{
         implicitHeight: 48
         windowIcon: Item{}
+        action: RowLayout{
+            IconButton{
+                id: btn_dark
+                visible:isProcessCheckRun
+                implicitWidth: 46
+                padding: 0
+                radius: 0
+                icon.width: 14
+                icon.height: 14
+                icon.name: "qrc:/qt/qml/GoodbyeDPI_UI/res/image/c_logo.png"
+                ToolTip.visible: hovered
+                ToolTip.text: backend.get_element_loc("conditional_run_enabled")
+                ToolTip.delay: Theme.toolbarDelay
+                onClicked: WindowRouter.go("/conditionalrun")
+                icon.color: "#00000000"
+            }
+        }
     }
     /*onNewInit:
         (argument)=>{
@@ -437,9 +455,16 @@ FramelessWindow {
                             WindowRouter.go("/pseudoconsole")
                         }
                     }
+                    P.MenuItem {
+                        text: qsTr(backend.get_element_loc("conditional_run_title"))
+                        onTriggered: {
+                            WindowRouter.go("/conditionalrun")
+                        }
+                    }
                 }
                 P.Menu {
                     title: backend.get_element_loc("component")
+                    enabled:!isProcessCheckRun
 
                     P.MenuItem {
                         text: qsTr("GoodbyeDPI")
@@ -704,6 +729,43 @@ FramelessWindow {
             isProcessCanStart = true;
         }
     }
+    Connections{
+        target:systemProcessHelper
+        function onProcessCheckedStarted(){
+            isProcessCanStart = false;
+            isProcessCheckRun = true;
+        }
+        function onProcessCheckedStopped(){
+            isProcessCanStart = true;
+            isProcessCheckRun = false;
+        }
+        function onToastRequest(id, _arg){
+            var msg = ''
+            if (id != '#COND:FAILURE' && 
+                !backend.getBool('NOTIFICATIONS', 'notifyaboutconditional')) {
+                    return
+                }
+            if (id == '#COND:START_SUCCESS') {
+                msg = backend.get_element_loc("notf_conditional_run_setup")
+            } else if (id == '#COND:STOP_SUCCESS') {
+                msg = backend.get_element_loc("notf_conditional_run_remove")
+            } else if (id == '#COND:FAILURE') {
+                msg = backend.get_element_loc("notf_conditional_run_err")
+            } else if (id == '#COND:PROC_FOUND') {
+                var _msg = backend.get_element_loc("notf_conditional_run_found")
+                msg = _arg!=""?_msg.arg(_arg):_msg
+            } else if (id == '#COND:PROC_NOT_FOUND') {
+                var _msg = backend.get_element_loc("notf_conditional_run_not_found")
+                msg = _arg!=""?_msg.arg(_arg):_msg
+            } 
+            Qt.callLater(
+                toast.show_notification, 
+                "#NOTF_CONDITIONAL_RUN_OPEN", 
+                backend.get_element_loc("conditional_run_title"), 
+                msg
+            )
+        }
+    }
     
     Connections {
         target:proxyHelper
@@ -800,6 +862,10 @@ FramelessWindow {
                 if (action === "user_not_dismissed") {
                     Qt.openUrlExternally("https://storik4pro.github.io/wiki/cert/")
                 }
+            } else if (notificationId == '#NOTF_CONDITIONAL_RUN_OPEN') {
+                if (action === "user_not_dismissed") {
+                    WindowRouter.go('/conditionalrun')
+                }
             }
         }
     }
@@ -847,6 +913,10 @@ FramelessWindow {
 
         updateIcon()
         backend.start_check_component_updates()
+
+        if (backend.getBool('GLOBAL', 'conditionenabled')) {
+            systemProcessHelper.start_process_checker()
+        }
         
     }
    

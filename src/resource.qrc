@@ -2,6 +2,7 @@
     <qresource prefix="/qt/qml/GoodbyeDPI_UI">
         <file>res/image/logo.png</file>
         <file>res/image/tray_logo.png</file>
+        <file>res/image/c_logo.png</file>
         <file>res/image/tray_logo_green.png</file>
         <file>res/image/tray_logo_red.png</file>
         <file>res/image/update.png</file>
@@ -47,6 +48,8 @@
         <file>res/qml/page/T_AdditionalUtilsGoodCheckPage.qml</file>
         <file>res/qml/screen/MainScreen.qml</file>
         <file>res/qml/window/MainWindow.qml</file>
+        <file>res/qml/window/ConditionalRunWindow.qml</file>
+        <file>res/qml/screen/ConditionalRunScreen.qml</file>
         <file>res/qml/screen/MultiWindowScreen.qml</file>
         <file>res/qml/screen/PseudoConsoleScreen.qml</file>
         <file>res/qml/window/PseudoConsoleWindow.qml</file>

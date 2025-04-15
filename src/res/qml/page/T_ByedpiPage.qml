@@ -160,7 +160,7 @@ Page{
                                     text: backend.get_element_loc('share_to_any_tip')
                                     Layout.fillWidth: true
                                     font: Typography.caption
-                                    color: "#c0c0c0"
+                                    color: Theme.res.textFillColorSecondary
                                     horizontalAlignment: Text.AlignLeft
                                     wrapMode:Text.Wrap
                                 }
@@ -354,6 +354,7 @@ ScrollablePage {
                     id: checkBtn
                     text: backend.get_element_loc("update_available_btn_t")
                     highlighted: true
+                    enabled:!systemProcessHelper.is_alive()
                     Layout.minimumWidth: 50
                     Layout.alignment: Qt.AlignRight|Qt.AlignVCenter
                     
@@ -471,7 +472,7 @@ ScrollablePage {
                         text: backend.get_element_loc("preset_tip")
                         horizontalAlignment: Text.AlignLeft
                         font: Typography.caption
-                        color: "#c0c0c0"
+                        color: Theme.res.textFillColorSecondary
                         wrapMode: Text.Wrap
                     }
                 }
@@ -536,7 +537,7 @@ ScrollablePage {
                             text: backend.get_element_loc('proxy_setup_tip')
                             horizontalAlignment: Text.AlignLeft
                             font: Typography.caption
-                            color: "#c0c0c0"
+                            color: Theme.res.textFillColorSecondary
                             wrapMode:Text.Wrap
                         }
                     }
@@ -1071,6 +1072,15 @@ Component.onCompleted:{
             multiWindow.close_window(title);
         }
     }
+Connections{
+    target:systemProcessHelper
+    function onProcessCheckedStarted(){
+        checkBtn.enabled = false
+    }
+    function onProcessCheckedStopped(){
+        checkBtn.enabled = true
+    }
+}
 Connections {
         target:multiWindow
         function onMulti_window_init(id) {
