@@ -915,7 +915,7 @@ FramelessWindow {
         backend.start_check_component_updates()
 
         if (backend.getBool('GLOBAL', 'conditionenabled')) {
-            systemProcessHelper.start
+            systemProcessHelper.start_process_checker()
         }
         
     }
