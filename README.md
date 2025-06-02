@@ -32,9 +32,11 @@ GoodbyeDPI UI предоставляет удобный графический �
 ## Использование
 ![1](https://github.com/user-attachments/assets/8e97ea96-3cb9-49c8-b5ff-6bc4a8d57a38)
 <details><summary>Больше скриншотов</summary>
+  
 ![3](https://github.com/user-attachments/assets/f108723e-93ff-4e63-a775-42b2ef6375cb)
 ![4](https://github.com/user-attachments/assets/13f4b1bb-024d-431f-9842-6bb380d1e449)
 ![2](https://github.com/user-attachments/assets/cb74727b-2c32-491e-8b4c-426a4a7d7921)
+
 </details>
 
 
