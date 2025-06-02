@@ -212,7 +212,7 @@ class GoodCheckHelper(QObject):
     @Slot(result=str)
     def get_check_engine_name(self):
         _engine = configs['goodcheck'].get_value("engine")
-        return 'goodbyeDPI' if _engine == 'GoodbyeDPI' else _engine
+        return 'goodbyeDPI' if _engine.lower() == 'goodbyedpi' else _engine.lower()
         
     @Slot(result='QVariantList')
     def get_sitelist(self):
@@ -293,6 +293,7 @@ class GoodCheckHelper(QObject):
             if os.path.exists(DIRECTORY+"data/goodbyeDPI/x86_64/goodbyedpi.exe"):
                 shutil.copy(DIRECTORY+"data/goodbyeDPI/x86_64/goodbyedpi.exe", DIRECTORY+"data/goodbyeDPI/x86_64/gdpi.exe")
 
+            configs['goodcheck'].set_value('engine', engine)
             self.settings.save_settings()
             configs['goodcheck'].reload_config()
 

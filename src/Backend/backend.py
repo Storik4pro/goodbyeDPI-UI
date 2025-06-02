@@ -75,7 +75,7 @@ class Backend(QObject):
             {
                 'key': '/goodbyedpi',
                 'title': 'GoodbyeDPI',
-                '_icon': f"qrc:/qt/qml/{PATH}/res/image/logo.png",
+                '_icon': f"qrc:/qt/qml/{PATH}/res/image/glogo.png",
             },
             {
                 'key': '/zapret',
@@ -760,8 +760,33 @@ class Backend(QObject):
         open_folder((DIRECTORY if not DEBUG else DEBUG_PATH)+\
                     f'data/'+('goodbyeDPI' if component_name == 'goodbyedpi' else component_name))
     
+    @Slot(str, int, result=str)
+    def get_config_path_value(self, component_name:str, id):
+        if os.path.exists(Path(CONFIG_PATH, component_name, f"{id}.json")):
+            return f"{id}"
+        else:
+            preset_list = self.get_presets(component_name)
+            return f"{preset_list[id].split('.')[0]}"
+    
+    @Slot(str, result=int)
+    def get_current_id(self, component_name:str):
+        preset_id = self.getInt(component_name.upper(), 'preset')
+        
+        basic_preset_list = self.get_presets(component_name, "basiconly")
+        load_preset_list = self.get_presets(component_name, "loadedonly")
+        
+        if len(basic_preset_list) >= preset_id:
+            return preset_id
+        elif preset_id <= len(basic_preset_list) + len(load_preset_list) + 1:
+            return preset_id + 1
+        else:
+            for i in range(len(load_preset_list)):
+                if int(load_preset_list[i].split('.')[0]) == preset_id:
+                    return len(basic_preset_list) + i + 2
+        return 3
+    
     @Slot(str, result=list)
-    def get_presets(self, component_name):
+    def get_presets(self, component_name, _type="normal"):
         folder_path = CONFIG_PATH+f"/{component_name}"
 
         presets_list = []
@@ -793,11 +818,17 @@ class Backend(QObject):
         if standard_presets:
             presets_list.append(f"<separator>{self.get_element_loc('standart').upper()}")
             presets_list.extend(standard_presets)
-
+            
+        if (_type == "basiconly"):
+                return standard_presets
+        
         if loaded_presets:
             presets_list.append(f"<separator>{self.get_element_loc('loaded').upper()}")
             presets_list.extend(loaded_presets)
 
+        if (_type == "loadedonly"):
+                return loaded_presets
+            
         return presets_list
     
     @Slot()

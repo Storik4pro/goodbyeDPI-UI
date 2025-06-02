@@ -417,7 +417,7 @@ class Process(QObject):
         self.preset_changed.emit()
         self.clean_output.emit()
         
-        if engine and not settings.settings['COMPONENTS'].getboolean(engine):
+        if engine and not settings.settings['COMPONENTS'].getboolean(engine.lower()):
             self.handle_error('Component not installed correctly.')
             return False
 

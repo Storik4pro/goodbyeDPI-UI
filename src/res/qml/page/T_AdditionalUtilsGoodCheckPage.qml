@@ -118,7 +118,13 @@ ScrollablePage {
                         if (result) {
                             process.update_preset()
                             var _engine = goodCheck.get_check_engine_name() === 'GoodbyeDPI' ? 'goodbyeDPI':goodCheck.get_check_engine_name()
+                            if (_engine != 'goodbyeDPI') {
+                                backend.toggleBool(_engine.toUpperCase(), 'use_advanced_mode', true)
+                            } else {
+                                backend.toggleBool('GLOBAL', 'use_advanced_mode', true)
+                            }
                             process.change_engine(_engine)
+
                             isExitAvailible = true
                             for (var i = 0; i < buttonArray.length; i++) {
                                 if (buttonArray[i].btnstrategy === strategyForApply) {
@@ -1941,6 +1947,32 @@ ScrollablePage {
     function loadAllData() {
         _asyncToGenerator(function*() {
             animation.visible = true
+
+            function hasSeparator(all, success) {
+                for (var k = 0; k < strategyModel.count; ++k) {
+                    var item = strategyModel.get(k)
+                    if (item.type === 'separator'
+                        && item.all === all
+                        && item.success === success) {
+                        return true
+                    }
+                }
+                return false
+            }
+
+            function hasStrategy(all, success, strategyName) {
+                for (var k = 0; k < strategyModel.count; ++k) {
+                    var item = strategyModel.get(k)
+                    if (item.type === 'strategy'
+                        && item.all === all
+                        && item.success === success
+                        && item.strategy === strategyName) {
+                        return true
+                    }
+                }
+                return false
+            }
+
             var data = goodCheck.get_strategy_list()
             strategyModel.clear()
             yield pass();
@@ -1950,22 +1982,30 @@ ScrollablePage {
                 var strategyGroup = data[i]
                 var all = strategyGroup.all
                 var success = strategyGroup.success
-                strategyModel.append({
-                    'all':all,
-                    'success':success,
-                    'type':'separator',
-                    'strategy':''
-                })
+                if (!hasSeparator(all, success)) {
+                    strategyModel.append({
+                        'all':all,
+                        'success':success,
+                        'type':'separator',
+                        'strategy':''
+                    })
+                }
                 var strategies = strategyGroup.strategies
+                
                 for (var j = 0; j < strategies.length; ++j) {
                     yield pass();
+                    var strategyName = strategies[j]
+
+                    if (!hasStrategy(all, success, strategyName)) {
                         strategyModel.append({
                         'all':all,
                         'success':success,
                         'type':'strategy',
                         'strategy':strategies[j]
-                    })
+                        })
+                    }
                 }
+                
             }
 
             var data = goodCheck.get_sitelist()
