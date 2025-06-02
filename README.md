@@ -1,4 +1,4 @@
-# GoodbyeDPI UI
+![icon](https://github.com/user-attachments/assets/e67c903c-e649-4560-8483-3d0bde4d1e0f)
 
 Добро пожаловать в GoodbyeDPI UI! Это пользовательский интерфейс для проектов [goodbyeDPI](https://github.com/ValdikSS/GoodbyeDPI), [zapret](https://github.com/bol-van/zapret) [byeDPI](https://github.com/hufrea/byedpi) и [spoofDPI](https://github.com/xvzc/SpoofDPI)
 
@@ -30,9 +30,12 @@ GoodbyeDPI UI предоставляет удобный графический �
 6. Поздравляем! Вы завершили установку!
 
 ## Использование
-![image](https://github.com/user-attachments/assets/1bd27ac1-1f93-4038-886e-c1a6a048469e)
-![image](https://github.com/user-attachments/assets/02ecdf6f-b082-4522-82bd-58c5e7d38ee5)
-![Снимок экрана 2024-10-31 184336](https://github.com/user-attachments/assets/4bdab7b0-5eec-40d5-b0d3-7a3e74770b06)
+![1](https://github.com/user-attachments/assets/8e97ea96-3cb9-49c8-b5ff-6bc4a8d57a38)
+<details><summary>Больше скриншотов</summary>
+![3](https://github.com/user-attachments/assets/f108723e-93ff-4e63-a775-42b2ef6375cb)
+![4](https://github.com/user-attachments/assets/13f4b1bb-024d-431f-9842-6bb380d1e449)
+![2](https://github.com/user-attachments/assets/cb74727b-2c32-491e-8b4c-426a4a7d7921)
+</details>
 
 
 1. Запустите приложение.
