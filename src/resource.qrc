@@ -1,6 +1,7 @@
 <RCC>
     <qresource prefix="/qt/qml/GoodbyeDPI_UI">
         <file>res/image/logo.png</file>
+        <file>res/image/glogo.png</file>
         <file>res/image/tray_logo.png</file>
         <file>res/image/c_logo.png</file>
         <file>res/image/tray_logo_green.png</file>
