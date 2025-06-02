@@ -1,7 +1,5 @@
 # GoodbyeDPI UI
 
-> Вы хорошо знаете Python/C# и хотите поучавствовать в совершенствовании программы? Напишите на почту storik4.20@gmail.com
-
 Добро пожаловать в GoodbyeDPI UI! Это пользовательский интерфейс для проектов [goodbyeDPI](https://github.com/ValdikSS/GoodbyeDPI), [zapret](https://github.com/bol-van/zapret) [byeDPI](https://github.com/hufrea/byedpi) и [spoofDPI](https://github.com/xvzc/SpoofDPI)
 
 ## Описание
