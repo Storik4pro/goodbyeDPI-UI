@@ -95,11 +95,21 @@ ScrollablePage {
                     Qt.openUrlExternally("https://github.com/Storik4pro/goodbyeDPI-UI/issues")
                 }
             }
+            IconButton{
+                Layout.leftMargin: 0
+                icon.name: FluentIcons.graph_Heart
+                icon.width: 20
+                icon.height: 20
+                text: backend.get_element_loc('say_thanks')
+                onClicked: {
+                    Qt.openUrlExternally("https://pay.cloudtips.ru/p/5bb7ff74")
+                }
+            }
         }
         RowLayout{
             spacing:0
             CopyableText {
-                text: "© 2024 Storik4. License: Apache License, Version 2.0."
+                text: "© 2025 Storik4. License: Apache License, Version 2.0."
                 Layout.preferredWidth: cllay.width - infoButton.width
                 font.pixelSize: 14
                 color: Theme.res.textFillColorSecondary
@@ -392,6 +402,7 @@ ScrollablePage {
             ListElement { text: "zhuzichu520"; link: "https://github.com/zhuzichu520"}
             ListElement { text: "Lux Fero"; link: ""}
             ListElement { text: "lumenpearson"; link: ""}
+            ListElement { text: "leaftail1880"; link: ""}
 
         }
         Repeater {
