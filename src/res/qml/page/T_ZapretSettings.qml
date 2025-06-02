@@ -476,7 +476,7 @@ ScrollablePage {
         ListModel {
             id: componentModel
             Component.onCompleted: {
-                var jsonFilePath = cmbox.currentIndex 
+                var jsonFilePath = backend.get_config_path_value('zapret', cmbox.currentIndex)
                 componentModel.clear()
                 var data = backend.analyze_custom_parameters(jsonFilePath, true)
                 for (var i = 0; i < data.length; ++i) {
@@ -548,7 +548,7 @@ ScrollablePage {
                         Layout.preferredWidth: rwlay.width < 550 ? rwlay.width-200 : 350
                         Layout.fillWidth: false
                         model: backend.get_presets('zapret')
-                        currentIndex: model[backend.getInt("ZAPRET", "preset")].includes("<separator>") ? backend.getInt("ZAPRET", "preset")+1 :backend.getInt("ZAPRET", "preset")
+                        currentIndex: backend.get_current_id("zapret") !== 0 ? backend.get_current_id("zapret") : 1
                         property var isInitializing: true
                         onCurrentIndexChanged: {
                             let selectedValue = model[currentIndex];
@@ -561,7 +561,8 @@ ScrollablePage {
                             console.log(process.get_preset(), selectedValue)
                             backend.zapret_update_preset(selectedValue);
                             process.update_preset()
-                            var jsonFilePath = cmbox.currentIndex
+                            var jsonFilePath = backend.get_config_path_value('zapret', cmbox.currentIndex)
+                            console.log(jsonFilePath)
                             componentModel.clear()
                             var data = backend.analyze_custom_parameters(jsonFilePath, true)
                             for (var i = 0; i < data.length; ++i) {
@@ -719,7 +720,7 @@ ScrollablePage {
                         ListModel {
                             id: editModel
                             Component.onCompleted: {
-                                var jsonFilePath = cmbox.currentIndex
+                                var jsonFilePath = backend.get_config_path_value('zapret', cmbox.currentIndex)
                                 editModel.clear()
                                 var data = backend.analyze_custom_parameters(jsonFilePath, false)
                                 for (var i = 0; i < data.length; ++i) {
