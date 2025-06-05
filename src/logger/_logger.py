@@ -27,12 +27,13 @@ class AppLogger:
         self.utilname = utilname
         self.logs_folder = 'logs'
         self.log_file_path = os.path.join(self.logs_folder, f'{utilname}.log')
-        self.logger = logging.getLogger(__name__)
+        
         os.makedirs(self.logs_folder, exist_ok=True)
-        try:
-            logging.basicConfig(filename=self.log_file_path, level=log_level)
-        except:
-            pass
+        handler = logging.FileHandler(self.log_file_path)
+        
+        self.logger = logging.getLogger(self.utilname)
+        self.logger.setLevel(log_level)
+        self.logger.addHandler(handler)
 
     def create_logs(self, text):
         _time = datetime.now().strftime('%H:%M:%S')
@@ -54,13 +55,37 @@ class AppLogger:
         self.show_criticalerror_message(error)
 
     def show_warning_message(self, info):
-        messagebox.showwarning("GoodbyeDPI UI", error_placeholder.format(title=warn, version=self.__version__, system=system_info, _type="WARNING", info=info))
+        messagebox.showwarning("GoodbyeDPI UI", 
+                               error_placeholder.format(
+                                   title=warn, 
+                                   version=self.__version__, 
+                                   system=system_info, 
+                                   _type="WARNING", 
+                                   info=info
+                                   )
+                               )
 
     def show_error_message(self, info):
-        messagebox.showerror("GoodbyeDPI UI", error_placeholder.format(title=info,version=self.__version__, system=system_info, _type="ERROR", info=info))
+        messagebox.showerror("GoodbyeDPI UI", 
+                             error_placeholder.format(
+                                 title=info,
+                                 version=self.__version__, 
+                                 system=system_info, 
+                                 _type="ERROR", 
+                                 info=info
+                                 )
+                             )
 
     def show_criticalerror_message(self, info):
-        messagebox.showerror("GoodbyeDPI UI", error_placeholder.format(title=er, version=self.__version__, system=system_info, _type="CRITICAL ERROR", info=info))
+        messagebox.showerror("GoodbyeDPI UI", 
+                             error_placeholder.format(
+                                 title=er, 
+                                 version=self.__version__,
+                                 system=system_info, 
+                                 _type="CRITICAL ERROR", 
+                                 info=info
+                                 )
+                             )
         sys.exit(-1)
 
     def create_debug_log(self, text):
@@ -84,7 +109,8 @@ class AppLogger:
         self.logger.critical(f'[{_time}] {text}')
 
     def cleanup_logs(self):
-        if os.path.exists(self.log_file_path) and os.path.getsize(self.log_file_path) == 0:
+        if (os.path.exists(self.log_file_path) and 
+            os.path.getsize(self.log_file_path) == 0):
             try:
                 logging.shutdown()
                 os.remove(self.log_file_path)
