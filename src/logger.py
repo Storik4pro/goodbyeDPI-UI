@@ -84,7 +84,7 @@ def setup(name, level=logging.DEBUG):
     __logging = logging.getLogger(name)
     __logging.setLevel(level)
     log_file_name = f"{name}_{QDateTime.currentDateTime().toString('yyyyMMdd')}.log"
-    log_dir_path = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppLocalDataLocation) + "/log"
+    log_dir_path = 'logs'
     log_dir = QDir(log_dir_path)
     if not log_dir.exists():
         log_dir.mkpath(log_dir_path)
