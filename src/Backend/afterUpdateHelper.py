@@ -11,7 +11,7 @@ from _data import BACKUP_SETTINGS_FILE_PATH, COMPONENTS_URLS, DEBUG_PATH, DIRECT
 from utils import get_component_download_url
 from .backend import DownloadComponent
 
-logger = AppLogger(VERSION, 'after_update', LOG_LEVEL if not DEBUG else logging.DEBUG)
+logger = AppLogger(VERSION, 'after_update', DIRECTORY, LOG_LEVEL if not DEBUG else logging.DEBUG)
 
 class AfterUpdateHelper(QObject):
     progressIndeterminateVisibleChanged = Signal(bool)

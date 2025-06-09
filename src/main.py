@@ -1,4 +1,4 @@
-from logger import AppLogger
+from logger import AppLogger, hot_debugger
 
 try:
     import asyncio
@@ -29,10 +29,10 @@ try:
     from Backend.notification import Toast
 
     from quick_start import after_update_actions, check_app_is_runned, chk_directory, first_run_actions, kill_update, merge_settings, merge_blacklist, rename_update_exe, merge_settings_to_json
-    logger = AppLogger(VERSION, "goodbyeDPI", LOG_LEVEL if not DEBUG else logging.DEBUG)
+    logger = AppLogger(VERSION, "goodbyeDPI", DIRECTORY, LOG_LEVEL if not DEBUG else logging.DEBUG)
 except:
     import traceback
-    logger = AppLogger("-x-", "goodbyeDPI", logging.CRITICAL)
+    logger = AppLogger("-x-", "goodbyeDPI", "", logging.CRITICAL)
     logger.raise_critical(traceback.format_exc())
 
 try:
@@ -43,6 +43,7 @@ try:
             return False
         
     def run_app(first_run):
+        hot_debugger.log('Getting ready backend...')
         backend = Backend(first_run)
         process = Process()
         toast = Toast()
@@ -53,17 +54,28 @@ try:
         iconImageProvider = IconImageProvider()
         proxyHelper = ProxyHelper(iconImageProvider)
         systemProcessHelper = SystemProcessHelper(process)
+        hot_debugger.log('Getting ready backend complete')
+        
         print(sys.argv)
+        hot_debugger.log('Getting ready style and app config...')
         os.environ["QT_QUICK_CONTROLS_STYLE"] = "FluentUI"
         QGuiApplication.setOrganizationName(GlobalConfig.application_company)
         QGuiApplication.setOrganizationDomain(GlobalConfig.application_domain)
         QGuiApplication.setApplicationName(GlobalConfig.application_name)
         QGuiApplication.setApplicationDisplayName(GlobalConfig.application_name)
         QGuiApplication.setApplicationVersion(GlobalConfig.application_version)
+        hot_debugger.log('Getting ready style and app config complete')
+        
+        hot_debugger.log('Setup logger...')
         Logger.setup("GoodbyeDPI_UI", level=LOG_LEVEL if not DEBUG else logging.DEBUG)
+        hot_debugger.log('Setup logger complete')
+        
+        hot_debugger.log('Getting ready app...')
         app = QGuiApplication(sys.argv)
         engine = QQmlApplicationEngine()
+        hot_debugger.log('Getting ready app complete')
         
+        hot_debugger.log('Register backend in GoodbyeDPI_UI namespace...')
         engine.rootContext().setContextProperty("backend", backend)
         engine.rootContext().setContextProperty("process", process)
         engine.rootContext().setContextProperty("toast", toast)
@@ -75,7 +87,9 @@ try:
         engine.rootContext().setContextProperty("proxyHelper", proxyHelper)
         engine.rootContext().setContextProperty("systemProcessHelper", systemProcessHelper)
         engine.addImageProvider("icons", iconImageProvider)
+        hot_debugger.log('Register complete')
 
+        hot_debugger.log('Setup windows...')
         engine.addImportPath(":/qt/qml")
         
         icon = QIcon(DIRECTORY+"data/icon.ico")
@@ -88,10 +102,14 @@ try:
 
         loop = QEventLoop(app)
         asyncio.set_event_loop(loop)
+        
+        hot_debugger.log('Setup windows complte')
 
         if not engine.rootObjects():
+            hot_debugger.log('rootObjects is None. Kill...')
             sys.exit(-1)
 
+        hot_debugger.log('Loop started...')
         with loop:
             sys.exit(loop.run_forever())
 
@@ -101,12 +119,13 @@ try:
         try:
             options, args = getopt.getopt(argv, "", ["after-update", "autorun", 
                                                      "after-patching", "after-failed-update", 
-                                                     "debug"])
+                                                     "debug", "enable-hot-debug-mode"])
         except getopt.GetoptError as err:
             pass
 
         autorun = 'False'
         after_update = False
+        hot_debug = False
         first_run = settings.settings.getboolean('GLOBAL', 'is_first_run') if not DEBUG else False
         pompt = ' '
 
@@ -114,28 +133,41 @@ try:
             if name == '--after-update':
                 after_update = True
                 settings.change_setting('GLOBAL', 'update_complete', "False")
+            if name == '--enable-hot-debug-mode':
+                hot_debug = True
+                hot_debugger.setup()
             pompt+=name+value
 
-        if not is_admin() and not DEBUG:
+        is_run_as_admin = is_admin()
+        hot_debugger.log(f"isRunAsAdmin: {is_run_as_admin}; isDebug: {DEBUG}")
+        
+        if not is_run_as_admin and not DEBUG:
             logger.raise_warning(text.inAppText['run_as_admin'])
             sys.exit(-1)
             
-        
+        hot_debugger.log(f"isAppRunAsAdmin check pass.")
         logger.create_debug_log("Getting ready for start application.")
 
         # ==> Getting ready
-
+        hot_debugger.log(f"Checking other app instance...")
         check_app_is_runned(logger)
+        hot_debugger.log(f"Checking other app instance complete")
 
         if settings.settings['GLOBAL']['hide_to_tray'] == "True":
             autorun = 'True'
+        
+        hot_debugger.log(f"autorun is {autorun}")
         try:
             if not DEBUG:
                 # first run actions
+                hot_debugger.log("First run actions...")
                 first_run_actions()
+                hot_debugger.log("First run actions complete")
 
                 # check work directory 
+                hot_debugger.log("Check work directory (cwd)...")
                 chk_directory()
+                hot_debugger.log("Check work directory (cwd) complete")
 
                 # check components installed
                 config = settings.settings
@@ -146,29 +178,36 @@ try:
                     'byedpi': BYEDPI_EXECUTABLE,
                     'zapret':ZAPRET_EXECUTABLE,
                 }
-
+                hot_debugger.log("Check components...")
                 for component, executable in components_to_check.items():
                     component_path = os.path.join(DIRECTORY, "data", component, executable)
                     if config.getboolean('COMPONENTS', component) and not os.path.exists(component_path):
                         settings.change_setting('COMPONENTS', component, 'False')
                         logger.create_info_log(f'Component {component} will be unregistered, because {executable} not exist')
 
-                # check after update actions
+                hot_debugger.log("Check components complete")
+                
+                # check after update 
+                hot_debugger.log("After update actions...")
                 if not settings.settings.getboolean('GLOBAL', 'update_complete'):
                     after_update_actions(logger)
-
-                
+                hot_debugger.log("After update actions complete")
+            
+            hot_debugger.log("Saving settings...")
             settings.save_settings()
+            hot_debugger.log("Saving settings complete")
         except:
             logger.raise_critical(traceback.format_exc())
 
         # ==> Running Qt
+        hot_debugger.log("Running Qt...")
         try:
             run_app(first_run)
         except SystemExit:
             pass
-
+        hot_debugger.log("Qt app is died. Cleanup logs...")
         logger.cleanup_logs()
+        hot_debugger.log("Cleanup logs complete")
 except SystemExit as ex:
     pass
 except:

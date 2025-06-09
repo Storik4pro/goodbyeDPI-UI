@@ -9,7 +9,10 @@ import winreg
 from logger import AppLogger
 from dotenv import load_dotenv
 
-state = getattr(sys, 'frozen', False)
+if hasattr(__import__(__name__), '__compiled__'):
+    state = True
+else:
+    state = False
 
 if os.path.exists("apiKeys.py") or state:
     from apiKeys import API_KEY
@@ -43,7 +46,7 @@ def is_font_installed(font_name):
 
 DIRECTORY = f'{application_path}/' if not DEBUG else ''
 
-VERSION = "1.2.10"
+VERSION = "1.2.11"
 
 load_dotenv()
 DEV_API = os.getenv('DEV_API')
@@ -173,7 +176,7 @@ BLACKLIST_PROVIDERS = {
     "1andrevich": "https://raw.githubusercontent.com/1andrevich/Re-filter-lists/refs/heads/main/community.lst"
 }
 
-logger = AppLogger(VERSION, "settings_import")
+logger = AppLogger(VERSION, "settings_import", application_path, log_level=logging.INFO)
 
 class Settings:
     def __init__(self, settingsfile=SETTINGS_FILE_PATH, encoding='utf-8', space_around_delimiters=True) -> None:

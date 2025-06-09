@@ -7,25 +7,30 @@ import psutil
 import json
 
 from utils import install_font, is_process_running, is_weak_pc, register_app
-from logger import AppLogger
+from logger import AppLogger, hot_debugger
 from _data import DEBUG, DIRECTORY, CONFIG_PATH, SETTINGS_FILE_PATH, ZAPRET_PATH, settings, text
 
 def check_app_is_runned(logger:AppLogger):
     if not DEBUG:
         existing_app = is_process_running('goodbyeDPI.exe')
+        hot_debugger.log(f'ExistApp: {existing_app}')
         if existing_app:
             result = messagebox.askyesno(text.inAppText['app_is_running'], 
                                          text.inAppText['process']+" 'goodbyeDPI.exe' "+text.inAppText['app_is_running_info'])
             if result:
                 try:
+                    hot_debugger.log(f'Try to kill...')
                     existing_app.terminate()
                     existing_app.wait()
                 except psutil.NoSuchProcess:
+                    hot_debugger.log(f'ERR')
                     logger.create_debug_log(traceback.format_exc())
                 except:
+                    hot_debugger.log(f'ERR')
                     logger.create_error_log(traceback.format_exc())
             else:
                 sys.exit(0)
+    hot_debugger.log(f'CHK end')
 
 def create_custom_hostlist(filename):
     content = """simplex.im
@@ -41,17 +46,32 @@ rtmps.youtube.com"""
 def first_run_actions():
     first_run = settings.settings.getboolean('GLOBAL', 'is_first_run')
     if first_run:
+        hot_debugger.log(f"register...")
         register_app()
+        hot_debugger.log(f"register OK")
+        hot_debugger.log(f"custom hoslist... ")
         create_custom_hostlist(ZAPRET_PATH+"/myhostlist.txt")
+        hot_debugger.log(f"custom hoslist OK")
+
         settings.change_setting('GLOBAL', 'is_first_run', 'False')
 
+        hot_debugger.log(f"You PC is weak?")
         if is_weak_pc():
+            hot_debugger.log(f"You PC is weak.")
             settings.change_setting('APPEARANCE_MODE', 'animations', 'False')
+        else:
+            hot_debugger.log(f"You PC is not weak.")
 
 def after_update_actions(logger:AppLogger):
     try:
+        hot_debugger.log("Try to kill...")
         kill_update()
+        hot_debugger.log("Try to kill OK")
+        
+        hot_debugger.log("Try to rename...")
         update_result = rename_update_exe()
+        hot_debugger.log(f"Try to rename OK => {update_result}")
+        
         settings.change_setting('GLOBAL', 'update_complete', "True")
     except:
         logger.create_error_log(traceback.format_exc())
