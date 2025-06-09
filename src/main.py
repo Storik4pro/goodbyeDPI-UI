@@ -29,10 +29,10 @@ try:
     from Backend.notification import Toast
 
     from quick_start import after_update_actions, check_app_is_runned, chk_directory, first_run_actions, kill_update, merge_settings, merge_blacklist, rename_update_exe, merge_settings_to_json
-    logger = AppLogger(VERSION, "goodbyeDPI", LOG_LEVEL if not DEBUG else logging.DEBUG)
+    logger = AppLogger(VERSION, "goodbyeDPI", DIRECTORY, LOG_LEVEL if not DEBUG else logging.DEBUG)
 except:
     import traceback
-    logger = AppLogger("-x-", "goodbyeDPI", logging.CRITICAL)
+    logger = AppLogger("-x-", "goodbyeDPI", "", logging.CRITICAL)
     logger.raise_critical(traceback.format_exc())
 
 try:

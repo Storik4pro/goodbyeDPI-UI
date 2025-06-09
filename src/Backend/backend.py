@@ -26,7 +26,7 @@ from _data import BACKUP_SETTINGS_FILE_PATH, BLACKLIST_PROVIDERS, COMPONENTS_URL
 KEY = 'GOODBYEDPI'
 PATH = 'GoodbyeDPI_UI'
 
-logger = AppLogger(VERSION, "QT_Backend", LOG_LEVEL)
+logger = AppLogger(VERSION, "QT_Backend", DIRECTORY, LOG_LEVEL)
 
 class Backend(QObject):
     download_url_ready = Signal(str)  

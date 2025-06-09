@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 import os
+from pathlib import Path
 import platform
 import sys
 import tkinter.messagebox as messagebox
@@ -21,11 +22,12 @@ If this error persists, please contact app support and report the issue."
 er = "Unable to start application"
 warn = ""
 info = ""
+
 class AppLogger:
-    def __init__(self, version, utilname, log_level=logging.WARNING) -> None:
+    def __init__(self, version, utilname, path, log_level=logging.WARNING) -> None:
         self.__version__ = version
         self.utilname = utilname
-        self.logs_folder = 'logs'
+        self.logs_folder = Path(path, 'logs')
         self.log_file_path = os.path.join(self.logs_folder, f'{utilname}.log')
         
         os.makedirs(self.logs_folder, exist_ok=True)

@@ -16,7 +16,7 @@ from _data import DEBUG, DEBUG_PATH, DIRECTORY, VERSION, settings
 from logger import AppLogger
 from utils import change_setting, download_update, get_download_url, get_latest_release
 
-logger = AppLogger(VERSION, "patcher")
+logger = AppLogger(VERSION, "patcher", DIRECTORY)
 
 class Patcher(QObject):
     errorHappens = Signal(str)

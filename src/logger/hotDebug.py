@@ -1,6 +1,6 @@
 import logging
 from . import AppLogger
-from _data import VERSION
+from _data import VERSION, DIRECTORY
 HOT_DEBUG_VERSION = VERSION + '_hotdebug'
 
 class HotDebugger:
@@ -8,7 +8,7 @@ class HotDebugger:
         self.logger = None
         
     def setup(self):
-        self.logger = AppLogger(HOT_DEBUG_VERSION, 'hot_debug', logging.DEBUG)
+        self.logger = AppLogger(HOT_DEBUG_VERSION, 'hot_debug', DIRECTORY, logging.DEBUG)
         
         self.logger.create_info_log('Hot debugger is setup correctly.')
         
