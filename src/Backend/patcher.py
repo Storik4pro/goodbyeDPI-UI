@@ -11,6 +11,7 @@ from PySide6.QtQml import QQmlApplicationEngine
 import zipfile
 import json
 import requests
+from packaging.version import Version
 
 from _data import DEBUG, DEBUG_PATH, DIRECTORY, VERSION, settings
 from logger import AppLogger
@@ -189,7 +190,7 @@ class PatchDownloadWorker(QObject):
                 match = re.search(r'/download/(\d+\.\d+\.\d+)/', url)
                 if match and not DEBUG:
                     version = match.group(1)
-                    if version <= VERSION:
+                    if Version(version) <= Version(VERSION):
                         continue
                     
                 dependency_patch_path = os.path.join(temp_dir, os.path.basename(url))
@@ -197,8 +198,8 @@ class PatchDownloadWorker(QObject):
                     self._download_and_process_dependency(url, dependency_patch_path)
                 except Exception as ex:
                     shutil.rmtree(temp_dir)
-                    self.error.emit('ERR_PATCH_REQUROEMENTS_DOWNLOAD')
-                    return 'ERR_PATCH_REQUROEMENTS_DOWNLOAD'
+                    self.error.emit('ERR_PATCH_REQUIREMENTS_DOWNLOAD')
+                    return 'ERR_PATCH_REQUIREMENTS_DOWNLOAD'
                 
             self.processed_patches.append(temp_dir)
             
