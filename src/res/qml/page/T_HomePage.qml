@@ -169,11 +169,14 @@ ScrollablePage {
                             text:backend.get_element_loc('fact')
                             font: Typography.bodyStrong
                         }
-                        Label{
+                        Text{
+                            color:Theme.res.textFillColorSecondary
+                            textFormat: Text.RichText
                             Layout.preferredWidth:rest1.width - 100
                             text:backend.get_fact()
                             font: Typography.body
                             wrapMode:Text.Wrap
+                            onLinkActivated: Qt.openUrlExternally(link)
                         }
                     }
                     IconButton{
