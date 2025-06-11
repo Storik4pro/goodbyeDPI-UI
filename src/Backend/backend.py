@@ -58,7 +58,7 @@ class Backend(QObject):
     @Slot(result=str)
     def get_fact(self):
         if not self.first_run:
-            facts = tuple(self.get_element_loc(f'fact{i}') for i in range(1, 19))
+            facts = tuple(self.get_element_loc(f'fact{i}') for i in range(1, 33))
             random_fact = random.choice(facts)
         else:
             random_fact = self.get_element_loc("first_run_tip")
