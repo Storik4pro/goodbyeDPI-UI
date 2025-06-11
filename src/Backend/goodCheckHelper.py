@@ -7,6 +7,8 @@ import re
 import shutil
 import subprocess
 import threading
+import socket
+import errno
 from PySide6.QtCore import QObject, Slot
 from PySide6.QtCore import QProcess, Signal, QThread, QFileSystemWatcher, QTimer,QProcessEnvironment
 import psutil
@@ -52,6 +54,25 @@ zapret_strategies = [
 byedpi_strategies = [
     "[TCP] - [IPv4]"
 ]
+
+
+
+_ADDR_NOT_AVAIL = {errno.EADDRNOTAVAIL, errno.EAFNOSUPPORT}
+_ADDR_IN_USE = {errno.EADDRINUSE}
+
+def system_has_ipv6() -> bool:
+    if not socket.has_ipv6:
+        return False
+    try:
+        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
+            sock.bind(("::1", 0))
+        return True
+    except OSError as e:
+        if e.errno in _ADDR_NOT_AVAIL:
+            return False
+        if e.errno in _ADDR_IN_USE:
+            return True
+        return False
 
 def parse_all_data(text: str) -> tuple:
     '''
@@ -248,6 +269,10 @@ class GoodCheckHelper(QObject):
     
     @Slot(str, result=int)
     def get_chk_preset_int_value(self, key):
+        if key == "check_list" and self.config.get_value(key) == 3:
+            if not system_has_ipv6():
+                self.config.set_value('check_list', 1)
+                return 1
         return self.config.get_value(key)
 
     @Slot(int)
