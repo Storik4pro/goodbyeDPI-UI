@@ -22,6 +22,7 @@ logger = AppLogger(VERSION, "patcher", DIRECTORY)
 class Patcher(QObject):
     errorHappens = Signal(str)
     downloadProgress = Signal(float)
+    speedInfoChanged = Signal(str, str)
     downloadFinished = Signal(str)
     workFinished = Signal()
     patcherWorkFinished = Signal()
@@ -40,6 +41,7 @@ class Patcher(QObject):
         self.qthread.started.connect(self.worker.run)
         self.worker.progressChanged.connect(self.downloadProgress)
         self.worker.progressChanged.connect(self.progressChanged)
+        self.worker.speedInfoChanged.connect(self.speedInfoChanged)
         self.worker.downloadFinished.connect(self.downloadFinished)
         self.worker.error.connect(self.downloadFinished)
         self.worker.preparationProgress.connect(self.preparationProgress)
@@ -99,6 +101,7 @@ class Patcher(QObject):
 class PatchDownloadWorker(QObject):
     error = Signal(str)
     progressChanged = Signal(float)
+    speedInfoChanged = Signal(str, str)
     downloadFinished = Signal(str)
     workFinished = Signal()
     preparationProgress = Signal()
@@ -118,6 +121,8 @@ class PatchDownloadWorker(QObject):
         else:
             success = self._download_update()
         self.downloadFinished.emit(success)
+        self.workFinished.emit()
+        return
         
 
     def _download_update(self):
@@ -125,7 +130,11 @@ class PatchDownloadWorker(QObject):
         directory = os.path.join((DEBUG_PATH if DEBUG else settings.settings['GLOBAL']['work_directory']), filename)
         self.local_file_path = directory
         try:
-            url = get_download_url(get_latest_release(), filetype='.cdpipatch')
+            url = get_download_url(
+                get_latest_release(), 
+                filetype='.cdpipatch', 
+                debug_check=False
+            )
         except KeyError:
             return 'ERR_INVALID_SERVER_RESPONSE'
         
@@ -136,8 +145,18 @@ class PatchDownloadWorker(QObject):
             return url
 
         try:
-            download_update(url, directory, self.progressChanged)
+            download_update(
+                url, 
+                directory, 
+                self.progressChanged, 
+                speed_changed_signal=self.speedInfoChanged,
+                debug_check=False
+            )
             self.progressChanged.emit(0.0)
+            
+            if DEBUG: 
+                return 'ERR_DEBUG_MODE'
+            
             change_setting('GLOBAL', 'after_update', "True")
             
             if os.path.isdir(f'{DIRECTORY}unpacked_patch'):
