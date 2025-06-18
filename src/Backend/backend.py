@@ -13,6 +13,7 @@ import subprocess
 import sys
 import time
 import traceback
+import markdown
 
 from PySide6.QtCore import QObject, Slot
 from PySide6.QtCore import QProcess, Signal, QThread
@@ -20,7 +21,7 @@ from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 
 from logger import AppLogger
-from utils import ProgressToast, background_sound, change_setting, change_settings, check_version, check_winpty, convert_bat_file, create_xml, delete_file, download_blacklist, error_sound, extract_zip, get_component_download_url, get_latest_release, get_download_url, download_update, move_settings_file, open_custom_blacklist, open_folder, pretty_path, register_component, remove_xml, start_process, stop_servise, unregister_component
+from utils import ProgressToast, background_sound, change_setting, change_settings, check_version, check_winpty, convert_bat_file, create_xml, delete_file, download_blacklist, error_sound, extract_zip, get_component_download_url, get_latest_release, get_download_url, download_update, get_release_info, move_settings_file, open_custom_blacklist, open_folder, pretty_path, register_component, remove_xml, start_process, stop_servise, unregister_component
 from _data import BACKUP_SETTINGS_FILE_PATH, BLACKLIST_PROVIDERS, COMPONENTS_URLS, CONFIG_PATH, DEBUG_PATH, EXECUTABLES, LOG_LEVEL, PRESETS, PRESETS_DEFAULT, REPO_NAME, REPO_OWNER, SETTINGS_FILE_PATH, VERSION, Settings, UserConfig, settings, DEBUG, DIRECTORY, configs, text
 
 KEY = 'GOODBYEDPI'
@@ -922,6 +923,49 @@ class Backend(QObject):
         version = platform.version()
         major, minor, build = map(int, version.split('.'))
         return build >= 22000
+    
+    @Slot(str, result=str)
+    def get_release_notes(self, component_name):
+        repo = None
+        owner = None
+        if component_name != "prg":
+            component_addres = COMPONENTS_URLS[component_name]
+            repo = component_addres.split("/")[1]
+            owner = component_addres.split("/")[0]
+        else:
+            repo = REPO_NAME
+            owner = REPO_OWNER
+        if repo == None or owner == None:
+            return self.get_element_loc("list_of_changes_load_failure")
+        
+        try:
+            data = get_release_info(repo_name=repo, repo_owner=owner, component_name=component_name.lower())
+        except:
+            return self.get_element_loc("list_of_changes_load_failure")
+        
+        locale = self.getValue("GLOBAL", "language")
+        localized_data = re.findall(rf"\[{locale}\]\s*(.*?)(?=(?:\[[A-Z]{{2}}\]|\Z))", data["body"], flags=re.DOTALL)
+        
+        if localized_data is None or localized_data == []:
+            markdown_data = markdown.markdown(data["body"])
+        else:
+            markdown_data = markdown.markdown(localized_data[0])
+            
+        markdown_data = markdown_data.replace("\n", " ")
+        markdown_data = markdown_data.replace("\r", "   ")
+        markdown_data = markdown_data.replace("<h3></h3>", "")
+        
+        markdown_data = markdown_data.replace("<h2>", "<span style='font-size:15px; font-weight:bold; margin:0;'>")
+        markdown_data = markdown_data.replace("</h2>", "</span>")
+        
+        markdown_data = markdown_data.replace("<h1>", "<span style='font-size:20px; font-weight:bold; margin:0;'>")
+        markdown_data = markdown_data.replace("</h1>", "</span>")
+        
+        markdown_data = markdown_data.replace("<ul>", "<ul style='margin:0 0 0 0;'>")
+        markdown_data = markdown_data.replace("</ul>", "</ul>")
+        
+        print(markdown_data)
+        return markdown_data
     
 class UpdateCheckerWorker(QObject):
     finished = Signal(bool)
