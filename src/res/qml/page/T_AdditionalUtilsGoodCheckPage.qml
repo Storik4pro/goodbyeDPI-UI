@@ -482,7 +482,7 @@ ScrollablePage {
                             right: parent.right
                             rightMargin: 0
                         }
-                        width:page.width < 700 ? page.width - 350 : 350
+                        width:page.width < 620 ? page.width - 280 : 350
                         model: [
                             "Zapret",
                             "GoodbyeDPI",
@@ -548,7 +548,7 @@ ScrollablePage {
                         ComboBox {
                             id:sitelist_element
                             
-                            Layout.preferredWidth:(page.width < 700 ? page.width - 350 : 350) - height - 10
+                            Layout.preferredWidth:(page.width < 620 ? page.width - 280 : 350) - height - 10
                             model: [backend.get_element_loc("goodcheck_all"), backend.get_element_loc("goodcheck_googlevideo"), 
                             backend.get_element_loc("goodcheck_miscellaneous"), backend.get_element_loc("goodcheck_nothing"), backend.get_element_loc("goodcheck_twitter")]
                             currentIndex: engine.currentIndex===2 ? goodCheck.get_chk_preset_int_value('tcp_hosts') : backend.get_int_from_config("GOODCHECK", "check_list")
@@ -636,7 +636,7 @@ ScrollablePage {
                             right: parent.right
                             rightMargin: 0
                         }
-                        width:page.width < 700 ? page.width - 350 : 350
+                        width:page.width < 620 ? page.width - 280 : 350
                         model: models[engine.currentIndex]
                         currentIndex: engine.currentIndex===2 ? goodCheck.get_chk_preset_int_value('strategy') : backend.get_int_from_config("GOODCHECK", "strategies")
                         onActivated: {
@@ -780,7 +780,7 @@ ScrollablePage {
                                 right: parent.right
                                 rightMargin: 0
                             }
-                            width:page.width < 700 ? page.width - 350 : 350
+                            width:page.width < 620 ? page.width - 280 : 350
                             model: [
                                 "Native",
                                 "Curl",
