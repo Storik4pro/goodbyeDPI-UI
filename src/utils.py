@@ -80,7 +80,7 @@ class ProgressToast():
             Text(title),
             Text(description),
             Progress(
-                value = "-1",
+                value = "0",
                 status = "{status}",
                 title = filename,
                 display_value = "0% @ 0 MB/s"
@@ -88,7 +88,7 @@ class ProgressToast():
         ]
         self.notification_thread = None
         print(self.toast.elements[2].value)
-        self.start_toast(-1, 'downloading')
+        self.start_toast(0, 'downloading')
 
     async def update_toast_tread(self, value, status):
         self.result = await self.toast.show({
@@ -460,9 +460,10 @@ def stop_servise():
     except Exception as e:
         pass
 
-def download_blacklist(url, progress_toast:ProgressToast, local_filename=GOODBYE_DPI_PATH+'russia-blacklist.txt'):
+def download_blacklist(url, progress_toast:ProgressToast=None, local_filename=GOODBYE_DPI_PATH+'russia-blacklist.txt'):
     temp_filename = local_filename + '.tmp'
-    progress_toast.update_toast(0, 'downloading')
+    if progress_toast:
+        progress_toast.update_toast(0, 'downloading')
     try:
         with requests.get(url, stream=True) as r:
             r.raise_for_status()
@@ -482,9 +483,11 @@ def download_blacklist(url, progress_toast:ProgressToast, local_filename=GOODBYE
     except Exception as ex:
         if os.path.exists(temp_filename):
             os.remove(temp_filename)
-        progress_toast.update_toast(0, 'error', str(ex), 'Something went wrong')
+        if progress_toast:
+            progress_toast.update_toast(0, 'error', str(ex), 'Something went wrong')
         return False
-    progress_toast.update_toast(100, 'complete!')
+    if progress_toast:
+        progress_toast.update_toast(100, 'complete!')
     return True
 
 def move_settings_file(settings_file_path, backup_settings_file_path):
@@ -572,10 +575,10 @@ def get_latest_release(reason:Literal['auto', 'manual']='auto'):
 
     return latest_version
 
-def get_release_info(version):
+def get_release_info(version="", repo_owner=REPO_OWNER, repo_name=REPO_NAME, component_name="prg"):
     if settings.get_value('CACHE', 'prg_update_check_time') != datetime.now().strftime("%d.%m.%Y") or \
-        not os.path.exists(f'{DIRECTORY}tempfiles/versiondata_{REPO_OWNER}_{REPO_NAME}.json'):
-        code = save_version_data_to_cache(REPO_OWNER, REPO_NAME, object='prg')
+        not os.path.exists(f'{DIRECTORY}tempfiles/versiondata_{repo_owner}_{repo_name}.json'):
+        code = save_version_data_to_cache(repo_owner, repo_name, object=component_name)
         if code != True:
             return code
     
@@ -584,8 +587,8 @@ def get_release_info(version):
 
     return data
 
-def get_download_url(version, filetype=".zip"):
-    if DEBUG: return "patch.cdpipatch"
+def get_download_url(version, filetype=".zip", debug_check=True):
+    if DEBUG and debug_check: return "patch.cdpipatch"
     try:
         data = get_release_info(version)
         
@@ -608,7 +611,25 @@ def get_download_url(version, filetype=".zip"):
     except Exception as ex:
         return 'ERR_UNKNOWN'
     
-def download_update(url, directory, signal=None, debug_check=True):
+def _format_size(bytes_per_sec: float) -> str:
+    units = ['bytes/s', 'KB/s', 'MB/s', 'GB/s']
+    size = bytes_per_sec
+    unit = units[0]
+    for u in units[1:]:
+        if size >= 1024:
+            size /= 1024
+            unit = u
+        else:
+            break
+    return f"{size:.2f} {unit}"
+    
+def download_update(
+    url, 
+    directory,
+    signal=None, 
+    speed_changed_signal=None, 
+    debug_check=True
+    ):
     if not debug_check or not DEBUG or signal is None:
         with requests.get(url, stream=True) as r:
             total_length = r.headers.get('content-length')
@@ -617,17 +638,39 @@ def download_update(url, directory, signal=None, debug_check=True):
                     shutil.copyfileobj(r.raw, f)
             else:
                 dl = 0
+                start = time.time()
                 total_length = int(total_length)
                 with open(directory, 'wb') as f:
                     for data in r.iter_content(chunk_size=4096):
-                        if signal:signal.emit(float((dl / total_length)*100))
+                        now = time.time()
+                            
                         dl += len(data)
                         f.write(data)
+                        
+                        if signal:
+                            signal.emit(float((dl / total_length)*100))
+                        
+                        elapsed = now - start
+                        if elapsed > 0:
+                            speed = dl / elapsed
+                            remaining_bytes = total_length - dl
+                            remaining_time = remaining_bytes / speed if speed > 0 else 0
+
+                            speed_str = _format_size(speed)
+                            rem_str = str(remaining_time)
+
+                            if speed_changed_signal:
+                                speed_changed_signal.emit(speed_str, rem_str)
+                                
     else:
         i=0
         while i < 100:
             i+=1
-            if signal:signal.emit(i)
+            if signal:
+                signal.emit(i)
+            
+            if speed_changed_signal:
+                speed_changed_signal.emit('1.00 MB/s', f"{100-i}")
             time.sleep(0.05)
         shutil.copyfile(url, directory)
 
