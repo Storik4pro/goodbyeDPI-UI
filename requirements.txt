@@ -9,3 +9,5 @@ python-dotenv==1.0.1
 pydantic==2.10.6
 aiohttp==3.11.13
 icmplib==3.0.4
+packaging==24.2
+markdown==3.8

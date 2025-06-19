@@ -106,6 +106,55 @@ ScrollablePage {
                 }
             }
         }
+        Button{
+            id:btn2
+            Layout.preferredHeight: 34
+            Layout.preferredWidth:cllay.width
+            Layout.alignment: Qt.AlignLeft
+            RowLayout{
+                anchors.fill: parent
+                anchors{
+                    leftMargin: 10
+                    rightMargin: 10
+                }
+                spacing: 10
+                Icon {
+                    source: "qrc:/qt/qml/GoodbyeDPI_UI/res/image/telegram.png"
+                    Layout.preferredHeight:18
+                    Layout.preferredWidth:20
+                }
+                ColumnLayout{
+                    Layout.fillWidth: true
+                    spacing: 2
+                    Label{
+                        Layout.fillWidth: true
+                        text: backend.get_element_loc('join_community')
+                        horizontalAlignment: Text.AlignLeft
+                        wrapMode:Text.Wrap
+                        font: Typography.body
+                    }
+                }
+                IconButton {
+                    width: 30
+                    height: 30
+                    Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                    Icon {
+                        anchors.centerIn: parent
+                        source: FluentIcons.graph_OpenInNewWindow
+                        width: 15
+                        height: 15
+                    }
+                    onClicked: {
+                        Qt.openUrlExternally("https://t.me/storik4dev")
+                    }
+                }
+            }
+            
+            onClicked: {
+                Qt.openUrlExternally("https://t.me/storik4dev")
+            }
+            
+            }
         RowLayout{
             spacing:0
             CopyableText {
@@ -403,7 +452,7 @@ ScrollablePage {
             ListElement { text: "Lux Fero"; link: ""}
             ListElement { text: "lumenpearson"; link: ""}
             ListElement { text: "leaftail1880"; link: ""}
-
+            ListElement { text: "Nek0t"; link: ""}
         }
         Repeater {
             model: settingsModel

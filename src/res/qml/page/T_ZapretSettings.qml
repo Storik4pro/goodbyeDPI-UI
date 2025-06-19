@@ -1529,7 +1529,7 @@ ScrollablePage {
             onClicked: {
                 var result = process.stop_process()
                 if (result) {
-                    process.start_process()
+                    Qt.callLater(process.start_process)
                     info_manager_bottomright.show(InfoBarType.Success, backend.get_element_loc("save_complete"), 3000)
                 } else {
                     info_manager_bottomright.show(InfoBarType.Error, backend.get_element_loc("error_title"), 10000)

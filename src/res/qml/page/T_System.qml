@@ -13,10 +13,11 @@ StackPage {
         }
     }
     Component.onCompleted: {
-        if (context.argument.info === 'Component' && !systemProcessHelper.is_alive()){
-            router.go('/components')
-        } else {
-            router.go("/")
+        router.go("/")
+        if (context) {
+            if (context.argument.info === 'Component' && !systemProcessHelper.is_alive()){
+                router.go('/components')
+            }
         }
     }
 }

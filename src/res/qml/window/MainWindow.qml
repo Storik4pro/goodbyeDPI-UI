@@ -55,6 +55,51 @@ FramelessWindow {
                 onClicked: WindowRouter.go("/conditionalrun")
                 icon.color: "#00000000"
             }
+            IconButton{
+                id: btn_notification
+                implicitWidth: 46
+                padding: 0
+                radius: 0
+                visible:false
+                icon.width: 14
+                icon.height: 14
+                icon.name: FluentIcons.graph_Ringer
+                ToolTip.visible: hovered
+                ToolTip.text: backend.get_element_loc("ringer")
+                ToolTip.delay: Theme.toolbarDelay
+                onClicked: notificationDialog.open()
+            }
+        }
+    }
+    Dialog {
+        id: notificationDialog
+        width:400
+        FluentUI.radius:0
+        x: window.width - width
+        y: appBar.implicitHeight - 16
+        title: qsTr("Notification center")
+        ColumnLayout {
+            width:notificationDialog.width - (notificationDialog.padding*2)
+            Flickable {
+                id: notificationFlickable
+                clip: true
+                Layout.minimumHeight:100
+                contentHeight: notificationLayout.implicitHeight
+                ColumnLayout {
+                    id:notificationLayout
+                }
+                ScrollBar.vertical: ScrollBar {}
+            }
+            RowLayout {
+                Layout.fillWidth:true
+                Item {
+                    Layout.fillWidth:true
+                }
+                Button {
+                    FluentUI.radius:0
+                    text: backend.get_element_loc("close")
+                }
+            }
         }
     }
     /*onNewInit:
