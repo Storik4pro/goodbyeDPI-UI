@@ -79,6 +79,12 @@ ScrollablePage {
         byedpi_model
     ]
 
+    property var engines: [
+        'zapret',
+        'goodbyedpi',
+        'byedpi',
+    ]
+
     property bool output_ready: false
     property bool process_state: false
     property bool isExitAvailible: false
@@ -491,6 +497,8 @@ ScrollablePage {
                         onActivated: {
                             let selectedValue = model[currentIndex];
                             backend.set_to_config("GOODCHECK", "engine", selectedValue)
+                            sitelist_element.model = goodCheck.get_available_sitelists(selectedValue)
+                            strategy_element.model = goodCheck.get_available_strategies(engine.model[engine.currentIndex])
                         }
                     }
                 }
@@ -549,9 +557,8 @@ ScrollablePage {
                             id:sitelist_element
                             
                             Layout.preferredWidth:(page.width < 620 ? page.width - 280 : 350) - height - 10
-                            model: [backend.get_element_loc("goodcheck_all"), backend.get_element_loc("goodcheck_googlevideo"), 
-                            backend.get_element_loc("goodcheck_miscellaneous"), backend.get_element_loc("goodcheck_nothing"), backend.get_element_loc("goodcheck_twitter")]
-                            currentIndex: engine.currentIndex===2 ? goodCheck.get_chk_preset_int_value('tcp_hosts') : backend.get_int_from_config("GOODCHECK", "check_list")
+                            model: goodCheck.get_available_sitelists(engines[engine.currentIndex])
+                            currentIndex: backend.get_int_from_config("GOODCHECK", "check_list")
                             onActivated: {
                                 let selectedValue = model[currentIndex];
                                 if (engine.currentIndex===2) {
@@ -576,7 +583,10 @@ ScrollablePage {
 
                             display:Button.IconOnly
                             onClicked: {
-                                goodCheck.open_goodcheck_file(sitelist_element.currentIndex);
+                                goodCheck.open_goodcheck_file(
+                                    engines[engine.currentIndex], 
+                                    sitelist_element.model[sitelist_element.currentIndex]
+                                );
                             }
                         }
                     }
@@ -637,7 +647,7 @@ ScrollablePage {
                             rightMargin: 0
                         }
                         width:page.width < 620 ? page.width - 280 : 350
-                        model: models[engine.currentIndex]
+                        model: goodCheck.get_available_strategies(engine.model[engine.currentIndex])
                         currentIndex: engine.currentIndex===2 ? goodCheck.get_chk_preset_int_value('strategy') : backend.get_int_from_config("GOODCHECK", "strategies")
                         onActivated: {
                             let selectedValue = model[currentIndex];

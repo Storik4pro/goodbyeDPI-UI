@@ -16,7 +16,7 @@ import glob
 
 import qasync
 from utils import start_process
-from _data import DIRECTORY, UserConfig, configs, settings, Settings, GOODBYE_DPI_PATH, ZAPRET_PATH, GOODCHECK_PATH, DEBUG_PATH, DEBUG
+from _data import DIRECTORIES, DIRECTORY, UserConfig, configs, settings, Settings, GOODBYE_DPI_PATH, ZAPRET_PATH, GOODCHECK_PATH, DEBUG_PATH, DEBUG
 from .chkPresetUtils import GGC_SERVER, Options, ServerAvailabilityChecker
 from .process import Process
 ENGINE = {
@@ -24,7 +24,13 @@ ENGINE = {
     "Zapret":"zapret"
 }
 
-CHECKLISTS = ["default - all", "default - googlevideo", "default - miscellaneous", "empty", "twitter"]
+CHECKLISTS = [
+    "default - all", 
+    "default - googlevideo", 
+    "default - miscellaneous", 
+    "empty", 
+    "twitter"
+]
 
 goodbyeDPI_strategies = [
     "[basic functionality test]",
@@ -225,6 +231,29 @@ class GoodCheckHelper(QObject):
             self.parsed_data = parse_all_data(self.output)
         return self.parsed_data if self.parsed_data else ({}, [])
     
+    @Slot(str, result='QVariantList')
+    def get_available_sitelists(self, engine:str):
+        engine_path = Path(DIRECTORIES[engine.lower()])
+        if not engine_path.exists():
+            return []
+        
+        sitelist_files = [
+            f.name.split('.')[0] 
+            for f in engine_path.glob('*.txt') 
+            if f.is_file() and not "ipset" in f.name
+        ]
+        return sitelist_files
+    
+    @Slot(str, result='QVariantList')
+    def get_available_strategies(self, engine:str):
+        engine_dirname = engine.capitalize().replace("dpi", "DPI")
+        engine_path = Path(GOODCHECK_PATH, 'StrategiesGoGo', engine_dirname)
+        if not engine_path.exists():
+            return []
+        
+        strategies_files = [f.name.split('.')[0] for f in engine_path.glob('*.txt') if f.is_file()]
+        return strategies_files
+    
     @Slot(result=bool)
     def is_data_ready(self):
         _empty = ({}, [])
@@ -275,9 +304,13 @@ class GoodCheckHelper(QObject):
                 return 1
         return self.config.get_value(key)
 
-    @Slot(int)
-    def open_goodcheck_file(self, file):
-        os.startfile(DEBUG_PATH + f"{GOODCHECK_PATH}/CheckLists/{CHECKLISTS[file] + '.txt'}")
+    @Slot(str, str)
+    def open_goodcheck_file(self, engine:str, file):
+        engine_path = Path(DIRECTORIES[engine.lower()])
+        if not engine_path.exists():
+            return
+        
+        os.startfile(Path(engine_path, file+'.txt'))
         
     @Slot(str, str, str)
     def set_value(self, group, key, value):
@@ -308,6 +341,14 @@ class GoodCheckHelper(QObject):
         self.parsed_data = None
         self.strategy_list = None
         
+        strategies_to_check_list = self.get_available_strategies(engine)
+        if strategies_to_check_list == []:
+            strategies_to_check_list = ['NaN']
+            
+        sitelists_to_check = self.get_available_sitelists(engine)
+        if sitelists_to_check == []:
+            sitelists_to_check = ['NaN']
+        
         if engine.lower() in ['zapret', 'goodbyedpi']:
             self.settings.change_setting("GoodbyeDPI", "GoodbyeDPIFolder", "..\\\\goodbyeDPI")
             self.settings.change_setting("GoodbyeDPI", "GoodbyeDPIExecutableName", "gdpi.exe")
@@ -330,18 +371,40 @@ class GoodCheckHelper(QObject):
                     print(f"Error while trying to delete {log_file}: {e}")
 
             if self.process is None:
+                current_strategy = configs['goodcheck'].get_value("strategies")
+                if len(strategies_to_check_list) < current_strategy - 1:
+                    current_strategy = len(strategies_to_check_list) - 1
+                
+                current_checklist = configs['goodcheck'].get_value("check_list")
+                if len(sitelists_to_check) < current_checklist - 1:
+                    current_checklist = len(sitelists_to_check) - 1
+                
+                current_checklist_dir = Path(
+                    DIRECTORIES[engine.lower()], 
+                    sitelists_to_check[current_checklist] + ".txt"
+                )
+                target_checklist_dir = Path(
+                    DEBUG_PATH+GOODCHECK_PATH,
+                    "CheckLists", 
+                    sitelists_to_check[current_checklist] + ".txt"
+                )
+                
+                shutil.copyfile(current_checklist_dir, target_checklist_dir)
+                
                 arguments = ['-q', 
                             '-f', ENGINE[configs['goodcheck'].get_value("engine")],
                             '-m', configs['goodcheck'].get_value("curl").lower(),
-                            '-c', CHECKLISTS[configs['goodcheck'].get_value("check_list")] + ".txt",
-                            '-s', (goodbyeDPI_strategies[configs['goodcheck'].get_value("strategies")] if \
-                                configs['goodcheck'].get_value("engine") == 'GoodbyeDPI'\
-                                else zapret_strategies[configs['goodcheck'].get_value("strategies")]) + ".txt",
+                            '-c', sitelists_to_check[current_checklist] + ".txt",
+                            '-s', (strategies_to_check_list[current_strategy]) + ".txt",
                             '-p', str(configs['goodcheck'].get_value("p")),
-                            ]
+                ]
                 print(arguments)
-                self.process = start_process(*arguments, execut="goodcheckgogo.exe", path=DEBUG_PATH+GOODCHECK_PATH+"/goodcheckgogo.exe",\
-                                            cwd=DEBUG_PATH+GOODCHECK_PATH)
+                self.process = start_process(
+                    *arguments, 
+                    execut="goodcheckgogo.exe", 
+                    path=DEBUG_PATH+GOODCHECK_PATH+"/goodcheckgogo.exe",
+                    cwd=DEBUG_PATH+GOODCHECK_PATH
+                )
 
                 self.started.emit()
                 QTimer.singleShot(1000, self.find_new_log_file)
