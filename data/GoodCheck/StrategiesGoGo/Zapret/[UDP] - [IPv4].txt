@@ -19,31 +19,43 @@
 
 
 #KEY#--wf-l3=ipv4
+#KEY#--wf-tcp=443
+#KEY#--skip
+#ENDGROUP#
+
+#KEY#--wf-l3=ipv4
 #KEY#--wf-udp=443
 #KEY#--dpi-desync=fake
 #KEY#empty;--dpi-desync-fake-quic=0x00;--dpi-desync-fake-quic=PAYLOADUDP
-#KEY#empty;--dpi-desync-repeats=2;--dpi-desync-repeats=5;--dpi-desync-repeats=10;--dpi-desync-repeats=20
+#KEY#empty;--dpi-desync-repeats=2;--dpi-desync-repeats=6;--dpi-desync-repeats=11;--dpi-desync-repeats=20
 #ENDGROUP#
 
 #KEY#--wf-l3=ipv4
 #KEY#--wf-udp=443
 #KEY#--dpi-desync=ipfrag2
-#KEY#--dpi-desync-ipfrag-pos-udp=8;--dpi-desync-ipfrag-pos-udp=16;--dpi-desync-ipfrag-pos-udp=24;--dpi-desync-ipfrag-pos-udp=32;--dpi-desync-ipfrag-pos-udp=40;--dpi-desync-ipfrag-pos-udp=64
+#KEY#--dpi-desync-ipfrag-pos-udp=8;--dpi-desync-ipfrag-pos-udp=16;--dpi-desync-ipfrag-pos-udp=24;--dpi-desync-ipfrag-pos-udp=32;--dpi-desync-ipfrag-pos-udp=64
 #ENDGROUP#
 
 #KEY#--wf-l3=ipv4
 #KEY#--wf-udp=443
 #KEY#--dpi-desync=fake,ipfrag2
 #KEY#empty;--dpi-desync-fake-quic=0x00;--dpi-desync-fake-quic=PAYLOADUDP
-#KEY#empty;--dpi-desync-repeats=2;--dpi-desync-repeats=5;--dpi-desync-repeats=10;--dpi-desync-repeats=20
-#KEY#--dpi-desync-ipfrag-pos-udp=8;--dpi-desync-ipfrag-pos-udp=16;--dpi-desync-ipfrag-pos-udp=24;--dpi-desync-ipfrag-pos-udp=32;--dpi-desync-ipfrag-pos-udp=40;--dpi-desync-ipfrag-pos-udp=64
+#KEY#empty;--dpi-desync-repeats=2;--dpi-desync-repeats=6;--dpi-desync-repeats=11;--dpi-desync-repeats=20
+#KEY#--dpi-desync-ipfrag-pos-udp=8;--dpi-desync-ipfrag-pos-udp=16;--dpi-desync-ipfrag-pos-udp=24;--dpi-desync-ipfrag-pos-udp=32;--dpi-desync-ipfrag-pos-udp=64
+#ENDGROUP#
+
+#KEY#--wf-l3=ipv4
+#KEY#--wf-udp=443
+#KEY#--dpi-desync=udplen
+#KEY#--dpi-desync-udplen-increment=8;--dpi-desync-udplen-increment=16;--dpi-desync-udplen-increment=24
+#KEY#empty;--dpi-desync-udplen-pattern=0xB00BEDBABE
 #ENDGROUP#
 
 #KEY#--wf-l3=ipv4
 #KEY#--wf-udp=443
 #KEY#--dpi-desync=fake,udplen
 #KEY#empty;--dpi-desync-fake-quic=0x00;--dpi-desync-fake-quic=PAYLOADUDP
-#KEY#empty;--dpi-desync-repeats=2;--dpi-desync-repeats=5;--dpi-desync-repeats=10;--dpi-desync-repeats=20
+#KEY#empty;--dpi-desync-repeats=2;--dpi-desync-repeats=6;--dpi-desync-repeats=11;--dpi-desync-repeats=20
 #KEY#--dpi-desync-udplen-increment=8;--dpi-desync-udplen-increment=16;--dpi-desync-udplen-increment=24
-#KEY#empty;--dpi-desync-udplen-pattern=0xB00BEDBABEFACADE
+#KEY#empty;--dpi-desync-udplen-pattern=0xB00BEDBABE
 #ENDGROUP#
