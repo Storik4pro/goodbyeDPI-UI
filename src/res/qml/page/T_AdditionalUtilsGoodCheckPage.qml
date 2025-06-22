@@ -2021,17 +2021,30 @@ ScrollablePage {
             var data = goodCheck.get_sitelist()
             failureSitelistModel.clear()
 
+            function hasSite(ip, addr, model) {
+                for (var k = 0; k < model.count; ++k) {
+                    var item = model.get(k)
+                    if (item.ip === ip
+                        && item.url === addr) {
+                        return true
+                    }
+                }
+                return false
+            }
+
             for (var i = 0; i < data.length; ++i) {
                 var failureSites = data[i]['failure']
                 if (failureSites !== undefined) {
                     for (var j = 0; j < failureSites.length; ++j) {
                         yield pass();
                         var failureSite = failureSites[j]
-                        failureSitelistModel.append({
-                            'url': failureSite.url,
-                            'ip': failureSite.ip,
-                            'bestStrategy': 'NO'
-                        })
+                        if (!hasSite(failureSite.ip, failureSite.url, failureSitelistModel)) {
+                            failureSitelistModel.append({
+                                'url': failureSite.url,
+                                'ip': failureSite.ip,
+                                'bestStrategy': 'NO'
+                            })
+                        }
                     }
                 }
             }
@@ -2044,11 +2057,13 @@ ScrollablePage {
                 for (var j = 0; j < successSites.length; ++j) {
                     yield pass();
                     var successSite = successSites[j]
-                    sitelistModel.append({
-                        'url': successSite.url,
-                        'ip': successSite.ip,
-                        'bestStrategy': successSite.best
-                    })
+                    if (!hasSite(successSite.ip, successSite.url, sitelistModel)) {
+                        sitelistModel.append({
+                            'url': successSite.url,
+                            'ip': successSite.ip,
+                            'bestStrategy': successSite.best
+                        })
+                    }
                 }
             }
             animation.visible = false
