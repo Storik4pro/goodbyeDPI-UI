@@ -8,6 +8,7 @@ from logger import AppLogger
 from quick_start import merge_blacklist, merge_settings
 from _data import BACKUP_SETTINGS_FILE_PATH, COMPONENTS_URLS, DEBUG_PATH, DIRECTORY,\
     DEBUG, GOODBYE_DPI_PATH, LOG_LEVEL, SETTINGS_FILE_PATH, VERSION, settings, text
+from packaging.version import Version
 from utils import get_component_download_url
 from .backend import DownloadComponent
 
@@ -136,6 +137,15 @@ class MovingSettingsWorker(QObject):
                                         f"Backup settings file {source_dir+'/settings/_settings.ini'} does not exist.")
                 settings.reload_settings()
                 
+                if (
+                    settings.get_value('COMPONENTS', 'zapret') == 'True' and
+                    Version(
+                        settings.get_value('COMPONENTS', 'zapret_version').replace('v', '')
+                        ) < 
+                    Version('71.1.1')
+                    ):
+                    settings.change_setting('COMPONENTS', 'zapret_version', 'v71.1.1')
+                    settings.save_settings()
                 
                 if total_files == 0:
                     self.finished.emit()
