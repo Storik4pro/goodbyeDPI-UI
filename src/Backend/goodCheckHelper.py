@@ -523,6 +523,9 @@ class GoodCheckHelper(QObject):
             
         if self.process is not None:
             for proc in psutil.process_iter(['pid', 'name']):
+                if proc is None:
+                    continue
+                
                 if proc.info['pid'] == self.process.pid:
                     try:
                         proc.terminate()
