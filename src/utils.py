@@ -34,7 +34,7 @@ from toasted import Button, Image, Progress, Text, Toast, ToastButtonStyle, Toas
 import winsound
 
 import requests
-from _data import GOODBYE_DPI_EXECUTABLE, PARAMETER_MAPPING, PROXIFYRE_FILES_LIST, S_PARAMETER_MAPPING, S_VALUE_PARAMETERS, VALUE_PARAMETERS, ZAPRET_EXECUTABLE, ZAPRET_PATH, \
+from _data import GOODBYE_DPI_EXECUTABLE, GOODCHECK_PATH, PARAMETER_MAPPING, PROXIFYRE_FILES_LIST, S_PARAMETER_MAPPING, S_VALUE_PARAMETERS, VALUE_PARAMETERS, ZAPRET_EXECUTABLE, ZAPRET_PATH, \
     GOODBYE_DPI_PATH, DEBUG, DIRECTORY, DEBUG_PATH, REPO_NAME, REPO_OWNER, CONFIGS_REPO_NAME, SETTINGS_FILE_PATH,\
     CONFIG_PATH, SPOOFDPI_EXECUTABLE, BYEDPI_EXECUTABLE, EXECUTABLES, COMPONENTS_URLS, REQUEST_HEADER, text, settings
 
@@ -786,7 +786,7 @@ def extract_zip(zip_file, zip_folder_to_unpack, extract_to, files_to_skip=[]):
         print(ex)
         return "ERR_FILE_UNPACKING"
 
-def download_files_from_github(remote_dir, local_dir):
+def download_files_from_github(remote_dir, local_dir, skip_exist=True):
     base_url = f"https://api.github.com/repos/{REPO_OWNER}/{CONFIGS_REPO_NAME}/contents/{remote_dir}?ref=main"
     headers = {'Accept': 'application/vnd.github.v3.raw'}
     
@@ -825,7 +825,7 @@ def download_files_from_github(remote_dir, local_dir):
                     continue
                 
                 if (any(filename.endswith(ext) for ext in skip_filetypes) and 
-                    os.path.exists(local_filepath)):
+                    os.path.exists(local_filepath) and skip_exist):
                     continue
                 
                 download_url = file_info['download_url']
@@ -861,12 +861,33 @@ def open_folder(folder_path):
 
 def register_component(component_name:str, version):
     component_directory = DIRECTORY+f"data/{component_name}" if not DEBUG else f"E:/_component/{component_name}"
-    result = download_files_from_github(remote_dir=f"{component_name.lower()}/", local_dir=component_directory)
+    result = download_files_from_github(
+        remote_dir=f"{component_name.lower()}/", 
+        local_dir=component_directory
+    )
     if result: return result
 
     config_component_path = CONFIG_PATH+f"/{component_name.lower()}" if not DEBUG else f"E:/_component/{component_name}/config"
-    result = download_files_from_github(remote_dir=f"{component_name.lower()}/configs", local_dir=config_component_path)
+    result = download_files_from_github(
+        remote_dir=f"{component_name.lower()}/configs", 
+        local_dir=config_component_path
+    )
     if result: return result
+    
+    if component_name.lower() in ['goodbyedpi', 'zapret']:
+        component_dirname = component_name.capitalize().replace("dpi", "DPI")
+        goodcheck_component_strategies_path = Path(
+            GOODCHECK_PATH, 
+            "StrategiesGoGo", 
+            component_dirname
+        )
+        
+        result = download_files_from_github(
+            remote_dir=f"{component_name.lower()}/strategies",
+            local_dir=goodcheck_component_strategies_path,
+            skip_exist=False
+        )
+        if result: return result
 
     change_settings('COMPONENTS', [
         [f'{component_name.lower()}', 'True'],

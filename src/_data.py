@@ -46,7 +46,7 @@ def is_font_installed(font_name):
 
 DIRECTORY = f'{application_path}/' if not DEBUG else ''
 
-VERSION = "1.2.12"
+VERSION = "1.2.13"
 
 load_dotenv()
 DEV_API = os.getenv('DEV_API')
@@ -63,10 +63,19 @@ GOODCHECK_PATH = DIRECTORY+'data/GoodCheck/'
 GOODBYE_DPI_EXECUTABLE = "goodbyedpi.exe" 
 ZAPRET_PATH = DIRECTORY+'data/zapret/'
 ZAPRET_EXECUTABLE = "winws.exe" 
+SPOOFDPI_PATH = DIRECTORY+'data/spoofdpi/'
 SPOOFDPI_EXECUTABLE = "spoofdpi-windows-amd64.exe" 
+BYEDPI_PATH = DIRECTORY+'data/byedpi/'
 BYEDPI_EXECUTABLE = "ciadpi.exe" 
 PROXIFYRE_CONFIG_PATH = DIRECTORY+'data/proxifyre/app-config.json'
 PROXIFYRE_EXECUTABLE = 'proxifyre.exe'
+
+DIRECTORIES = {
+    'goodbyedpi':GOODBYE_DPI_PATH,
+    'zapret':ZAPRET_PATH,
+    'byedpi':BYEDPI_PATH,
+    'spoofdpi':SPOOFDPI_PATH,
+}
 EXECUTABLES = {
     'goodbyeDPI':GOODBYE_DPI_EXECUTABLE,
     'zapret':ZAPRET_EXECUTABLE,

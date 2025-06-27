@@ -1,0 +1,30 @@
+/Use symbol '/' to comment a line
+
+
+/Protocol; can be either TCP or UDP; it's required or error will be shown when parsing list
+#PROTO=TCP
+/IP version; can be 4 or 6
+#IPV=4
+/Proxy settings; should be in the form of protocol://ip:port; leave empty to disable
+#PROXY=
+
+
+/Strategy keys; program will use them to form a list of all possible combinations
+/One line - one key set; must begin with '#KEY#'
+/Use symbol ';' for keys separation
+/Use symbol '&' for keys merging
+/'empty' will be substituted with nothingness; 'FAKESNI', 'FAKEHEXSTREAMTCP', 'FAKEHEXSTREAMUDP', 'FAKEHEXBYTESTCP', 'FAKEHEXBYTESUDP', 'PAYLOADTCP' and 'PAYLOADUDP' will be substituted with values from config.ini
+/You can also put values directly, if you don't want substitution
+/Group of keys must always end with #ENDGROUP#
+
+/---Fake + Fakedsplit, Fakeddisorder---/
+
+#KEY#--wf-l3=ipv4
+#KEY#--wf-tcp=443
+#KEY#--dpi-desync=fake,fakedsplit;--dpi-desync=fake,fakeddisorder
+#KEY#--dpi-desync-fake-tls-mod=rnd,rndsni,dupsid,padencap
+#KEY#--dpi-desync-fooling=md5sig;--dpi-desync-fooling=badsum;--dpi-desync-fooling=badseq;--dpi-desync-fooling=datanoack;--dpi-desync-ttl=4;--dpi-desync-ttl=8
+#KEY#empty;--dpi-desync-fooling=md5sig;--dpi-desync-fooling=badsum;--dpi-desync-fooling=badseq;--dpi-desync-fooling=datanoack
+#KEY#--dpi-desync-split-pos=1;--dpi-desync-split-pos=method+1;--dpi-desync-split-pos=host+1;--dpi-desync-split-pos=endhost-1;--dpi-desync-split-pos=sld+1;--dpi-desync-split-pos=endsld-1;--dpi-desync-split-pos=midsld;--dpi-desync-split-pos=sniext
+#KEY#--dpi-desync-split-seqovl=3
+#ENDGROUP#
