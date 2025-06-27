@@ -138,11 +138,11 @@ class MovingSettingsWorker(QObject):
                 settings.reload_settings()
                 
                 if (
-                    settings.get_value('COMPONENTS', 'zapret') == 'True' and
+                    settings.settings['COMPONENTS']['zapret'] == 'True' and
                     Version(
-                        settings.get_value('COMPONENTS', 'zapret_version').replace('v', '')
+                        settings.get_value('COMPONENTS', 'zapret_version')
                         ) < 
-                    Version('71.1.1')
+                    Version('v71.1.1')
                     ):
                     settings.change_setting('COMPONENTS', 'zapret_version', 'v71.1.1')
                     settings.save_settings()
@@ -173,6 +173,16 @@ class MovingSettingsWorker(QObject):
                 merge_settings(BACKUP_SETTINGS_FILE_PATH, SETTINGS_FILE_PATH)
                 merge_blacklist(GOODBYE_DPI_PATH)
                 settings.reload_settings()
+                
+                if (
+                    settings.settings['COMPONENTS']['zapret'] == 'True' and
+                    Version(
+                        settings.get_value('COMPONENTS', 'zapret_version')
+                        ) < 
+                    Version('v71.1.1')
+                    ):
+                    settings.change_setting('COMPONENTS', 'zapret_version', 'v71.1.1')
+                    settings.save_settings()
 
                 settings.change_setting('GLOBAL', 'after_update', 'False')
             except:
